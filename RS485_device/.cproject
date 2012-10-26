@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="cdt.managedbuild.config.sdcc.exe.release.666685794">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.sdcc.exe.release.666685794" moduleId="org.eclipse.cdt.core.settings" name="Release">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.MakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="ihx" artifactName="${ProjName}" buildProperties="" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GASErrorParser" id="cdt.managedbuild.config.sdcc.exe.release.666685794" name="Release" parent="cdt.managedbuild.config.sdcc.exe.release">
+					<folderInfo id="cdt.managedbuild.config.sdcc.exe.release.666685794." name="/" resourcePath="">
+						<toolChain id="cdt.managedbuild.toolchain.sdcc.exe.release.749462821" name="SDCC Tool Chain" superClass="cdt.managedbuild.toolchain.sdcc.exe.release">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.sdcc.platform.exe.release.617372375" name="Release Platform" osList="solaris,linux,hpux,aix,qnx,win32" superClass="cdt.managedbuild.target.sdcc.platform.exe.release"/>
+							<builder buildPath="${workspace_loc:/RS485_device/Release}" id="cdt.managedbuild.target.sdcc.builder.exe.release.5469945" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Sdcc Make" superClass="cdt.managedbuild.target.sdcc.builder.exe.release"/>
+							<tool id="cdt.managedbuild.tool.sdcc.c.compiler.exe.release.831177639" name="SDCC Compiler" superClass="cdt.managedbuild.tool.sdcc.c.compiler.exe.release">
+								<option id="sdcc.c.compiler.category.other.iramsize.217404514" name="Check internal ram usage (--iram-size)" superClass="sdcc.c.compiler.category.other.iramsize" value="128" valueType="string"/>
+								<option id="sdcc.c.compiler.option.include.paths.359744629" name="Include paths (-I)" superClass="sdcc.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RS485_device/Comm}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/local/share/sdcc/include"/>
+									<listOptionValue builtIn="false" value="/usr/local/share/sdcc/include/mcs51"/>
+								</option>
+								<inputType id="cdt.managedbuild.tool.sdcc.c.compiler.input.1619980864" superClass="cdt.managedbuild.tool.sdcc.c.compiler.input"/>
+							</tool>
+							<tool command="sdcc --iram-size 128 --code-size 4096 --xram-size 0" id="cdt.managedbuild.tool.sdcc.c.linker.exe.release.1897206209" name="SDCC Linker" superClass="cdt.managedbuild.tool.sdcc.c.linker.exe.release">
+								<inputType id="cdt.managedbuild.tool.sdcc.c.linker.input.903981648" superClass="cdt.managedbuild.tool.sdcc.c.linker.input">
+									<additionalInput kind="additionalinputdependency" paths="$(USER_RELS)"/>
+									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
+								</inputType>
+							</tool>
+							<tool id="cdt.managedbuild.tool.sdcc.assembler.exe.release.1360960268" name="SDCC Assembler" superClass="cdt.managedbuild.tool.sdcc.assembler.exe.release">
+								<inputType id="cdt.managedbuild.tool.sdcc.assembler.input.1229963251" superClass="cdt.managedbuild.tool.sdcc.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Tests|Comm|Device" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Comm"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Device"/>
+						<entry excluding="Comm_test.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Tests"/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+		<cconfiguration id="cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012" moduleId="org.eclipse.cdt.core.settings" name="Comm_test">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="org.eclipse.cdt.core.MakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="ihx" artifactName="${ProjName}" buildProperties="" cleanCommand="rm -rf" description="Test configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GASErrorParser" id="cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012" name="Comm_test" parent="cdt.managedbuild.config.sdcc.exe.release">
+					<folderInfo id="cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012." name="/" resourcePath="">
+						<toolChain id="cdt.managedbuild.toolchain.sdcc.exe.release.167461007" name="SDCC Tool Chain" superClass="cdt.managedbuild.toolchain.sdcc.exe.release">
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.sdcc.platform.exe.release.968764069" name="Release Platform" osList="solaris,linux,hpux,aix,qnx,win32" superClass="cdt.managedbuild.target.sdcc.platform.exe.release"/>
+							<builder buildPath="${workspace_loc:/RS485_device/Release}" id="cdt.managedbuild.target.sdcc.builder.exe.release.1638976552" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Sdcc Make" superClass="cdt.managedbuild.target.sdcc.builder.exe.release"/>
+							<tool id="cdt.managedbuild.tool.sdcc.c.compiler.exe.release.1307136129" name="SDCC Compiler" superClass="cdt.managedbuild.tool.sdcc.c.compiler.exe.release">
+								<option id="sdcc.c.compiler.option.include.paths.1510250446" name="Include paths (-I)" superClass="sdcc.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RS485_device/Comm}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/local/share/sdcc/include"/>
+									<listOptionValue builtIn="false" value="/usr/local/share/sdcc/include/mcs51"/>
+								</option>
+								<option id="sdcc.c.compiler.category.other.iramsize.519568171" superClass="sdcc.c.compiler.category.other.iramsize" value="128" valueType="string"/>
+								<option id="sdcc.c.compiler.category.other.xramsize.254505167" superClass="sdcc.c.compiler.category.other.xramsize" value="0" valueType="string"/>
+								<option id="sdcc.c.compiler.category.other.codesize.369538651" superClass="sdcc.c.compiler.category.other.codesize" value="4096" valueType="string"/>
+								<inputType id="cdt.managedbuild.tool.sdcc.c.compiler.input.894927392" superClass="cdt.managedbuild.tool.sdcc.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.sdcc.c.linker.exe.release.1242096144" name="SDCC Linker" superClass="cdt.managedbuild.tool.sdcc.c.linker.exe.release">
+								<option id="sdcc.c.link.option.ldflags.1068021891" superClass="sdcc.c.link.option.ldflags" value="--iram-size 128 --xram-size 0 --code-size 4096" valueType="string"/>
+								<inputType id="cdt.managedbuild.tool.sdcc.c.linker.input.530068527" superClass="cdt.managedbuild.tool.sdcc.c.linker.input">
+									<additionalInput kind="additionalinputdependency" paths="$(USER_RELS)"/>
+									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
+								</inputType>
+							</tool>
+							<tool id="cdt.managedbuild.tool.sdcc.assembler.exe.release.857361955" name="SDCC Assembler" superClass="cdt.managedbuild.tool.sdcc.assembler.exe.release">
+								<inputType id="cdt.managedbuild.tool.sdcc.assembler.input.2097186622" superClass="cdt.managedbuild.tool.sdcc.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Tests|Comm|Device" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Comm"/>
+						<entry excluding="Device.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Device"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Tests"/>
+					</sourceEntries>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="RS485_device.cdt.managedbuild.target.sdcc.exe.327330324" name="MCS51 family (SDCC)" projectType="cdt.managedbuild.target.sdcc.exe"/>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/RS485_device"/>
+		</configuration>
+		<configuration configurationName="Comm_test"/>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012;cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012.">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="net.sourceforge.eclipsesdcc.SDCCManagedMakePerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.sdcc.exe.release.666685794;cdt.managedbuild.config.sdcc.exe.release.666685794.">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="net.sourceforge.eclipsesdcc.SDCCManagedMakePerProjectProfile"/>
+		</scannerConfigBuildInfo>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+</cproject>
