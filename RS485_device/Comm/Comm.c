@@ -13,9 +13,9 @@
 #include "Comm.h"
 
 // Global variables facilitating communication
-volatile unsigned char serial_received_char;
-volatile __bit serial_char_needs_processing;
-volatile __bit serial_send_complete;
+volatile unsigned char UART_received_char;
+volatile __bit UART_char_needs_processing;
+volatile __bit UART_send_complete;
 unsigned char comm_state;
 struct buffer_struct comm_buffer;
 
@@ -42,7 +42,8 @@ void init_comm()
   comm_buffer.index = 0;
 
   // Clear processing queue
-  serial_char_needs_processing=FALSE;
+  UART_char_needs_processing = FALSE;
+  UART_send_complete = FALSE;
 
   // Set the initial state
   comm_state = AWAITING_TRAIN_SEQ;
@@ -57,11 +58,11 @@ void Serial_ISR(void)  __interrupt 4 __using 0
   if(RI == 1)
   {
     RI = 0;
-    serial_received_char = SBUF;
-    serial_char_needs_processing = 1;
+    UART_received_char = SBUF;
+    UART_char_needs_processing = 1;
   }else if(TI == 1){
     TI = 0;
-    serial_send_complete = 1;
+    UART_send_complete = 1;
   }
   return;
 }
