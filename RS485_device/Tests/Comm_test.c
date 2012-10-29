@@ -9,13 +9,15 @@
 
 void main()
 {
-int a=0;
+unsigned short a=0;
 
-while (1)
+for(;;)
   {
-
+    if ( operate_comm() )
+      {
+        a = get_message()->index;
+      }
     a++;
-
   }
 
 }
