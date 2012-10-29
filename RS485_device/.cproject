@@ -62,14 +62,15 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactExtension="ihx" artifactName="${ProjName}" buildProperties="" cleanCommand="rm -rf" description="Test configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GASErrorParser" id="cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012" name="Comm_test" parent="cdt.managedbuild.config.sdcc.exe.release">
+				<configuration artifactExtension="ihx" artifactName="${ProjName}" buildProperties="" cleanCommand="rm -rf" description="Test configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GASErrorParser" id="cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012" name="Comm_test" parent="cdt.managedbuild.config.sdcc.exe.release" postannouncebuildStep="" postbuildStep="" preannouncebuildStep="" prebuildStep="">
 					<folderInfo id="cdt.managedbuild.config.sdcc.exe.release.666685794.1228146012." name="/" resourcePath="">
-						<toolChain id="cdt.managedbuild.toolchain.sdcc.exe.release.167461007" name="SDCC Tool Chain" superClass="cdt.managedbuild.toolchain.sdcc.exe.release">
+						<toolChain errorParsers="" id="cdt.managedbuild.toolchain.sdcc.exe.release.167461007" name="SDCC Tool Chain" superClass="cdt.managedbuild.toolchain.sdcc.exe.release">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.sdcc.platform.exe.release.968764069" name="Release Platform" osList="solaris,linux,hpux,aix,qnx,win32" superClass="cdt.managedbuild.target.sdcc.platform.exe.release"/>
-							<builder buildPath="${workspace_loc:/RS485_device/Release}" id="cdt.managedbuild.target.sdcc.builder.exe.release.1638976552" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Sdcc Make" superClass="cdt.managedbuild.target.sdcc.builder.exe.release"/>
-							<tool id="cdt.managedbuild.tool.sdcc.c.compiler.exe.release.1307136129" name="SDCC Compiler" superClass="cdt.managedbuild.tool.sdcc.c.compiler.exe.release">
+							<builder buildPath="${workspace_loc:/RS485_device/Release}" errorParsers="" id="cdt.managedbuild.target.sdcc.builder.exe.release.1638976552" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Sdcc Make" superClass="cdt.managedbuild.target.sdcc.builder.exe.release"/>
+							<tool command="sdcc -c" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG}${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="" id="cdt.managedbuild.tool.sdcc.c.compiler.exe.release.1307136129" name="SDCC Compiler" superClass="cdt.managedbuild.tool.sdcc.c.compiler.exe.release">
 								<option id="sdcc.c.compiler.option.include.paths.1510250446" name="Include paths (-I)" superClass="sdcc.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/RS485_device/Comm}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Base}&quot;"/>
 									<listOptionValue builtIn="false" value="/usr/local/share/sdcc/include"/>
 									<listOptionValue builtIn="false" value="/usr/local/share/sdcc/include/mcs51"/>
 								</option>
@@ -78,14 +79,14 @@
 								<option id="sdcc.c.compiler.category.other.codesize.369538651" name="Check code memory usage (--code-size)" superClass="sdcc.c.compiler.category.other.codesize" value="4096" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.sdcc.c.compiler.input.894927392" superClass="cdt.managedbuild.tool.sdcc.c.compiler.input"/>
 							</tool>
-							<tool id="cdt.managedbuild.tool.sdcc.c.linker.exe.release.1242096144" name="SDCC Linker" superClass="cdt.managedbuild.tool.sdcc.c.linker.exe.release">
+							<tool command="sdcc" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="" id="cdt.managedbuild.tool.sdcc.c.linker.exe.release.1242096144" name="SDCC Linker" superClass="cdt.managedbuild.tool.sdcc.c.linker.exe.release">
 								<option id="sdcc.c.link.option.ldflags.1068021891" name="Linker flags" superClass="sdcc.c.link.option.ldflags" value="--iram-size 128 --xram-size 0 --code-size 4096" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.sdcc.c.linker.input.530068527" superClass="cdt.managedbuild.tool.sdcc.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_RELS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
 								</inputType>
 							</tool>
-							<tool id="cdt.managedbuild.tool.sdcc.assembler.exe.release.857361955" name="SDCC Assembler" superClass="cdt.managedbuild.tool.sdcc.assembler.exe.release">
+							<tool command="as51" commandLinePattern="${COMMAND} ${FLAGS} ${OUTPUT_FLAG} ${OUTPUT_PREFIX}${OUTPUT} ${INPUTS}" errorParsers="" id="cdt.managedbuild.tool.sdcc.assembler.exe.release.857361955" name="SDCC Assembler" superClass="cdt.managedbuild.tool.sdcc.assembler.exe.release">
 								<inputType id="cdt.managedbuild.tool.sdcc.assembler.input.2097186622" superClass="cdt.managedbuild.tool.sdcc.assembler.input"/>
 							</tool>
 						</toolChain>

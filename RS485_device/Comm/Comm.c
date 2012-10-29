@@ -17,15 +17,18 @@ volatile unsigned char UART_received_char;
 volatile bool UART_char_needs_processing;
 volatile bool UART_send_complete;
 volatile bool UART_char_lost;
+unsigned char comm_error;
 unsigned char comm_state;
+unsigned char prev_char;
+unsigned char host_address;
 struct buffer_struct comm_buffer;
 
 
-void init_comm(void)
+void init_comm(unsigned char _host_address)
 {
   // Setup the serial port operation mode
   // Reset receive and transmit interrupt flags and disable receiver enable
-  RI  = 0;TI  = 0;REN = 1;
+  RI  = 0;TI  = 0;REN = 0;
   // 8-bit UART mode for serial TIMER1 Mode2 SMOD=1
   SM1 = 1;SM0 = 0;
   PCON |= SMOD;
@@ -46,12 +49,17 @@ void init_comm(void)
   UART_char_needs_processing = FALSE;
   UART_send_complete = FALSE;
   UART_char_lost = FALSE;
+  comm_error = NO_ERROR;
+
+  // Set the host address
+  host_address = _host_address;
 
   // Set the initial state
-  comm_state = AWAITING_TRAIN_SEQ;
+  comm_state = AWAITING_START_FRAME;
 
-  // Enable Serial interrupt - start listening on the bus
+  // Enable Serial interrupt and start listening on the bus
   ES = 1;
+  REN = 1;
 }
 
 // The serial ISR for communication
@@ -96,30 +104,34 @@ bool operate_comm(void)
 	{
 		switch (comm_state)
 		{
-		case AWAITING_TRAIN_SEQ:
-			if (process_char == TRAIN_CHAR || process_char == OUT_OF_SYNC_TRAIN_CHAR)
-			{
-				reset_UART();
+		case AWAITING_START_FRAME:
+		  if (ch_received == START_FRAME)
+		    {
+		      // Switch the state to wait for the address fileld of the frame
+		      comm_state = AWAITING_ADDRESS;
+		      comm_error = NO_ERROR;
+		    } else {
+		        // Communication error: frame out of sync set the error_condition
+			comm_error = NO_START_FRAME_RECEIVED;
+		    }
+		  break;
+		case AWAITING_ADDRESS:
+		  if (ch_received == host_address)
+		    {
 
-			} else {
-				// Completely out of sync
+		    } else {
+		        // Not addressed to this host => Wait for next start frame
 
-			}
-			break;
-		case RECEIVING_TRAIN_SEQ:
-			swx;
-			break;
-		case AWAITING_MESSAGE_HEAD:
-			xsw;
-			break;
+		    }
+		  break;
 		case RECEIVING_MESSAGE:
-			xsa;
+			//xsa;
 			break;
 		case MESSAGE_RECEIVED:
-			cel;
+			//cel;
 			break;
 		}
-
+/*
 	  if(state == AWAITING_COMMAND)
 	  {
 	    if(ch_received == MESSAGE_HEAD)
@@ -133,6 +145,9 @@ bool operate_comm(void)
 		comm_buffer.index++;
 	  if(ch_received == MESSAGE_TERMINATOR) {state = PROCESSING_COMMAND;}
 	  }
+*/
+		// Store prevoius char to ID escape sequences
+		prev_char = process_char;
 	}
 
 	return FALSE;

@@ -5,6 +5,7 @@
  *      Author: dmolnar
  */
 
+#include "Comm.h"
 
 void main()
 {
