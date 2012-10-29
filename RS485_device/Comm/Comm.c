@@ -2,7 +2,7 @@
  * Comm.c
  *
  *  Created on: Oct 20, 2012
- *      Author: Molnï¿½r Domokos
+ *      Author: Molnár Domokos
  *
  *      This is a communication module for the microprocessor over
  *      RS485
@@ -199,8 +199,8 @@ bool operate_comm(void)
           } else {
             ack_message(FALSE);
             clear_message_buffer();
-            comm_state = AWAITING_START_FRAME;
             CRC_burst_error_count++;
+            comm_state = AWAITING_START_FRAME;
           }
         break;
       }
