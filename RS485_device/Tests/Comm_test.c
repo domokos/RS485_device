@@ -7,17 +7,19 @@
 
 #include "Comm.h"
 
+struct message_struct *message_struct;
+
 void main()
 {
 unsigned short a=0;
 
 for(;;)
   {
-    if ( operate_comm() )
+    if ( (message_struct = get_message() ) != 0x0 )
       {
-        a = get_message()->index;
+        a++;
       }
-    a++;
+    a--;
   }
 
 }

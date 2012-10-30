@@ -11,13 +11,13 @@
 #include <at89x051.h>
 #include "Base.h"
 
+#define MAX_MESSAGE_LENGTH 15
+
 // Messaging buffer STRUCT
 struct message_struct
 {
-        unsigned char   content[15];
-        unsigned char   index;
-        unsigned char   address;
-        unsigned char   seq;
+  unsigned char   content[MAX_MESSAGE_LENGTH];
+  unsigned char   index;
 };
 
 
@@ -26,12 +26,15 @@ struct message_struct
 void init_comm(unsigned char _host_address);
 
 // Must be called periodically to allow comm module to perform housekeeping
-// Returns false to the caller if no further attention is needed and
-// returns true if a message is received
-bool operate_comm(void);
+// Returns void* to the caller if no message is received
+// returns a pointer to the message if a message is received
+struct message_struct* get_message(void);
+
+// Function to send response to the master on the bus
+void send_response(unsigned char opcode);
 
 // Provide access to the message structure
-struct message_struct* get_message();
+struct message_struct* get_message_buffer(void);
 
 /*
 Internal functions not to be accessed from outside of the comm modul
@@ -47,22 +50,15 @@ void ack_message(bool success);
 /*
  * The messaging format is:
  * START_FRAME - 8 bits
- * ADDRESS - 8 bits
+ * SLAVE_ADDRESS - 8 bits
  * SEQ - 8 bits
  * COMMAND - 8 bits
- * PARAMERER - arbitrary number of bits
- * CRC - 8 bits
+ * PARAMERER - arbitrary number of bytes
+ * CRC - 8 bits calculated for the data between start and end frame
  * END_FRAME - 8 bits
  *
- * The ADDRESS field structure is as follows:
- *      low bits 0-3:  Sender address
- *      high bits 4-7: Reciever address
- *
- * The CONTROL field is as follows:
+ *  * The SEQ field holds a message sequence number
  *      SEQ
- *
- *
- *
  */
 
 
@@ -79,6 +75,14 @@ void ack_message(bool success);
 // Messaging error conditions
 #define NO_ERROR 0 // No error
 #define NO_START_FRAME_RECEIVED 1 // Expected message start frame, got something else => Ignoring the frame
+#define MESSAGE_TOO_LONG 2 // Recieve buffer length exceeded
+
+// CRC generator polynomial
 #define CRC_POLYNOMIAL 0x131
+
+
+// Response opcodes
+#define CRC_ERROR 0 // The message contained CRC error
+
 
 #endif /* COMM_H_ */

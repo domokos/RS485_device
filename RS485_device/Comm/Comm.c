@@ -27,14 +27,6 @@ unsigned char CRC_burst_error_count;
 struct message_struct message_buffer;
 
 
-void clear_message_buffer()
-{
-  // Clear receive_buffer
-  message_buffer.index = 0;
-  message_buffer.address = 0;
-  message_buffer.seq = 0;
-}
-
 void init_comm(unsigned char _host_address)
 {
   // Setup the serial port operation mode
@@ -53,7 +45,8 @@ void init_comm(unsigned char _host_address)
   TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
   TR1  = 1;       // Start Timer 1
 
-  clear_message_buffer();
+  // Clear message buffer
+  message_buffer.index = 0;
 
   // Clear processing queue
   UART_char_needs_processing = FALSE;
@@ -78,14 +71,14 @@ void init_comm(unsigned char _host_address)
 unsigned char calculate_message_CRC()
 {
 unsigned char crc = 0;
-unsigned char byteCtr;
+unsigned char byte_nr;
 unsigned char bit_nr;
 
 // Loop through the message bytes
-for (byteCtr = 0; byteCtr < message_buffer.index; byteCtr++)
+for (byte_nr = 0; byte_nr < message_buffer.index; byte_nr++)
   {
     // Pick the next byte for processing
-    crc ^= (message_buffer.content[byteCtr]);
+    crc ^= (message_buffer.content[byte_nr]);
     // Loop through the bits of the byte to be processed
     for (bit_nr = 8; bit_nr > 0; bit_nr--)
       {
@@ -123,15 +116,15 @@ void Serial_ISR(void)  __interrupt 4 __using 0
 }
 
 // Provide access to the message structure
-struct message_struct* get_message()
+struct message_struct* get_message_buffer(void)
 {
   return &message_buffer;
 }
 
-// Send acknowledge message indicating success according to parameter
-void ack_message(bool success)
+// Function to send response to the master on the bus
+void send_response(unsigned char opcode)
 {
-  if (success)
+  if (opcode)
     {
 
     } else {
@@ -139,13 +132,13 @@ void ack_message(bool success)
     }
 }
 
-// Return TRUE if valid message to be processed is recieved
-// return FALSE otherwise
-bool operate_comm(void)
+// Returns void* to the caller if no message is received
+// returns a pointer to the message if a message is received
+struct message_struct* get_message(void)
 {
   unsigned char ch_received = 0;
   bool process_char = FALSE;
-  bool valid_message_recieved = FALSE;
+  bool message_recieved = FALSE;
 
   if(UART_char_needs_processing)
     {
@@ -161,19 +154,26 @@ bool operate_comm(void)
       switch (comm_state)
       {
       case AWAITING_START_FRAME:
-        if (ch_received == START_FRAME)
+        if (ch_received == START_FRAME && prev_char != MESSAGE_ESCAPE)
           {
             // Switch the state to wait for the address fileld of the frame
             comm_state = RECEIVING_MESSAGE;
             comm_error = NO_ERROR;
           } else {
-              // Communication error: frame out of sync set the error_condition
-              comm_error = NO_START_FRAME_RECEIVED;
+            // Communication error: frame out of sync set the error_condition
+            comm_error = NO_START_FRAME_RECEIVED;
+
           }
         break;
       case RECEIVING_MESSAGE:
-        if (ch_received == MESSAGE_ESCAPE && escape_char_recieved == FALSE)
+        if(message_buffer.index > MAX_MESSAGE_LENGTH-1)
           {
+            // Set error, start waiting for next message head and ignore the rest of the message
+            comm_error = MESSAGE_TOO_LONG;
+            comm_state = AWAITING_START_FRAME;
+            // Clear message buffer
+            message_buffer.index = 0;
+          } else if (ch_received == MESSAGE_ESCAPE && escape_char_recieved == FALSE) {
             escape_char_recieved = TRUE;
           } else if (ch_received != END_FRAME){
               // Recieve the message character and clear the escape flag
@@ -191,14 +191,13 @@ bool operate_comm(void)
       case POSTPROCESSING_MESSAGE:
         if (calculate_message_CRC() == message_buffer.content[message_buffer.index])
           {
-            ack_message(TRUE);
             CRC_burst_error_count = 0;
-            // Todo: Work out address ans SEQ handling
             comm_state = AWAITING_START_FRAME;
-            valid_message_recieved = TRUE;
+            message_recieved = TRUE;
           } else {
-            ack_message(FALSE);
-            clear_message_buffer();
+            send_response(CRC_ERROR);
+            // Clear message buffer
+            message_buffer.index = 1;
             CRC_burst_error_count++;
             comm_state = AWAITING_START_FRAME;
           }
@@ -207,5 +206,5 @@ bool operate_comm(void)
       // Store prevoius char to ID escape sequences
       prev_char = process_char;
     }
-  return valid_message_recieved;
+  if(message_recieved) return &message_buffer; else return (struct message_struct*)0x0;
 }
