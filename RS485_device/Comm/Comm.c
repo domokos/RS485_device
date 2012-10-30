@@ -193,7 +193,6 @@ struct message_struct* get_message(void)
           } else {
             // Communication error: frame out of sync set the error_condition
             comm_error = NO_START_FRAME_RECEIVED;
-
           }
         break;
       case RECEIVING_MESSAGE:
@@ -202,21 +201,21 @@ struct message_struct* get_message(void)
             // Set error, start waiting for next message head and ignore the rest of the message
             comm_error = MESSAGE_TOO_LONG;
             comm_state = AWAITING_START_FRAME;
+            escape_char_recieved = FALSE;
             // Clear message buffer
             message_buffer.index = 0;
-          } else if (ch_received == MESSAGE_ESCAPE && escape_char_recieved == FALSE) {
+          }else if (ch_received == MESSAGE_ESCAPE && !escape_char_recieved) {
             escape_char_recieved = TRUE;
-          } else if (ch_received != END_FRAME){
-              // Recieve the message character and clear the escape flag
-              message_buffer.content[message_buffer.index]=ch_received;
-              message_buffer.index++;
-              escape_char_recieved = FALSE;
-          } else {
-              // End frame recieved change state to post processing
-              escape_char_recieved = FALSE;
-              comm_state = POSTPROCESSING_MESSAGE;
-              // Decrease index to point to the last byte of the message payload
-              message_buffer.index--;
+          }else if (ch_received != END_FRAME || escape_char_recieved) {
+            // Recieve the message character and clear the escape flag
+            message_buffer.content[message_buffer.index]=ch_received;
+            message_buffer.index++;
+            escape_char_recieved = FALSE;
+          }else {
+            // End frame recieved change state to post processing
+            comm_state = POSTPROCESSING_MESSAGE;
+            // Decrease index to point to the last byte of the message payload
+            message_buffer.index--;
           }
         break;
       case POSTPROCESSING_MESSAGE:
