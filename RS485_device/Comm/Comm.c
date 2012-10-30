@@ -121,15 +121,46 @@ struct message_struct* get_message_buffer(void)
   return &message_buffer;
 }
 
+
+// Send a character to the UART
+void UART_putchar(unsigned char value)
+{
+  UART_send_complete = FALSE;
+  SBUF = value;
+  do{
+/*
+ * The serial interrupt handler will set the UARTsend_complete flag
+ * Optimizer will let us do this as the variable is declared as volatile
+*/
+    }while(!UART_send_complete);
+}
+
 // Function to send response to the master on the bus
+// the function expects message content to be prepared by the caller
+// including message SEQ number
 void send_response(unsigned char opcode)
 {
-  if (opcode)
+  unsigned char i;
+  message_buffer.content[OPCODE] = opcode;
+  message_buffer.content[CRC] = calculate_message_CRC();
+  // Now send the message
+  // Frame head first
+   UART_putchar(START_FRAME);
+
+   // Send message body
+  for (i=PARAMETER_START; i<=PARAMETER_END;i++)
     {
+      // Escape special characters
+      if (message_buffer.content[i] == MESSAGE_ESCAPE ||
+          message_buffer.content[i] == START_FRAME ||
+          message_buffer.content[i] == END_FRAME)
+            UART_putchar(MESSAGE_ESCAPE);
 
-    } else {
-
+      UART_putchar(message_buffer.content[i]);
     }
+
+  // Send frame end
+  UART_putchar(END_FRAME);
 }
 
 // Returns void* to the caller if no message is received
@@ -189,13 +220,14 @@ struct message_struct* get_message(void)
           }
         break;
       case POSTPROCESSING_MESSAGE:
-        if (calculate_message_CRC() == message_buffer.content[message_buffer.index])
+        if (calculate_message_CRC() == message_buffer.content[CRC])
           {
             CRC_burst_error_count = 0;
             comm_state = AWAITING_START_FRAME;
             message_recieved = TRUE;
           } else {
-            send_response(CRC_ERROR);
+            // Send error response if this host is the addressee
+            if(host_address == message_buffer.content[SLAVE_ADDRESS]) send_response(CRC_ERROR);
             // Clear message buffer
             message_buffer.index = 1;
             CRC_burst_error_count++;
@@ -206,5 +238,5 @@ struct message_struct* get_message(void)
       // Store prevoius char to ID escape sequences
       prev_char = process_char;
     }
-  if(message_recieved) return &message_buffer; else return (struct message_struct*)0x0;
+  if(message_recieved) return &message_buffer; else return 0;
 }

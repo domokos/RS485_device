@@ -13,9 +13,11 @@ void main()
 {
 unsigned short a=0;
 
+init_comm(1);
+
 for(;;)
   {
-    if ( (message_struct = get_message() ) != 0x0 )
+    if ( (message_struct = get_message()) )
       {
         a++;
       }

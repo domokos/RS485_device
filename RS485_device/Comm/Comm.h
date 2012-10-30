@@ -20,6 +20,27 @@ struct message_struct
   unsigned char   index;
 };
 
+/*
+ * The messaging format is:
+ * START_FRAME - 8 bits
+ * SLAVE_ADDRESS - 8 bits
+ * SEQ - 8 bits
+ * COMMAND - 8 bits
+ * PARAMERER - arbitrary number of bytes
+ * CRC - 8 bits calculated for the data between start and end frame
+ * END_FRAME - 8 bits
+ *
+ *  * The SEQ field holds a message sequence number
+ *      SEQ
+ */
+
+// The buffer indexes
+#define SLAVE_ADDRESS 1
+#define SEQ 2
+#define OPCODE 3
+#define PARAMETER_START 3
+#define CRC message_buffer.index
+#define PARAMETER_END message_buffer.index-1
 
 
 // Initialize comm module
@@ -45,22 +66,10 @@ unsigned char calculate_message_CRC();
 // Send ACK response to a message
 void ack_message(bool success);
 
+// Send a character to the UART
+void UART_putchar(unsigned char value);
+
 */
-
-/*
- * The messaging format is:
- * START_FRAME - 8 bits
- * SLAVE_ADDRESS - 8 bits
- * SEQ - 8 bits
- * COMMAND - 8 bits
- * PARAMERER - arbitrary number of bytes
- * CRC - 8 bits calculated for the data between start and end frame
- * END_FRAME - 8 bits
- *
- *  * The SEQ field holds a message sequence number
- *      SEQ
- */
-
 
 // Messaging states
 #define AWAITING_START_FRAME 0
