@@ -4,8 +4,8 @@
  *  Created on: Oct 20, 2012
  *      Author: Molnár Domokos
  *
- *      This is a communication module for the microprocessor over
- *      RS485
+ *      This is a communication module for the AT89c4051 microcontroller
+ *      over RS485
  */
 
 #include <at89x051.h>

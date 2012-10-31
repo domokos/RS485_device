@@ -42,6 +42,8 @@ struct message_struct
 #define CRC message_buffer.index
 #define PARAMETER_END message_buffer.index-1
 
+// The ISR prototypes to be included in the main program;
+void Serial_ISR(void)  __interrupt 4 __using 0;
 
 // Initialize comm module
 void init_comm(unsigned char _host_address);
