@@ -35,7 +35,15 @@ for(;;)
   {
     if ( (message_struct = get_message()) )
       {
-        a++;
+    	test -> content[0]=0x53;
+    	test -> content[1]=0x49;
+    	test -> content[2]=0x4b;
+    	test -> content[3]=0x45;
+    	test -> content[4]=0x52;
+    	test -> content[5]=0x00;
+    	test ->index=5;
+    	send_response(0x4b);
+    	test ->index=0;
       }
     a--;
   }

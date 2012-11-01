@@ -25,7 +25,7 @@ struct message_struct
  * START_FRAME - 8 bits
  * SLAVE_ADDRESS - 8 bits
  * SEQ - 8 bits
- * COMMAND - 8 bits
+ * OPCODE - 8 bits
  * PARAMERER - arbitrary number of bytes
  * CRC - 8 bits calculated for the data between start and end frame
  * END_FRAME - 8 bits
@@ -76,7 +76,6 @@ void UART_putchar(unsigned char value);
 // Messaging states
 #define AWAITING_START_FRAME 0
 #define RECEIVING_MESSAGE 1
-#define POSTPROCESSING_MESSAGE 2
 
 // Messaging frame structure elements
 #define START_FRAME 0x55
@@ -86,7 +85,7 @@ void UART_putchar(unsigned char value);
 // Messaging error conditions
 #define NO_ERROR 0 // No error
 #define NO_START_FRAME_RECEIVED 1 // Expected message start frame, got something else => Ignoring the frame
-#define MESSAGE_TOO_LONG 2 // Recieve buffer length exceeded
+#define MESSAGE_TOO_LONG 2 // Receive buffer length exceeded
 
 // CRC generator polynomial CRC-8
 #define CRC_POLYNOMIAL 0x07

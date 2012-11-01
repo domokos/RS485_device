@@ -55,6 +55,7 @@ void init_comm(unsigned char _host_address)
   comm_error = NO_ERROR;
   escape_char_recieved = FALSE;
   CRC_burst_error_count = 0;
+  prev_char = 0;
 
   // Set the host address
   host_address = _host_address;
@@ -212,28 +213,25 @@ struct message_struct* get_message(void)
             escape_char_recieved = FALSE;
           }else {
             // End frame recieved change state to post processing
-            comm_state = POSTPROCESSING_MESSAGE;
+            comm_state = AWAITING_START_FRAME;
             // Decrease index to point to the last byte of the message payload
             message_buffer.index--;
+            if (calculate_message_CRC() == message_buffer.content[CRC])
+            {
+            	CRC_burst_error_count = 0;
+            	message_recieved = TRUE;
+            } else {
+            	// Send error response if this host is the addressee
+            	if(host_address == message_buffer.content[SLAVE_ADDRESS]) send_response(CRC_ERROR);
+            	// Clear message buffer
+            	message_buffer.index = 0;
+            	CRC_burst_error_count++;
+            }
           }
         break;
       }
       // Store prevoius char to ID escape sequences
       prev_char = process_char;
-    } else if (comm_state == POSTPROCESSING_MESSAGE) {
-	  if (calculate_message_CRC() == message_buffer.content[CRC])
-		{
-		  CRC_burst_error_count = 0;
-		  comm_state = AWAITING_START_FRAME;
-		  message_recieved = TRUE;
-		} else {
-		  // Send error response if this host is the addressee
-		  if(host_address == message_buffer.content[SLAVE_ADDRESS]) send_response(CRC_ERROR);
-		  // Clear message buffer
-		  message_buffer.index = 0;
-		  CRC_burst_error_count++;
-		  comm_state = AWAITING_START_FRAME;
-		}
     }
   if(message_recieved) return &message_buffer; else return 0;
 }
