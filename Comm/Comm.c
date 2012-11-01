@@ -217,24 +217,23 @@ struct message_struct* get_message(void)
             message_buffer.index--;
           }
         break;
-      case POSTPROCESSING_MESSAGE:
-        if (calculate_message_CRC() == message_buffer.content[CRC])
-          {
-            CRC_burst_error_count = 0;
-            comm_state = AWAITING_START_FRAME;
-            message_recieved = TRUE;
-          } else {
-            // Send error response if this host is the addressee
-            if(host_address == message_buffer.content[SLAVE_ADDRESS]) send_response(CRC_ERROR);
-            // Clear message buffer
-            message_buffer.index = 0;
-            CRC_burst_error_count++;
-            comm_state = AWAITING_START_FRAME;
-          }
-        break;
       }
       // Store prevoius char to ID escape sequences
       prev_char = process_char;
+    } else if (comm_state == POSTPROCESSING_MESSAGE) {
+	  if (calculate_message_CRC() == message_buffer.content[CRC])
+		{
+		  CRC_burst_error_count = 0;
+		  comm_state = AWAITING_START_FRAME;
+		  message_recieved = TRUE;
+		} else {
+		  // Send error response if this host is the addressee
+		  if(host_address == message_buffer.content[SLAVE_ADDRESS]) send_response(CRC_ERROR);
+		  // Clear message buffer
+		  message_buffer.index = 0;
+		  CRC_burst_error_count++;
+		  comm_state = AWAITING_START_FRAME;
+		}
     }
   if(message_recieved) return &message_buffer; else return 0;
 }

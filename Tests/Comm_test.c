@@ -19,17 +19,16 @@ TH1 = 0xfd;
 
 test = get_message_buffer();
 
-test -> content[0]=0xa1;
-test -> content[1]=0xa2;
-test -> content[2]=0xa3;
-test -> content[3]=0xa4;
-test -> content[4]=0xa5;
-test -> content[5]=0xa6;
+test -> content[0]=0x74;
+test -> content[1]=0x65;
+test -> content[2]=0x78;
+test -> content[3]=0x74;
+test -> content[4]=0x69;
+test -> content[5]=0x74;
 test ->index=5;
 
-send_response(23);
-
-
+send_response(0x78);
+test ->index=0;
 
 
 for(;;)

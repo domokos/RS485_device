@@ -88,8 +88,8 @@ void UART_putchar(unsigned char value);
 #define NO_START_FRAME_RECEIVED 1 // Expected message start frame, got something else => Ignoring the frame
 #define MESSAGE_TOO_LONG 2 // Recieve buffer length exceeded
 
-// CRC generator polynomial
-#define CRC_POLYNOMIAL 0x131
+// CRC generator polynomial CRC-8
+#define CRC_POLYNOMIAL 0x07
 
 
 // Response opcodes
