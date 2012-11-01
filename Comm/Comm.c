@@ -63,7 +63,7 @@ void init_comm(unsigned char _host_address)
   comm_state = AWAITING_START_FRAME;
 
   // Enable Serial interrupt and start listening on the bus
-  ES = 1;
+  ES = 1; EA = 1;
   REN = 1;
 }
 
@@ -148,7 +148,7 @@ void send_response(unsigned char opcode)
    UART_putchar(START_FRAME);
 
    // Send message body
-  for (i=PARAMETER_START; i<=PARAMETER_END;i++)
+  for (i=SLAVE_ADDRESS; i<=CRC;i++)
     {
       // Escape special characters
       if (message_buffer.content[i] == MESSAGE_ESCAPE ||

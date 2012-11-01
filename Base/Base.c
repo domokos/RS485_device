@@ -35,7 +35,7 @@ void delay(unsigned int _100usec_time)
   TMOD = (TMOD&0xF0)|0x02;    // Set Timer 0 Autoreload mode
   TR0  = 1;       // Start Timer 0
 
-  ET0  = 1;       // Enable Timer0 interrupt
+  ET0  = 1; EA = 1; // Enable Timer0 interrupt
   while ( DELAY > 0 )
     {
       __asm nop __endasm;

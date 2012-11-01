@@ -35,9 +35,9 @@ struct message_struct
  */
 
 // The buffer indexes
-#define SLAVE_ADDRESS 1
-#define SEQ 2
-#define OPCODE 3
+#define SLAVE_ADDRESS 0
+#define SEQ 1
+#define OPCODE 2
 #define PARAMETER_START 3
 #define CRC message_buffer.index
 #define PARAMETER_END message_buffer.index-1
