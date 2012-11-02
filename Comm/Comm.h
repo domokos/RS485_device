@@ -77,6 +77,11 @@ void UART_putchar(unsigned char value);
 #define AWAITING_START_FRAME 0
 #define RECEIVING_MESSAGE 1
 
+// The number after which get_message is called while waiting for a character but recieving none
+// that will cause it to reset.
+// Can be regarded as a timeout limit
+#define MESSAGE_TIMEOUT_COUNT_LIMIT 4000
+
 // Messaging frame structure elements
 #define START_FRAME 0x55
 #define END_FRAME 0x5d
@@ -86,13 +91,15 @@ void UART_putchar(unsigned char value);
 #define NO_ERROR 0 // No error
 #define NO_START_FRAME_RECEIVED 1 // Expected message start frame, got something else => Ignoring the frame
 #define MESSAGE_TOO_LONG 2 // Receive buffer length exceeded
+#define MESSAGING_TIMEOUT 3 // Timeout occured
+#define COMM_CRC_ERROR 4; // Frame with CRC error received
 
-// CRC generator polynomial CRC-8
-#define CRC_POLYNOMIAL 0x07
-
+// CRC generator polynomials
+//#define CRC8_POLYNOMIAL 0x07
+#define CRC16_POLYNOMIAL 0x1021
 
 // Response opcodes
-#define CRC_ERROR 0 // The message contained CRC error
+#define CRC_ERROR 0 // The received message contained CRC error
 
 
 #endif /* COMM_H_ */

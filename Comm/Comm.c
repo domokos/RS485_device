@@ -24,6 +24,7 @@ unsigned char comm_state;
 unsigned char prev_char;
 unsigned char host_address;
 unsigned char CRC_burst_error_count;
+unsigned short message_timeout_counter;
 struct message_struct message_buffer;
 
 
@@ -62,14 +63,37 @@ void init_comm(unsigned char _host_address)
 
   // Set the initial state
   comm_state = AWAITING_START_FRAME;
+  message_timeout_counter = 0;
 
   // Enable Serial interrupt and start listening on the bus
   ES = 1; EA = 1;
   REN = 1;
 }
 
+// CRC-CCITT (0xFFFF)
+unsigned short calculate_message_CRC16()
+{
+unsigned char i;
+unsigned short crc = 0xffff;
+unsigned short num;
+
+for (num=0; num < message_buffer.index+1; num++)           /* Step through bytes in memory */
+{
+    crc = crc ^ ((unsigned short)message_buffer.content[num] << 8);         /* Fetch byte from memory, XOR into  CRC top byte*/
+    for (i = 0; i < 8; i++)      /* Prepare to rotate 8 bits */
+    {
+        if (crc & 0x8000)       /* b15 is set... */
+        	crc = (crc << 1) ^ CRC16_POLYNOMIAL;    /* rotate and XOR with polynomial */
+        else                     /* b15 is clear... */
+            crc <<= 1;           /* just rotate */
+    }                            /* Loop for 8 bits */
+ }                               /* Loop until num=0 */
+ return(crc);                    /* Return updated CRC */
+}
+
+/*
 // Calculate the 8-bit CRC for the message payload
-unsigned char calculate_message_CRC()
+unsigned char calculate_message_CRC8()
 {
 unsigned char crc = 0;
 unsigned char byte_nr;
@@ -86,13 +110,13 @@ for (byte_nr = 0; byte_nr < message_buffer.index; byte_nr++)
         // Compare the bit with bit 7
         // If the same: shift CRC register, bit0='0'
         // else: shift CRC register and then invert the polynomial's set bits
-        if (crc & 0x80) crc = (crc << 1) ^ CRC_POLYNOMIAL;
+        if (crc & 0x80) crc = (crc << 1) ^ CRC8_POLYNOMIAL;
                    else crc = (crc << 1);
       }
   }
 return crc;
 }
-
+*/
 // The serial ISR for communication
 void Serial_ISR(void)  __interrupt 4 __using 0
 {
@@ -143,7 +167,7 @@ void send_response(unsigned char opcode)
 {
   unsigned char i;
   message_buffer.content[OPCODE] = opcode;
-  message_buffer.content[CRC] = calculate_message_CRC();
+  message_buffer.content[CRC] = calculate_message_CRC16();
   // Now send the message
   // Frame head first
    UART_putchar(START_FRAME);
@@ -206,32 +230,48 @@ struct message_struct* get_message(void)
             message_buffer.index = 0;
           }else if (ch_received == MESSAGE_ESCAPE && !escape_char_recieved) {
             escape_char_recieved = TRUE;
+            comm_error = NO_ERROR;
           }else if (ch_received != END_FRAME || escape_char_recieved) {
-            // Recieve the message character and clear the escape flag
+            // Receive the message character and clear the escape flag
             message_buffer.content[message_buffer.index]=ch_received;
             message_buffer.index++;
             escape_char_recieved = FALSE;
+            comm_error = NO_ERROR;
           }else {
-            // End frame recieved change state to post processing
+            // End frame received change state to post processing
             comm_state = AWAITING_START_FRAME;
             // Decrease index to point to the last byte of the message payload
             message_buffer.index--;
-            if (calculate_message_CRC() == message_buffer.content[CRC])
+            if (calculate_message_CRC16() == (unsigned short)(&message_buffer.content)+CRC )
             {
             	CRC_burst_error_count = 0;
             	message_recieved = TRUE;
+            	comm_error = NO_ERROR;
             } else {
             	// Send error response if this host is the addressee
             	if(host_address == message_buffer.content[SLAVE_ADDRESS]) send_response(CRC_ERROR);
             	// Clear message buffer
             	message_buffer.index = 0;
             	CRC_burst_error_count++;
+            	comm_error = COMM_CRC_ERROR;
             }
           }
         break;
       }
-      // Store prevoius char to ID escape sequences
+      // Store previous char to ID escape sequences
       prev_char = process_char;
+    } else {
+    	if( comm_state == RECEIVING_MESSAGE )
+    	{
+    		if (message_timeout_counter++ > MESSAGE_TIMEOUT_COUNT_LIMIT )
+    		{
+    			message_timeout_counter = 0;
+    			comm_state =  AWAITING_START_FRAME;
+    			message_buffer.index = 0;
+    			comm_error = MESSAGING_TIMEOUT;
+    		}
+    	}
+
     }
   if(message_recieved) return &message_buffer; else return 0;
 }
