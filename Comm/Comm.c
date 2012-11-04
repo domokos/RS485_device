@@ -70,6 +70,30 @@ void init_comm(unsigned char _host_address)
   REN = 1;
 }
 
+
+unsigned short flip_bits(unsigned short byte)
+{
+	unsigned short flipped = 0;
+	char i,j=7;
+
+	for (i = 7; i > -8;)
+	{
+		printf("flipped: %i\n",flipped);
+		printf("byte << i: %i\n",byte << i);
+		printf("0x01 << j: %i\n",0x01 << j);
+		if (i>0)
+		{
+			flipped |= ((byte << i) & (0x01 << j));
+		} else {
+			flipped |= ((byte >> (-i)) & (0x01 << j));
+		}
+		i = i-2;
+		j = j-1;
+	}
+	return flipped;
+}
+
+
 // CRC-CCITT (0xFFFF)
 unsigned short calculate_message_CRC16()
 {

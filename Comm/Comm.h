@@ -97,6 +97,7 @@ void UART_putchar(unsigned char value);
 // CRC generator polynomials
 //#define CRC8_POLYNOMIAL 0x07
 #define CRC16_POLYNOMIAL 0x1021
+#define CRC16_POLYNOMIAL_LSB_FIRST 0x8408
 
 // Response opcodes
 #define CRC_ERROR 0 // The received message contained CRC error
