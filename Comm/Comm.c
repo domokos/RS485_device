@@ -71,26 +71,22 @@ void init_comm(unsigned char _host_address)
 }
 
 
-unsigned short flip_bits(unsigned short byte)
+unsigned char flip_bits(unsigned char byte)
 {
-	unsigned short flipped = 0;
-	char i,j=7;
+  unsigned char flipped_byte = 0;
+  char i;
+  unsigned char j=7;
 
-	for (i = 7; i > -8;)
-	{
-		printf("flipped: %i\n",flipped);
-		printf("byte << i: %i\n",byte << i);
-		printf("0x01 << j: %i\n",0x01 << j);
-		if (i>0)
-		{
-			flipped |= ((byte << i) & (0x01 << j));
-		} else {
-			flipped |= ((byte >> (-i)) & (0x01 << j));
-		}
-		i = i-2;
-		j = j-1;
-	}
-	return flipped;
+  for (i = 7; i >= -7;)
+    {
+      if (i>0)
+          flipped_byte |= ((byte << i) & (0x01 << j));
+        else
+          flipped_byte |= ((byte >> (-i)) & (0x01 << j));
+      i = i-2;
+      j = j-1;
+    }
+  return flipped_byte;
 }
 
 
@@ -99,7 +95,7 @@ unsigned short calculate_message_CRC16()
 {
 unsigned char i;
 unsigned short crc = 0xffff;
-unsigned short num;
+unsigned char num;
 
 for (num=0; num < message_buffer.index+1; num++)           /* Step through bytes in memory */
 {
