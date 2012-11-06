@@ -24,7 +24,7 @@ unsigned char comm_state;
 unsigned char prev_char;
 unsigned char host_address;
 unsigned char CRC_burst_error_count;
-unsigned short message_timeout_counter;
+unsigned int message_timeout_counter;
 struct message_struct message_buffer;
 
 
@@ -91,15 +91,16 @@ unsigned char flip_bits(unsigned char byte)
 
 
 // CRC-CCITT (0xFFFF)
-unsigned short calculate_message_CRC16()
+unsigned int calculate_message_CRC16()
 {
-unsigned char i;
-unsigned short crc = 0xffff;
+unsigned char i,c;
+unsigned int crc = 0xffff;
 unsigned char num;
 
 for (num=0; num < message_buffer.index+1; num++)           /* Step through bytes in memory */
 {
-    crc = crc ^ ((unsigned short)message_buffer.content[num] << 8);         /* Fetch byte from memory, XOR into  CRC top byte*/
+    c = flip_bits(message_buffer.content[num]); /* Flip the bits to comply with the true serial bit order */
+    crc = crc ^ ((unsigned int)c << 8); /* Fetch byte from memory, XOR into  CRC top byte*/
     for (i = 0; i < 8; i++)      /* Prepare to rotate 8 bits */
     {
         if (crc & 0x8000)       /* b15 is set... */
@@ -111,32 +112,7 @@ for (num=0; num < message_buffer.index+1; num++)           /* Step through bytes
  return(crc);                    /* Return updated CRC */
 }
 
-/*
-// Calculate the 8-bit CRC for the message payload
-unsigned char calculate_message_CRC8()
-{
-unsigned char crc = 0;
-unsigned char byte_nr;
-unsigned char bit_nr;
 
-// Loop through the message bytes
-for (byte_nr = 0; byte_nr < message_buffer.index; byte_nr++)
-  {
-    // Pick the next byte for processing
-    crc ^= (message_buffer.content[byte_nr]);
-    // Loop through the bits of the byte to be processed
-    for (bit_nr = 8; bit_nr > 0; bit_nr--)
-      {
-        // Compare the bit with bit 7
-        // If the same: shift CRC register, bit0='0'
-        // else: shift CRC register and then invert the polynomial's set bits
-        if (crc & 0x80) crc = (crc << 1) ^ CRC8_POLYNOMIAL;
-                   else crc = (crc << 1);
-      }
-  }
-return crc;
-}
-*/
 // The serial ISR for communication
 void Serial_ISR(void)  __interrupt 4 __using 0
 {
@@ -262,7 +238,7 @@ struct message_struct* get_message(void)
             comm_state = AWAITING_START_FRAME;
             // Decrease index to point to the last byte of the message payload
             message_buffer.index--;
-            if (calculate_message_CRC16() == (unsigned short)(&message_buffer.content)+CRC )
+            if (calculate_message_CRC16() == (unsigned int)(&message_buffer.content)+CRC )
             {
             	CRC_burst_error_count = 0;
             	message_recieved = TRUE;
@@ -283,13 +259,13 @@ struct message_struct* get_message(void)
     } else {
     	if( comm_state == RECEIVING_MESSAGE )
     	{
-    		if (message_timeout_counter++ > MESSAGE_TIMEOUT_COUNT_LIMIT )
-    		{
-    			message_timeout_counter = 0;
-    			comm_state =  AWAITING_START_FRAME;
-    			message_buffer.index = 0;
-    			comm_error = MESSAGING_TIMEOUT;
-    		}
+    	    if (message_timeout_counter++ > MESSAGE_TIMEOUT_COUNT_LIMIT )
+    	      {
+    	        message_timeout_counter = 0;
+    	        comm_state =  AWAITING_START_FRAME;
+    	        message_buffer.index = 0;
+    	        comm_error = MESSAGING_TIMEOUT;
+    	      }
     	}
 
     }
