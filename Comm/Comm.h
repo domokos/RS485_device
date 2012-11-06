@@ -27,7 +27,7 @@ struct message_struct
  * SEQ - 8 bits
  * OPCODE - 8 bits
  * PARAMERER - arbitrary number of bytes
- * CRC - 8 bits calculated for the data between start and end frame
+ * CRC - 2*8 bits calculated for the data between start and end frame
  * END_FRAME - 8 bits
  *
  *  * The SEQ field holds a message sequence number
@@ -39,8 +39,8 @@ struct message_struct
 #define SEQ 1
 #define OPCODE 2
 #define PARAMETER_START 3
-#define CRC message_buffer.index
-#define PARAMETER_END message_buffer.index-1
+#define CRC message_buffer.index-1
+#define PARAMETER_END message_buffer.index-2
 
 // The ISR prototypes to be included in the main program;
 void Serial_ISR(void)  __interrupt 4 __using 0;

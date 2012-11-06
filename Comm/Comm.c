@@ -97,9 +97,10 @@ unsigned char i,c;
 unsigned int crc = 0xffff;
 unsigned char num;
 
-for (num=0; num < message_buffer.index+1; num++)           /* Step through bytes in memory */
+for (num=0; num < CRC; num++)           /* Step through bytes in memory */
 {
     c = flip_bits(message_buffer.content[num]); /* Flip the bits to comply with the true serial bit order */
+//	c = message_buffer.content[num];
     crc = crc ^ ((unsigned int)c << 8); /* Fetch byte from memory, XOR into  CRC top byte*/
     for (i = 0; i < 8; i++)      /* Prepare to rotate 8 bits */
     {
