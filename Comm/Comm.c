@@ -167,8 +167,8 @@ void send_response(unsigned char opcode)
   message_buffer.content[OPCODE] = opcode;
 
   crc = calculate_message_CRC16();
-  message_buffer.content[CRC1] = (unsigned char) (crc & 0x00ff);
-  message_buffer.content[CRC2] = (unsigned char) ((crc & 0xff00) >> 8);
+  message_buffer.content[CRC1] = (unsigned char) ((crc & 0xff00) >> 8);
+  message_buffer.content[CRC2] = (unsigned char) (crc & 0x00ff);
   // Now send the message
   // Frame head first
    UART_putchar(START_FRAME);

@@ -51,6 +51,9 @@ for(;;)
     	test -> content[4]=0x52;
     	test ->index=4;
     	send_response(0x4b);
+//Test CRC sent out
+    	P0 = test -> content[5]; //Expected  d6
+        P1 = test -> content[6]; //Expected  8b
     	test ->index=0;
       }
     a--;

@@ -55,25 +55,29 @@ void init_comm(unsigned char _host_address);
 // returns a pointer to the message if a message is received
 struct message_struct* get_message(void);
 
+
+/*
+ * Public function library
+ */
+
 // Function to send response to the master on the bus
 void send_response(unsigned char opcode);
 
 // Provide access to the message structure
 struct message_struct* get_message_buffer(void);
 
+
+
 /*
-Internal functions not to be accessed from outside of the comm modul
+ * Internal functions - should not be called from outside of the comm modul
+*/
 
-//Check 8-Bit checksum with given polynomial
-unsigned char calculate_message_CRC();
-
-// Send ACK response to a message
-void ack_message(bool success);
+//Calculate the 16-Bit checksum of the message
+static unsigned char calculate_message_CRC();
 
 // Send a character to the UART
-void UART_putchar(unsigned char value);
+static void UART_putchar(unsigned char value);
 
-*/
 
 // Messaging states
 #define AWAITING_START_FRAME 0
