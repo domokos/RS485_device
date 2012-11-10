@@ -32,6 +32,7 @@ struct message_struct
  *
  *  * The SEQ field holds a message sequence number
  *      SEQ
+ *      Index must point to the last parameter byte
  */
 
 // The buffer indexes
@@ -39,8 +40,9 @@ struct message_struct
 #define SEQ 1
 #define OPCODE 2
 #define PARAMETER_START 3
-#define CRC message_buffer.index-1
-#define PARAMETER_END message_buffer.index-2
+#define CRC1 message_buffer.index+1
+#define CRC2 message_buffer.index+2
+#define PARAMETER_END message_buffer.index
 
 // The ISR prototypes to be included in the main program;
 void Serial_ISR(void)  __interrupt 4 __using 0;
@@ -98,7 +100,10 @@ void UART_putchar(unsigned char value);
 #define CRC16_POLYNOMIAL 0x1021
 
 // Response opcodes
-#define CRC_ERROR 0 // The received message contained CRC error
+
+// The received message contained CRC error
+// The message has a zero length payload. CRC follows the opcode
+#define CRC_ERROR 0
 
 
 #endif /* COMM_H_ */

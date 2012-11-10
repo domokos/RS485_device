@@ -97,7 +97,7 @@ unsigned char i,c;
 unsigned int crc = 0xffff;
 unsigned char num;
 
-for (num=0; num < CRC; num++)           /* Step through bytes in memory */
+for (num=0; num < CRC1; num++)           /* Step through bytes in memory */
 {
     c = flip_bits(message_buffer.content[num]); /* Flip the bits to comply with the true serial bit order */
 //	c = message_buffer.content[num];
@@ -163,14 +163,18 @@ void UART_putchar(unsigned char value)
 void send_response(unsigned char opcode)
 {
   unsigned char i;
+  unsigned int crc;
   message_buffer.content[OPCODE] = opcode;
-  message_buffer.content[CRC] = calculate_message_CRC16();
+
+  crc = calculate_message_CRC16();
+  message_buffer.content[CRC1] = (unsigned char) (crc & 0x00ff);
+  message_buffer.content[CRC2] = (unsigned char) ((crc & 0xff00) >> 8);
   // Now send the message
   // Frame head first
    UART_putchar(START_FRAME);
 
    // Send message body
-  for (i=SLAVE_ADDRESS; i<=CRC;i++)
+  for (i=SLAVE_ADDRESS; i<=CRC2;i++)
     {
       // Escape special characters
       if (message_buffer.content[i] == MESSAGE_ESCAPE ||
@@ -238,15 +242,21 @@ struct message_struct* get_message(void)
             // End frame received change state to post processing
             comm_state = AWAITING_START_FRAME;
             // Decrease index to point to the last byte of the message payload
-            message_buffer.index--;
-            if (calculate_message_CRC16() == (unsigned int)(&message_buffer.content)+CRC )
+            // Excluding CRC bytes
+            message_buffer.index -= 3;
+            if (calculate_message_CRC16() == (unsigned int)((message_buffer.content[CRC1] << 8) | (message_buffer.content[CRC2])))
             {
             	CRC_burst_error_count = 0;
             	message_recieved = TRUE;
             	comm_error = NO_ERROR;
             } else {
             	// Send error response if this host is the addressee
-            	if(host_address == message_buffer.content[SLAVE_ADDRESS]) send_response(CRC_ERROR);
+            	if(host_address == message_buffer.content[SLAVE_ADDRESS])
+            	  {
+            	    // Send no parameter in the message
+            	    message_buffer.index = PARAMETER_START-1;
+            	    send_response(CRC_ERROR);
+            	  }
             	// Clear message buffer
             	message_buffer.index = 0;
             	CRC_burst_error_count++;

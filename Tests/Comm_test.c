@@ -15,6 +15,7 @@ unsigned short a=0;
 
 init_comm(1);
 
+// Set 19200 baud @ 11.0592 MHz Crystal
 TH1 = 0xfd;
 
 test = get_message_buffer();
@@ -30,6 +31,14 @@ test ->index=5;
 send_response(0x78);
 test ->index=0;
 
+/*
+ To test send this valid message in the emulator:
+{55,1,4b,75,74,79,61,b6,10,5d}
+Original: 14b75747961
+Flipped: 80d2ae2e9e86
+80d2ae2e9e86
+CRC flipped: b610
+*/
 
 for(;;)
   {
@@ -40,8 +49,7 @@ for(;;)
     	test -> content[2]=0x4b;
     	test -> content[3]=0x45;
     	test -> content[4]=0x52;
-    	test -> content[5]=0x00;
-    	test ->index=5;
+    	test ->index=4;
     	send_response(0x4b);
     	test ->index=0;
       }
