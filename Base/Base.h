@@ -8,7 +8,7 @@
 #ifndef BASE_H_
 #define BASE_H_
 
-#include<at89x051.h>
+#include "at89c4051.h"
 
 // Global constants
 #define TRUE 1

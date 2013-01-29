@@ -2,13 +2,12 @@
  * Comm.c
  *
  *  Created on: Oct 20, 2012
- *      Author: Molnár Domokos
+ *      Author: Molnï¿½r Domokos
  *
  *      This is a communication module for the AT89c4051 microcontroller
  *      over RS485
  */
 
-#include <at89x051.h>
 #include "Base.h"
 #include "Comm.h"
 
@@ -115,8 +114,9 @@ for (num=0; num < CRC1; num++)           /* Step through bytes in memory */
 
 
 // The serial ISR for communication
-void Serial_ISR(void)  __interrupt 4 __using 0
+ISR(SERIAL,0)
 {
+
   if(RI == 1)
   {
     RI = 0;
@@ -136,6 +136,7 @@ void Serial_ISR(void)  __interrupt 4 __using 0
   }
   return;
 }
+
 
 // Provide access to the message structure
 struct message_struct* get_message_buffer(void)
@@ -157,9 +158,10 @@ void UART_putchar(unsigned char value)
     }while(!UART_send_complete);
 }
 
-// Function to send response to the master on the bus
-// the function expects message content to be prepared by the caller
-// including message SEQ number
+/* Function to send response to the master on the bus
+ * the function expects message content to be prepared by the caller
+ * including message SEQ number
+*/
 void send_response(unsigned char opcode)
 {
   unsigned char i;

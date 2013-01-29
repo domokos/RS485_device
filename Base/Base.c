@@ -5,18 +5,19 @@
  *      Author: doma
  *      Basic common routines for the RS485 device
  */
-
-#include <at89x051.h>
 #include "Base.h"
 
 // Global delaytime
 volatile unsigned int  DELAY;
+#ifdef SDCC
 // The delay timer ISR
 void Timer0_ISR(void) __interrupt 1 __using 0
 {
   if ( DELAY > 0 ) DELAY--;    // Timebase ticks for delay-routine
   return;
 }
+#endif
+
 // The delay routine wait
 void delay(unsigned int _100usec_time)
 {

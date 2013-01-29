@@ -8,7 +8,6 @@
 #ifndef COMM_H_
 #define COMM_H_
 
-#include <at89x051.h>
 #include "Base.h"
 
 #define MAX_MESSAGE_LENGTH 15
@@ -45,7 +44,7 @@ struct message_struct
 #define PARAMETER_END message_buffer.index
 
 // The ISR prototypes to be included in the main program;
-void Serial_ISR(void)  __interrupt 4 __using 0;
+ISR(SERIAL,0);
 
 // Initialize comm module
 void init_comm(unsigned char _host_address);
