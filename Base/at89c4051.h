@@ -80,21 +80,15 @@ ISR(UTX1, 0)
 #error "Unknown compiler."
 #endif
 
-
-// Interrupt vectors
-#define SERIAL_VECTOR 4
-#define TIMER0_VECTOR 1
-
-
-SFRBIT(0xB0, P3, P3_7, P3_6, P3_5, P3_4, P3_3, P3_2, P3_1, P3_0)
-SFRBIT(0x90, P1, P1_7, P1_6, P1_5, P1_4, P1_3, P1_2, P1_1, P1_0)
-
 /*  BYTE Register  */
 
 SFR(0x81, SP)
 SFR(0x82, DPL)
 SFR(0x83, DPH)
 SFR(0x87, PCON)
+
+/*  TCON  */
+SFRBIT(0x88, TCON, TF1, TR1, TF0, TR0, IE1, IT1, IE0, IT0)
 
 SFR(0x89, TMOD)
 
@@ -103,20 +97,22 @@ SFR(0x8B,TL1)
 SFR(0x8C,TH0)
 SFR(0x8D,TH1)
 
+/*  P1 */
+SFRBIT(0x90, P1, P1_7, P1_6, P1_5, P1_4, P1_3, P1_2, P1_1, P1_0)
+
+/*  SCON  */
+SFRBIT(0x98, SCON, SM0, SM1, SM2, REN, TB8, RB8, TI, RI)
+
 SFR(0x99,SBUF)
-SFR(0xA0,P2)
 SFR(0xA8,IE)
-SFR(0xB0,P3)
+
+/* P3 */
+SFRBIT(0xB0, P3, P3_7, P3_6, P3_5, P3_4, P3_3, P3_2, P3_1, P3_0)
+
 SFR(0xB8,IP)
 SFR(0xD0,PSW)
 SFR(0xE0,ACC)
 SFR(0xF0,B)
-
-/*  TCON  */
-SFRBIT(0x88, TCON,IT0,IE0,IT1,IE1,TR0,TF0,TR1,TF1)
-
-/*  SCON  */
-SFRBIT(0x98, SCON, RI, TI, RB8, TB8, REN, SM2, SM1, SM0)
 
 /*  IE   */
 SBIT(0xA8,EX0)
@@ -174,11 +170,10 @@ SBIT(0xD7,CY)
 #define T1_MASK         0xF0
 
 /* Interrupt numbers: address = (number * 8) + 3 */
-#define IE0_VECTOR      0       /* 0x03 external interrupt 0 */
-#define TF0_VECTOR      1       /* 0x0b timer 0 */
-#define IE1_VECTOR      2       /* 0x13 external interrupt 1 */
-#define TF1_VECTOR      3       /* 0x1b timer 1 */
-#define SI0_VECTOR      4       /* 0x23 serial port 0 */
-
+#define EXT0_VECTOR     0       /* 0x03 external interrupt 0 */
+#define TIMER0_VECTOR   1       /* 0x0b timer 0 */
+#define EXT1_VECTOR     2       /* 0x13 external interrupt 1 */
+#define TIMER1_VECTOR   3       /* 0x1b timer 1 */
+#define SERIAL_VECTOR   4       /* 0x23 serial port 0 */
 
 #endif /* AT894051_H_ */

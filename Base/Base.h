@@ -17,7 +17,7 @@
 typedef __bit bool;
 
 // The timer ISR routine prototype to be included in the main file
-void Timer0_ISR(void) __interrupt 1 __using 0;
+ISR(TIMER0,0);
 
 // Base routine headers
 void delay(unsigned int _100usec_time);

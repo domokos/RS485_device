@@ -9,14 +9,13 @@
 
 // Global delaytime
 volatile unsigned int  DELAY;
-#ifdef SDCC
+
 // The delay timer ISR
-void Timer0_ISR(void) __interrupt 1 __using 0
+ISR(TIMER0,0)
 {
   if ( DELAY > 0 ) DELAY--;    // Timebase ticks for delay-routine
   return;
 }
-#endif
 
 // The delay routine wait
 void delay(unsigned int _100usec_time)
