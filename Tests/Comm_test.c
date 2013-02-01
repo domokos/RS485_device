@@ -7,13 +7,15 @@
 
 #include "Comm.h"
 
+#define HOST_ID 1
+
 struct message_struct *message_struct, *test;
 
 void main()
 {
 unsigned short a=0;
 
-init_comm(1);
+init_comm(HOST_ID);
 
 // Set 19200 baud @ 11.0592 MHz Crystal
 TH1 = 0xfd;

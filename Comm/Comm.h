@@ -16,9 +16,11 @@
 #define AWAITING_START_FRAME 0
 #define RECEIVING_MESSAGE 1
 
-// The number after which get_message is called while waiting for a character but recieving none
-// that will cause it to reset.
-// Can be regarded as a timeout limit
+/*
+ * The number after which get_message is called while waiting for a character
+ * during transmission of a frame but recieving none that will cause
+ * it to reset: a timeout limit.
+*/
 #define MESSAGE_TIMEOUT_COUNT_LIMIT 4000
 
 // Messaging frame structure elements
@@ -36,11 +38,50 @@
 // CRC generator polynomial
 #define CRC16_POLYNOMIAL 0x1021
 
-// Response opcodes
+/*
+ * Command opcodes
+ */
+
+// Set the value of a register
+#define SET_REGISTER 0
+
+// Read the value of a register
+#define READ_REGISTER 1
+
+// Identify a register by returning its description
+#define IDENTTIFY_REGISTER 2
+
+// Reset the device to its basic state
+#define RESET_DEVICE 3
+
+// Perform selftest
+#define SELFTEST 4
+
+// PING - master expects an echo and the same payload
+#define PING 5
+
+
+/*
+ *  Response opcodes
+ */
 
 // The received message contained CRC error
 // The message has a zero length payload. CRC follows the opcode
 #define CRC_ERROR 0
+
+// Command succesfully recieved response messge payload
+// contains the information requested by the master
+#define COMMAND_SUCCESS 1
+
+// Command succesfully recieved, execution of the
+// requested operation failed, original status preserved or
+// status undefined
+#define COMMAND_FAIL 2
+
+// Response to a PING message - should contain the same
+// message recieved in the PING
+#define ECHO 3
+
 
 // Messaging buffer STRUCT
 struct message_struct
