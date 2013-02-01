@@ -20,15 +20,15 @@ TH1 = 0xfd;
 
 test = get_message_buffer();
 
-test -> content[0]=0x74;
-test -> content[1]=0x65;
-test -> content[2]=0x78;
-test -> content[3]=0x74;
-test -> content[4]=0x69;
-test -> content[5]=0x74;
+test -> content[0]='A';
+test -> content[1]='l';
+test -> content[2]='m';
+test -> content[3]='a';
+test -> content[4]='f';
+test -> content[5]='a';
 test ->index=5;
 
-send_response(0x78);
+send_response('m','l');
 test ->index=0;
 
 /*
@@ -44,13 +44,13 @@ for(;;)
   {
     if ( (message_struct = get_message()) )
       {
-    	test -> content[0]=0x53;
-    	test -> content[1]=0x49;
-    	test -> content[2]=0x4b;
-    	test -> content[3]=0x45;
-    	test -> content[4]=0x52;
+    	test -> content[0]='S';
+    	test -> content[1]='i';
+    	test -> content[2]='k';
+    	test -> content[3]='e';
+    	test -> content[4]='r';
     	test ->index=4;
-    	send_response(0x4b);
+    	send_response('k','i');
 //Test CRC sent out
     	P3 = test -> content[5]; //Expected  d6
         P1 = test -> content[6]; //Expected  8b

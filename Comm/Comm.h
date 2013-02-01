@@ -12,72 +12,6 @@
 
 #define MAX_MESSAGE_LENGTH 15
 
-// Messaging buffer STRUCT
-struct message_struct
-{
-  unsigned char   content[MAX_MESSAGE_LENGTH];
-  unsigned char   index;
-};
-
-/*
- * The messaging format is:
- * START_FRAME - 8 bits
- * SLAVE_ADDRESS - 8 bits
- * SEQ - 8 bits
- * OPCODE - 8 bits
- * PARAMERER - arbitrary number of bytes
- * CRC - 2*8 bits calculated for the data between start and end frame
- * END_FRAME - 8 bits
- *
- *  * The SEQ field holds a message sequence number
- *      SEQ
- *      Index must point to the last parameter byte
- */
-
-// The buffer indexes
-#define SLAVE_ADDRESS 0
-#define SEQ 1
-#define OPCODE 2
-#define PARAMETER_START 3
-#define CRC1 message_buffer.index+1
-#define CRC2 message_buffer.index+2
-#define PARAMETER_END message_buffer.index
-
-// The ISR prototypes to be included in the main program;
-ISR(SERIAL,0);
-
-// Initialize comm module
-void init_comm(unsigned char _host_address);
-
-// Must be called periodically to allow comm module to perform housekeeping
-// Returns void* to the caller if no message is received
-// returns a pointer to the message if a message is received
-struct message_struct* get_message(void);
-
-
-/*
- * Public function library
- */
-
-// Function to send response to the master on the bus
-void send_response(unsigned char opcode);
-
-// Provide access to the message structure
-struct message_struct* get_message_buffer(void);
-
-
-
-/*
- * Internal functions - should not be called from outside of the comm modul
-*/
-
-//Calculate the 16-Bit checksum of the message
-static unsigned char calculate_message_CRC();
-
-// Send a character to the UART
-static void UART_putchar(unsigned char value);
-
-
 // Messaging states
 #define AWAITING_START_FRAME 0
 #define RECEIVING_MESSAGE 1
@@ -108,5 +42,84 @@ static void UART_putchar(unsigned char value);
 // The message has a zero length payload. CRC follows the opcode
 #define CRC_ERROR 0
 
+// Messaging buffer STRUCT
+struct message_struct
+{
+  unsigned char   content[MAX_MESSAGE_LENGTH];
+  unsigned char   index;
+};
+
+
+
+/**********************************************************************************
+ * The messaging format:
+ * START_FRAME - 8 bits
+ * SLAVE_ADDRESS - 8 bits
+ * SEQ - 8 bits
+ * OPCODE - 8 bits
+ * PARAMERER - arbitrary number of bytes
+ * CRC - 2*8 bits calculated for the data between start and end frame
+ * END_FRAME - 8 bits
+ *
+ *  * The SEQ field holds a message sequence number
+ *      SEQ
+ *      Index must point to the last parameter byte
+ ***********************************************************************************/
+
+// The buffer indexes
+#define SLAVE_ADDRESS 0
+#define SEQ 1
+#define OPCODE 2
+#define PARAMETER_START 3
+#define CRC1 message_buffer.index+1
+#define CRC2 message_buffer.index+2
+#define PARAMETER_END message_buffer.index
+
+// The ISR prototypes to be included in the main program;
+ISR(SERIAL,0);
+
+/*
+ * Public function library
+ */
+
+// Function to send response to the master on the bus
+void send_response(unsigned char opcode, unsigned char seq);
+
+// Provide access to the message structure
+struct message_struct* get_message_buffer(void);
+
+// Get the error state of the comm module
+unsigned char get_comm_error(void);
+
+// Indicate if UART has lost a char
+bool is_UART_char_lost(void);
+
+// Return the host address
+unsigned char get_host_address(void);
+
+// Set the host address
+void set_host_address(unsigned char _host_address);
+
+// Return the # of CRC errors seen
+unsigned char get_CRC_burst_error_count(void);
+
+// Initialize comm module
+void init_comm(unsigned char _host_address);
+
+// Must be called periodically to allow comm module to perform housekeeping
+// Returns void* to the caller if no message is received
+// returns a pointer to the message if a message is received
+struct message_struct* get_message(void);
+
+
+/*
+ * Internal functions - should not be called from outside of the comm modul
+*/
+
+//Calculate the 16-Bit checksum of the message
+static unsigned char calculate_message_CRC();
+
+// Send a character to the UART
+static void UART_putchar(unsigned char value);
 
 #endif /* COMM_H_ */
