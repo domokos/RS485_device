@@ -21,7 +21,7 @@
  * during transmission of a frame but recieving none that will cause
  * it to reset: a timeout limit.
 */
-#define MESSAGE_TIMEOUT_COUNT_LIMIT 4000
+#define MESSAGE_TIMEOUT_COUNT_LIMIT 500
 
 // Messaging frame structure elements
 #define START_FRAME 0x55
@@ -44,21 +44,48 @@
 
 // Set the value of a register
 #define SET_REGISTER 0
-
 // Read the value of a register
 #define READ_REGISTER 1
-
 // Identify a register by returning its description
 #define IDENTTIFY_REGISTER 2
-
 // Reset the device to its basic state
 #define RESET_DEVICE 3
-
-// Perform selftest
-#define SELFTEST 4
-
+// Perform tests
+#define COMM_TEST_REVERSE_MESSAGE 4
 // PING - master expects an echo and the same payload
 #define PING 5
+// Set communication speed
+#define SET_COMM_SPEED 6
+
+
+
+/*
+ * COMMAND PARAMETERS
+ */
+// Parameters of SET_COMM_SPEED
+// Timer1 reload values for 11.0592 MHz Crystal
+struct comm_speed_struct
+{
+  unsigned char   reload_value;
+  unsigned char   is_smod_set;
+};
+
+#define COMM_SPEED_300_L 0
+#define COMM_SPEED_1200_L 1
+#define COMM_SPEED_2400_L 2
+#define COMM_SPEED_4800_L 3
+#define COMM_SPEED_9600_L 4
+#define COMM_SPEED_14400_L 5
+#define COMM_SPEED_28800_L 6
+#define COMM_SPEED_300_H 7
+#define COMM_SPEED_1200_H 8
+#define COMM_SPEED_2400_H 9
+#define COMM_SPEED_4800_H 10
+#define COMM_SPEED_9600_H 11
+#define COMM_SPEED_14400_H 12
+#define COMM_SPEED_19200_H 13
+#define COMM_SPEED_28800_H 14
+#define COMM_SPEED_57600_H 15
 
 
 /*
@@ -68,16 +95,13 @@
 // The received message contained CRC error
 // The message has a zero length payload. CRC follows the opcode
 #define CRC_ERROR 0
-
 // Command succesfully recieved response messge payload
 // contains the information requested by the master
 #define COMMAND_SUCCESS 1
-
 // Command succesfully recieved, execution of the
 // requested operation failed, original status preserved or
 // status undefined
 #define COMMAND_FAIL 2
-
 // Response to a PING message - should contain the same
 // message recieved in the PING
 #define ECHO 3
@@ -144,8 +168,14 @@ void set_host_address(unsigned char _host_address);
 // Return the # of CRC errors seen
 unsigned char get_CRC_burst_error_count(void);
 
+// Reset the state of the communication
+void reset_comm(void);
+
 // Initialize comm module
-void init_comm(unsigned char _host_address);
+void init_comm(unsigned char host_address, unsigned char comm_speed);
+
+// Set communication speed
+void set_comm_speed(unsigned char comm_speed);
 
 // Must be called periodically to allow comm module to perform housekeeping
 // Returns void* to the caller if no message is received

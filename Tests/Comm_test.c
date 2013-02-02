@@ -9,56 +9,82 @@
 
 #define HOST_ID 1
 
-struct message_struct *message_struct, *test;
+struct message_struct *message_buffer;
 
-void main()
+void initial_test(void)
 {
-unsigned short a=0;
+  struct message_struct *test;
 
-init_comm(HOST_ID);
+  unsigned char a=0;
+  test = get_message_buffer();
 
-// Set 19200 baud @ 11.0592 MHz Crystal
-TH1 = 0xfd;
+  test -> content[0]='A';
+  test -> content[1]='l';
+  test -> content[2]='m';
+  test -> content[3]='a';
+  test -> content[4]='f';
+  test -> content[5]='a';
+  test ->index=5;
 
-test = get_message_buffer();
+  send_response('m','l');
 
-test -> content[0]='A';
-test -> content[1]='l';
-test -> content[2]='m';
-test -> content[3]='a';
-test -> content[4]='f';
-test -> content[5]='a';
-test ->index=5;
 
-send_response('m','l');
-test ->index=0;
+  /*
+   To test send this valid message in the emulator:
+  {55,1,4b,75,74,79,61,b6,10,5d}
+  Original: 14b75747961
+  Flipped: 80d2ae2e9e86
+  80d2ae2e9e86
+  CRC flipped: b610
+  */
 
-/*
- To test send this valid message in the emulator:
-{55,1,4b,75,74,79,61,b6,10,5d}
-Original: 14b75747961
-Flipped: 80d2ae2e9e86
-80d2ae2e9e86
-CRC flipped: b610
-*/
+  for(;;)
+    {
+      if ( (message_buffer = get_message()) != NULL )
+        {
+          message_buffer -> content[0]='S';
+          message_buffer -> content[1]='i';
+          message_buffer -> content[2]='k';
+          message_buffer -> content[3]='e';
+          message_buffer -> content[4]='r';
+          message_buffer -> index=4;
+          send_response('k','i');
+        }
+      a--;
+    }
+}
 
-for(;;)
-  {
-    if ( (message_struct = get_message()) )
+void data_communication_test(void)
+{
+  if ( (message_buffer = get_message()) != NULL )
+    {
+      switch (message_buffer->content[OPCODE])
       {
-    	test -> content[0]='S';
-    	test -> content[1]='i';
-    	test -> content[2]='k';
-    	test -> content[3]='e';
-    	test -> content[4]='r';
-    	test ->index=4;
-    	send_response('k','i');
-//Test CRC sent out
-    	P3 = test -> content[5]; //Expected  d6
-        P1 = test -> content[6]; //Expected  8b
-    	test ->index=0;
+        case PING:
+            send_response(ECHO,message_buffer->content[SEQ]);
+          break;
+        case COMM_TEST_REVERSE_MESSAGE:
+
+          break;
       }
-    a--;
-  }
+
+
+
+
+    }
+}
+
+
+void main(void)
+{
+
+  // Set 14000 baud @ 11.0592 MHz Crystal
+  init_comm(HOST_ID,COMM_SPEED_4800_H);
+
+
+  initial_test();
+
+  //data_communication_test();
+
 
 }

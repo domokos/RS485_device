@@ -24,6 +24,25 @@ static unsigned char host_address;
 static unsigned char CRC_burst_error_count;
 static unsigned int message_timeout_counter;
 static struct message_struct message_buffer;
+__code static const struct comm_speed_struct comm_speeds[] = {
+    {0xa0,0}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
+    {0xe8,0}, //COMM_SPEED_1200_L 0xe8,SMOD not set in PCON
+    {0xf4,0}, //COMM_SPEED_2400_L 0xf4,SMOD not set in PCON
+    {0xfa,0}, //COMM_SPEED_4800_L 0xfa,SMOD not set in PCON
+    {0xfd,0}, //COMM_SPEED_9600_L 0xfd,SMOD not set in PCON
+    {0xfe,0}, //COMM_SPEED_14400_L 0xfe,SMOD not set in PCON
+    {0xff,0}, //COMM_SPEED_28800_L 0xff,SMOD not set in PCON
+
+    {0x40,1}, //COMM_SPEED_300_H 0x40,SMOD set in PCON
+    {0xd0,1}, //COMM_SPEED_1200_H 0xd0,SMOD set in PCON
+    {0x8e,1}, //COMM_SPEED_2400_H 0x8e,SMOD set in PCON
+    {0xf4,1}, //COMM_SPEED_4800_H 0xf4,SMOD set in PCON
+    {0xfa,1}, //COMM_SPEED_9600_H 0xfa,SMOD set in PCON
+    {0xfc,1}, //COMM_SPEED_14400_H 0xfc,SMOD set in PCON
+    {0xfd,1}, //COMM_SPEED_19200_H 0xfd,SMOD set in PCON
+    {0xfe,1}, //COMM_SPEED_28800_H 0xfe,SMOD set in PCON
+    {0xff,1} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
+};
 
 /*
  * Internal utility functions
@@ -113,24 +132,9 @@ static void UART_putchar(unsigned char value)
  * Public interface
  */
 
-void init_comm(unsigned char _host_address)
+// Reset the state of the communication channel
+void reset_comm(void)
 {
-  // Setup the serial port operation mode
-  // Reset receive and transmit interrupt flags and disable receiver enable
-  RI  = 0;TI  = 0;REN = 0;
-  // 8-bit UART mode for serial TIMER1 Mode2 SMOD=1
-  SM1 = 1;SM0 = 0;
-  PCON |= SMOD;
-
-  // Multiprocessor communication disabled
-  SM2 = 0;
-
-  // Setup the serial port timer Timer1
-  TL1  = 0xff;    // Start from 255
-  TH1  = 0xff;    // Reload 255: 57600 baud @ 11.0592 MHz Crystal with SMOD=1
-  TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
-  TR1  = 1;       // Start Timer 1
-
   // Clear message buffer
   message_buffer.index = 0;
 
@@ -143,16 +147,49 @@ void init_comm(unsigned char _host_address)
   CRC_burst_error_count = 0;
   prev_char = 0;
 
-  // Set the host address
-  host_address = _host_address;
-
   // Set the initial state
   comm_state = AWAITING_START_FRAME;
   message_timeout_counter = 0;
+}
+
+// Initialize the communication module
+void init_comm(unsigned char host_address, unsigned char comm_speed)
+{
+  // Setup the serial port operation mode
+  // Reset receive and transmit interrupt flags and disable receiver enable
+  RI  = 0;TI  = 0;REN = 0;
+  // 8-bit UART mode for serial TIMER1 Mode2 SMOD=1
+  SM1 = 1;SM0 = 0;
+
+  // Set serial RxD and TxD lines to high
+  P3_1=1; P3_0 =1;
+
+  // Multiprocessor communication disabled
+  SM2 = 0;
+
+  // Set the communication speed
+  set_comm_speed(comm_speed);
+
+  // Set the host address
+  set_host_address(host_address);
+
+  // Reset the communication channel
+  reset_comm();
 
   // Enable Serial interrupt and start listening on the bus
   ES = 1; EA = 1;
   REN = 1;
+}
+
+void set_comm_speed(unsigned char comm_speed)
+{
+  TR1  = 0; //Stop Timer 1
+  TL1  = 0xff;    // Start from 255
+  TH1 = comm_speeds[comm_speed].reload_value;
+  if(comm_speeds[comm_speed].is_smod_set) PCON|=SMOD; else PCON&=0x7F;
+  // Setup the serial port timer Timer1
+  TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
+  TR1  = 1;       // Start Timer 1
 }
 
 // Provide access to the message structure
@@ -245,6 +282,7 @@ struct message_struct* get_message(void)
   if(process_char)
     {
       // A character is recieved by UART - process it
+      message_timeout_counter = 0;
       switch (comm_state) {
       case AWAITING_START_FRAME:
         if (ch_received == START_FRAME && prev_char != MESSAGE_ESCAPE)
@@ -330,5 +368,5 @@ struct message_struct* get_message(void)
     	}
 
     }
-  if(message_recieved) return &message_buffer; else return 0;
+  if(message_recieved) return &message_buffer; else return NULL;
 }

@@ -15,6 +15,7 @@
 #define __interrupt(x)
 #define __using(x)
 #define __xdata
+#define __code
 #endif
 
 #define SFRBIT(address, name, bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0) \
@@ -75,6 +76,7 @@ ISR(UTX1, 0)
 #define SBIT(address, name) static unsigned char name;
 #define SFR16(addressH, addressL, name) static unsigned short name;
 #define SFRX(address, name) static unsigned char name;
+#define __bit unsigned char;
 
 #else
 #error "Unknown compiler."
