@@ -54,37 +54,82 @@ void initial_test(void)
     }
 }
 
+void reverse_message_buffer(struct message_struct *_message_buffer)
+{
+  unsigned char i, j=_message_buffer -> index, tmp;
+  for(i=PARAMETER_START;i<=_message_buffer -> index;i++)
+    {
+      tmp = _message_buffer -> content[i];
+      _message_buffer -> content[i] = _message_buffer -> content[j];
+      _message_buffer -> content[j] = tmp;
+    }
+}
+
 void data_communication_test(void)
 {
-  if ( (message_buffer = get_message()) != NULL )
+  unsigned char p,response_opcode;
+  for(;;)
     {
-      switch (message_buffer->content[OPCODE])
-      {
-        case PING:
-            send_response(ECHO,message_buffer->content[SEQ]);
-          break;
-        case COMM_TEST_REVERSE_MESSAGE:
-
-          break;
-      }
-
-
-
+      if ( (message_buffer = get_message()) != NULL )
+        {
+          switch (message_buffer->content[OPCODE])
+          {
+          case SET_REGISTER:
+            p = 0x01 << message_buffer->content[PARAMETER_START]-1;
+            if (message_buffer->content[PARAMETER_START+1]) P1 |= p; else P1 &= ~p;
+            response_opcode = COMMAND_SUCCESS;
+            break;
+          case READ_REGISTER:
+            p = 0x01 << message_buffer->content[PARAMETER_START]-1;
+            message_buffer->content[PARAMETER_START] = (P1 & p);
+            message_buffer->index=PARAMETER_START;
+            response_opcode = COMMAND_SUCCESS;
+            break;
+          case IDENTTIFY_REGISTER:
+            message_buffer->content[PARAMETER_START+3] = message_buffer->content[PARAMETER_START];
+            message_buffer->content[PARAMETER_START] = 'P';
+            message_buffer->content[PARAMETER_START+1] = '1';
+            message_buffer->content[PARAMETER_START+2] = '_';
+            message_buffer->index = PARAMETER_START+3;
+            response_opcode = COMMAND_SUCCESS;
+            break;
+          case RESET_DEVICE:
+            response_opcode = COMMAND_SUCCESS;
+            break;
+          case COMM_TEST_REVERSE_MESSAGE:
+            reverse_message_buffer(message_buffer);
+            response_opcode = COMMAND_SUCCESS;
+            break;
+          case PING:
+            response_opcode = ECHO;
+            break;
+          case SET_COMM_SPEED:
+            set_comm_speed(message_buffer->content[PARAMETER_START]);
+            response_opcode = COMMAND_SUCCESS;
+            break;
+          default:
+            response_opcode = COMMAND_FAIL;
+           break;
+          }
+          send_response(response_opcode,message_buffer->content[SEQ]);
+        }
 
     }
 }
 
 
+
+
 void main(void)
 {
 
-  // Set 14000 baud @ 11.0592 MHz Crystal
+  // Set 4800 baud @ 11.0592 MHz Crystal
   init_comm(HOST_ID,COMM_SPEED_4800_H);
 
 
-  initial_test();
+//  initial_test();
 
-  //data_communication_test();
+  data_communication_test();
 
 
 }

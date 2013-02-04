@@ -63,7 +63,7 @@
  * COMMAND PARAMETERS
  */
 // Parameters of SET_COMM_SPEED
-// Timer1 reload values for 11.0592 MHz Crystal
+// Timer1 reload and SMOD bit PCON values for 11.0592 MHz Crystal
 struct comm_speed_struct
 {
   unsigned char   reload_value;
