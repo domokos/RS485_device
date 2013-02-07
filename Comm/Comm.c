@@ -19,7 +19,6 @@ static volatile bool UART_char_lost;
 static bool escape_char_recieved;
 static unsigned char comm_error;
 static unsigned char comm_state;
-static unsigned char prev_char;
 static unsigned char host_address;
 static unsigned char CRC_burst_error_count;
 static unsigned int message_timeout_counter;
@@ -145,7 +144,6 @@ void reset_comm(void)
   comm_error = NO_ERROR;
   escape_char_recieved = FALSE;
   CRC_burst_error_count = 0;
-  prev_char = 0;
 
   // Set the initial state
   comm_state = AWAITING_START_FRAME;
@@ -285,7 +283,7 @@ struct message_struct* get_message(void)
       message_timeout_counter = 0;
       switch (comm_state) {
       case AWAITING_START_FRAME:
-        if (ch_received == START_FRAME && prev_char != MESSAGE_ESCAPE)
+        if (ch_received == START_FRAME)
           {
             // Switch the state to wait for the address fileld of the frame
             comm_state = RECEIVING_MESSAGE;
@@ -349,13 +347,11 @@ struct message_struct* get_message(void)
           }
         break;
       }
-      // Store previous char to ID escape sequences
-      prev_char = process_char;
 
     } else {
         // No character is recieved by UART
         // maintain a timeout counter and cleanup communication if
-        // no transmission is seen on the line
+        // no transmission is seen on the bus after timeout has elapsed
     	if( comm_state == RECEIVING_MESSAGE )
     	{
     	    if (message_timeout_counter++ > MESSAGE_TIMEOUT_COUNT_LIMIT )

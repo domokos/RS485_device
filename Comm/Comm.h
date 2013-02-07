@@ -123,7 +123,7 @@ struct message_struct
  * SEQ - 8 bits
  * OPCODE - 8 bits
  * PARAMERER - arbitrary number of bytes
- * CRC - 2*8 bits calculated for the data between start and end frame
+ * CRC - 2*8 bits calculated for the data including start frame and the last byte of parameter
  * END_FRAME - 8 bits
  *
  *  * The SEQ field holds a message sequence number
