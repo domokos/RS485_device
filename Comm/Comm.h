@@ -115,6 +115,13 @@ struct message_struct
 };
 
 
+/*
+ * Pins of the microcontroller reserved for communication
+*/
+
+#define COMM_DIRECTION_PIN P3_7
+#define DEVICE_LISTENS 0
+#define DEVICE_SENDS 1
 
 /**********************************************************************************
  * The messaging format:
@@ -192,5 +199,8 @@ static unsigned char calculate_message_CRC();
 
 // Send a character to the UART
 static void UART_putchar(unsigned char value);
+
+// Set the direction of communication
+static void set_comm_direction(unsigned char direction);
 
 #endif /* COMM_H_ */

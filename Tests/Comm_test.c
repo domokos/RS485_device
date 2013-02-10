@@ -32,7 +32,7 @@ void initial_test(void)
   /*
    To test send this valid message in the emulator:
   {55,1,4b,75,74,79,61,b6,10,5d}
-  Original: 14b75747961
+  Original: 014b75747961
   Flipped: 80d2ae2e9e86
   80d2ae2e9e86
   CRC flipped: b610

@@ -126,6 +126,12 @@ static void UART_putchar(unsigned char value)
     }while(!UART_send_complete);
 }
 
+// Set the direction of communication
+static void set_comm_direction(unsigned char direction)
+{
+  COMM_DIRECTION_PIN = direction;
+}
+
 
 /*
  * Public interface
@@ -148,6 +154,9 @@ void reset_comm(void)
   // Set the initial state
   comm_state = AWAITING_START_FRAME;
   message_timeout_counter = 0;
+
+  // Listen on the bus for commands
+  set_comm_direction(DEVICE_LISTENS);
 }
 
 // Initialize the communication module
@@ -240,7 +249,10 @@ void send_response(unsigned char opcode, unsigned char seq)
   crc = calculate_message_CRC16();
   message_buffer.content[CRC1] = (unsigned char) ((crc & 0xff00) >> 8);
   message_buffer.content[CRC2] = (unsigned char) (crc & 0x00ff);
+
   // Now send the message
+  set_comm_direction(DEVICE_SENDS);
+
   // Frame head first
    UART_putchar(START_FRAME);
 
@@ -258,6 +270,9 @@ void send_response(unsigned char opcode, unsigned char seq)
 
   // Send frame end
   UART_putchar(END_FRAME);
+
+  // Listen on the bus
+  set_comm_direction(DEVICE_LISTENS);
 }
 
 // Returns void* to the caller if no message is received
