@@ -21,6 +21,12 @@ typedef __bit bool;
 ISR(TIMER0,0);
 
 // Base routine headers
-void delay(unsigned int _100usec_time);
+void delay_100us(unsigned int _100usec_time);
+
+// Wait for milliseconds
+void delay_msec(unsigned int msec);
+
+// Wait for seconds
+void delay_sec(unsigned int sec);
 
 #endif /* BASE_H_ */

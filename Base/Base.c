@@ -17,8 +17,26 @@ ISR(TIMER0,0)
   return;
 }
 
+// Wait for seconds
+void delay_sec(unsigned int sec)
+{
+	unsigned int i=sec;
+	while (i--) {
+		delay_msec(1000);
+	}
+}
+
+// Wait for milliseconds
+void delay_msec(unsigned int msec)
+{
+	unsigned int i=msec;
+	while (i--) {
+		delay_100us(10);
+	}
+}
+
 // The delay routine wait
-void delay(unsigned int _100usec_time)
+void delay_100us(unsigned int _100usec_time)
 {
   if ( _100usec_time == 0 ) return;   // Return if delaytime is set to zero
 
