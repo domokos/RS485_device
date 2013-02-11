@@ -101,6 +101,7 @@ void data_communication_test(void)
             response_opcode = COMMAND_SUCCESS;
             break;
           case PING:
+            bus_flood_test(43,10);
             response_opcode = ECHO;
             break;
           case SET_COMM_SPEED:
@@ -112,6 +113,8 @@ void data_communication_test(void)
            break;
           }
           send_response(response_opcode,message_buffer->content[SEQ]);
+        } else {
+            P1_4 = 1;
         }
 
     }
@@ -123,6 +126,7 @@ void data_communication_test(void)
 void main(void)
 {
 
+  P1=0;
   // Set 4800 baud @ 11.0592 MHz Crystal
   init_comm(HOST_ID,COMM_SPEED_4800_H);
 

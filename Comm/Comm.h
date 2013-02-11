@@ -189,6 +189,8 @@ void set_comm_speed(unsigned char comm_speed);
 // returns a pointer to the message if a message is received
 struct message_struct* get_message(void);
 
+// Low level flood test of the bus
+void bus_flood_test(unsigned char character, int repeat);
 
 /*
  * Internal functions - should not be called from outside of the comm modul

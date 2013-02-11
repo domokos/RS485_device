@@ -43,6 +43,20 @@ __code static const struct comm_speed_struct comm_speeds[] = {
     {0xff,1} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
 };
 
+// Low level flood test of the bus
+void bus_flood_test(unsigned char character, int repeat)
+{
+ set_comm_direction(DEVICE_SENDS);
+ while(repeat--)
+   {
+     UART_send_complete = FALSE;
+      SBUF = character;
+      do{
+        }while(!UART_send_complete);
+   }
+ set_comm_direction(DEVICE_LISTENS);
+}
+
 /*
  * Internal utility functions
  */
