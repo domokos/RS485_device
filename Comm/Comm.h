@@ -11,28 +11,33 @@
 #include "Base.h"
 
 #define MAX_MESSAGE_LENGTH 15
+#define TRAIN_LENGTH_RCV 8
+#define TRAIN_LENGTH_SND 16
 
 // Messaging states
-#define AWAITING_START_FRAME 0
-#define RECEIVING_MESSAGE 1
+#define WAITING_FOR_TRAIN 0
+#define RECEIVING_TRAIN 1
+#define IN_SYNC 2
+#define RECEIVING_MESSAGE 3
+#define RECEIVING_CRC1 4
+#define RECEIVING_CRC2 5
 
 /*
  * The number after which get_message is called while waiting for a character
- * during transmission of a frame but recieving none that will cause
+ * during transmission of a frame but receiving none that will cause
  * it to reset: a timeout limit.
 */
-#define MESSAGE_TIMEOUT_COUNT_LIMIT 500
+#define MESSAGE_TIMEOUT_COUNT_LIMIT 50
 
 // Messaging frame structure elements
-#define START_FRAME 0x55
-#define END_FRAME 0x5d
-#define MESSAGE_ESCAPE 0x7d
+#define TRAIN_CHR 0x55
+#define ESCAPE_CHR 0x7d
 
 // Messaging error conditions
 #define NO_ERROR 0 // No error
-#define NO_START_FRAME_RECEIVED 1 // Expected message start frame, got something else => Ignoring the frame
+#define NO_TRAIN_RECEIVED 1 // Expected train sequence, got something else => Ignoring communication
 #define MESSAGE_TOO_LONG 2 // Receive buffer length exceeded
-#define MESSAGING_TIMEOUT 3 // Timeout occured
+#define MESSAGING_TIMEOUT 3 // Timeout occured - expected but no communication is seen on the bus
 #define COMM_CRC_ERROR 4; // Frame with CRC error received
 
 // CRC generator polynomial
@@ -95,15 +100,15 @@ struct comm_speed_struct
 // The received message contained CRC error
 // The message has a zero length payload. CRC follows the opcode
 #define CRC_ERROR 0
-// Command succesfully recieved response messge payload
+// Command succesfully received response messge payload
 // contains the information requested by the master
 #define COMMAND_SUCCESS 1
-// Command succesfully recieved, execution of the
+// Command succesfully received, execution of the
 // requested operation failed, original status preserved or
 // status undefined
 #define COMMAND_FAIL 2
 // Response to a PING message - should contain the same
-// message recieved in the PING
+// message received in the PING
 #define ECHO 3
 
 
@@ -125,17 +130,17 @@ struct message_struct
 
 /**********************************************************************************
  * The messaging format:
- * START_FRAME - 8 bits
+ * TRAIN_CHR - n*8 bits
  * SLAVE_ADDRESS - 8 bits
  * SEQ - 8 bits
  * OPCODE - 8 bits
  * PARAMERER - arbitrary number of bytes
- * CRC - 2*8 bits calculated for the data including start frame and the last byte of parameter
- * END_FRAME - 8 bits
+ * TRAIN_CHR - indicating end of message
+ * CRC - 2*8 bits calculated for the data excluding start frame
+ * Train_CHR - 8 bits - to make sure bus state remains in send during transmitting CRC
  *
  *  * The SEQ field holds a message sequence number
- *      SEQ
- *      Index must point to the last parameter byte
+ *  * Index of the message buffer points to the last parameter byte
  ***********************************************************************************/
 
 // The buffer indexes
@@ -204,5 +209,7 @@ static void UART_putchar(unsigned char value);
 
 // Set the direction of communication
 static void set_comm_direction(unsigned char direction);
+
+static void count_and_perform_timeout(void);
 
 #endif /* COMM_H_ */

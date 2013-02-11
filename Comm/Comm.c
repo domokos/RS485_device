@@ -16,7 +16,8 @@ static volatile unsigned char UART_received_char;
 static volatile bool UART_char_needs_processing;
 static volatile bool UART_send_complete;
 static volatile bool UART_char_lost;
-static bool escape_char_recieved;
+static bool escape_char_received;
+static unsigned char train_length;
 static unsigned char comm_error;
 static unsigned char comm_state;
 static unsigned char host_address;
@@ -126,18 +127,17 @@ ISR(SERIAL,0)
   return;
 }
 
-
 // Send a character to the UART
 static void UART_putchar(unsigned char value)
 {
-  UART_send_complete = FALSE;
-  SBUF = value;
   do{
 /*
  * The serial interrupt handler will set the UARTsend_complete flag
  * Optimizer will let us do this as the variable is declared as volatile
 */
     }while(!UART_send_complete);
+  UART_send_complete = FALSE;
+  SBUF = value;
 }
 
 // Set the direction of communication
@@ -146,6 +146,18 @@ static void set_comm_direction(unsigned char direction)
   COMM_DIRECTION_PIN = direction;
 }
 
+static void count_and_perform_timeout(void)
+{
+  // Increase timeout counter
+  message_timeout_counter++;
+  // If timeout limit is reached start waiting for train
+  if (message_timeout_counter > MESSAGE_TIMEOUT_COUNT_LIMIT)
+    {
+      comm_state = WAITING_FOR_TRAIN;
+      comm_error = MESSAGING_TIMEOUT;
+      message_buffer.index = 0;
+    }
+}
 
 /*
  * Public interface
@@ -158,15 +170,13 @@ void reset_comm(void)
   message_buffer.index = 0;
 
   // Clear processing queue
-  UART_char_needs_processing = FALSE;
-  UART_send_complete = FALSE;
-  UART_char_lost = FALSE;
+  train_length = 0;
   comm_error = NO_ERROR;
-  escape_char_recieved = FALSE;
+  escape_char_received = FALSE;
   CRC_burst_error_count = 0;
 
   // Set the initial state
-  comm_state = AWAITING_START_FRAME;
+  comm_state = WAITING_FOR_TRAIN;
   message_timeout_counter = 0;
 
   // Listen on the bus for commands
@@ -193,6 +203,11 @@ void init_comm(unsigned char host_address, unsigned char comm_speed)
 
   // Set the host address
   set_host_address(host_address);
+
+  // Reset SW flags of the UART
+  UART_char_needs_processing = FALSE;
+  UART_send_complete = TRUE;
+  UART_char_lost = FALSE;
 
   // Reset the communication channel
   reset_comm();
@@ -260,30 +275,37 @@ void send_response(unsigned char opcode, unsigned char seq)
   message_buffer.content[OPCODE] = opcode;
   message_buffer.content[SEQ] = seq;
 
+  // Calculate the CRC
   crc = calculate_message_CRC16();
-  message_buffer.content[CRC1] = (unsigned char) ((crc & 0xff00) >> 8);
-  message_buffer.content[CRC2] = (unsigned char) (crc & 0x00ff);
 
   // Now send the message
   set_comm_direction(DEVICE_SENDS);
 
-  // Frame head first
-   UART_putchar(START_FRAME);
+  // Send the train sequence
+  for(i=0; i<TRAIN_LENGTH_SND; i++)
+    {
+      UART_putchar(TRAIN_CHR);
+    }
 
    // Send message body
-  for (i=SLAVE_ADDRESS; i<=CRC2;i++)
+  for (i=SLAVE_ADDRESS; i<CRC1; i++)
     {
       // Escape special characters
-      if (message_buffer.content[i] == MESSAGE_ESCAPE ||
-          message_buffer.content[i] == START_FRAME ||
-          message_buffer.content[i] == END_FRAME)
-            UART_putchar(MESSAGE_ESCAPE);
+      if (message_buffer.content[i] == ESCAPE_CHR ||
+          message_buffer.content[i] == TRAIN_CHR)
+            UART_putchar(ESCAPE_CHR);
 
       UART_putchar(message_buffer.content[i]);
     }
 
-  // Send frame end
-  UART_putchar(END_FRAME);
+  // Send a train chr to indicate end of message
+  UART_putchar(TRAIN_CHR);
+
+  UART_putchar((unsigned char) ((crc & 0xff00) >> 8));
+  UART_putchar((unsigned char) (crc & 0x00ff));
+
+  // Send a train chr to make sure bus communication goes OK while in send mode (Practically a delay)
+  UART_putchar(TRAIN_CHR);
 
   // Listen on the bus
   set_comm_direction(DEVICE_LISTENS);
@@ -291,11 +313,12 @@ void send_response(unsigned char opcode, unsigned char seq)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
+// Logically clean but suboptimal implementation
 struct message_struct* get_message(void)
 {
   unsigned char ch_received = 0;
   bool process_char = FALSE;
-  bool message_recieved = FALSE;
+  bool message_received = FALSE;
 
   if(UART_char_needs_processing)
     {
@@ -304,94 +327,134 @@ struct message_struct* get_message(void)
       ch_received = UART_received_char;
       ES = 1; // Enable serial interrupt
       process_char = TRUE;
+      // Reset message timeout counter as a character is received
+      message_timeout_counter = 0;
     }
 
-  if(process_char)
-    {
-      // A character is recieved by UART - process it
-      message_timeout_counter = 0;
-      switch (comm_state) {
-      case AWAITING_START_FRAME:
-        if (ch_received == START_FRAME)
+  switch (comm_state) {
+    case WAITING_FOR_TRAIN:
+      if(process_char)
+        {
+        if (ch_received == TRAIN_CHR)
           {
             // Switch the state to wait for the address fileld of the frame
-            comm_state = RECEIVING_MESSAGE;
+            // reset the next state by setting train_length to zero
+            train_length = 0;
+            comm_state = RECEIVING_TRAIN;
             comm_error = NO_ERROR;
           } else {
             // Communication error: frame out of sync set the error_condition and
             // do not change communication state: keep waiting for a start frame.
-            comm_error = NO_START_FRAME_RECEIVED;
+            comm_error = NO_TRAIN_RECEIVED;
           }
-        break;
-      case RECEIVING_MESSAGE:
-        if(message_buffer.index > MAX_MESSAGE_LENGTH-1)
+        } else {
+         // Do nothing stay in current state
+        }
+      break;
+
+    case IN_SYNC:
+    case RECEIVING_TRAIN:
+      if(process_char)
+        {
+        if (ch_received == TRAIN_CHR)
           {
-            // Set error, start waiting for next message head, ignore the rest of the message
-            // and clear the message buffer
-            comm_error = MESSAGE_TOO_LONG;
-            comm_state = AWAITING_START_FRAME;
-            escape_char_recieved = FALSE;
-            message_buffer.index = 0;
-
-          }else if (ch_received == MESSAGE_ESCAPE && !escape_char_recieved) {
-            // Set the escape flag and wait for the next character
-            escape_char_recieved = TRUE;
-            comm_error = NO_ERROR;
-
-          }else if (ch_received != END_FRAME || escape_char_recieved) {
-            // Receive the message character and clear the escape flag
-            message_buffer.content[message_buffer.index]=ch_received;
-            message_buffer.index++;
-            escape_char_recieved = FALSE;
-            comm_error = NO_ERROR;
-
-          }else {
-            // End frame received change state to waiting for the next message
-            // and perform post processing
-            comm_state = AWAITING_START_FRAME;
-
-            // Decrease index to point to the last byte of the message payload
-            // excluding CRC bytes
-            message_buffer.index -= 3;
-            if (calculate_message_CRC16() == (unsigned int)((message_buffer.content[CRC1] << 8) | (message_buffer.content[CRC2])))
-            {
-                // CRC is OK.
-            	CRC_burst_error_count = 0;
-            	message_recieved = TRUE;
-            	comm_error = NO_ERROR;
-
-            } else {
-            	// CRC is wrong: send error response if this host is the addressee
-            	if(host_address == message_buffer.content[SLAVE_ADDRESS])
-            	  {
-            	    // Send no parameter in the message
-            	    message_buffer.index = PARAMETER_START-1;
-            	    send_response(CRC_ERROR,message_buffer.content[SEQ]);
-            	  }
-            	// Clear message buffer
-            	message_buffer.index = 0;
-            	CRC_burst_error_count++;
-            	comm_error = COMM_CRC_ERROR;
-            }
+            // Recieved the expected character increase the
+            // train length seen so far and cahge state if
+            // enough train is seen
+            train_length++;
+            if(train_length == TRAIN_LENGTH_RCV)
+              {
+                comm_state = IN_SYNC;
+              }
+          } else {
+            if (comm_state ==  RECEIVING_TRAIN)
+              {
+                // Not a train character is received, not yet synced
+                // Go back to Waiting for train state
+                comm_state = WAITING_FOR_TRAIN;
+                comm_error = NO_TRAIN_RECEIVED;
+              } else {
+                // Got a non-train character when synced -
+                // start processig the message: change state
+                comm_state = RECEIVING_MESSAGE;
+                message_buffer.content[0]=ch_received;
+                message_buffer.index = 1;
+                escape_char_received = FALSE;
+              }
           }
-        break;
-      }
+        } else count_and_perform_timeout();
+      break;
 
-    } else {
-        // No character is recieved by UART
-        // maintain a timeout counter and cleanup communication if
-        // no transmission is seen on the bus after timeout has elapsed
-    	if( comm_state == RECEIVING_MESSAGE )
-    	{
-    	    if (message_timeout_counter++ > MESSAGE_TIMEOUT_COUNT_LIMIT )
-    	      {
-    	        message_timeout_counter = 0;
-    	        comm_state =  AWAITING_START_FRAME;
-    	        message_buffer.index = 0;
-    	        comm_error = MESSAGING_TIMEOUT;
-    	      }
-    	}
+    case RECEIVING_MESSAGE:
+      if(process_char)
+        {
+          if(message_buffer.index > MAX_MESSAGE_LENGTH-1)
+            {
+              // Set error, start waiting for next train, ignore the rest of the message
+              // and clear the message buffer
+              comm_error = MESSAGE_TOO_LONG;
+              comm_state = WAITING_FOR_TRAIN;
+              escape_char_received = FALSE;
+              message_buffer.index = 0;
 
-    }
-  if(message_recieved) return &message_buffer; else return NULL;
+            }else if (ch_received == ESCAPE_CHR && !escape_char_received && message_buffer.index > 2) {
+              // Set the escape flag and wait for the next character
+              escape_char_received = TRUE;
+
+            } else if (ch_received == TRAIN_CHR && !escape_char_received && message_buffer.index > 2) {
+              // Train character received start receiving the 2 CRC bytes
+                comm_state = RECEIVING_CRC1;
+
+            }else {
+              // Receive the escaped or not escaped message character
+              // and clear the escape flag
+              message_buffer.content[message_buffer.index]=ch_received;
+              message_buffer.index++;
+              escape_char_received = FALSE;
+
+            }
+        } else count_and_perform_timeout();
+      break;
+
+    case RECEIVING_CRC1:
+    case RECEIVING_CRC2:
+      if(process_char)
+        {
+          // If character is received and it was the first CRC character then
+          // get the first CRC and proceed on waiting for the next character
+          if (comm_state == RECEIVING_CRC1)
+            {
+              // Fix message buffer indes so that it points to the
+              // last message character recieved
+              message_buffer.index--;
+              message_buffer.content[CRC1] = ch_received;
+              comm_state = RECEIVING_CRC2;
+              break;
+            }
+
+          message_buffer.content[CRC2] = ch_received;
+
+          // Check the CRC of the message
+          if (calculate_message_CRC16() == (unsigned int)((message_buffer.content[CRC1] << 8) | (message_buffer.content[CRC2])))
+          {
+              // CRC is OK.
+              CRC_burst_error_count = 0;
+              message_received = TRUE;
+          } else {
+              // CRC is wrong: send error response if this host is the addressee
+              if(host_address == message_buffer.content[SLAVE_ADDRESS])
+                {
+                  // Send no parameter in the message
+                  message_buffer.index = PARAMETER_START-1;
+                  send_response(CRC_ERROR,message_buffer.content[SEQ]);
+                }
+              CRC_burst_error_count++;
+              comm_error = COMM_CRC_ERROR;
+          }
+          comm_state = WAITING_FOR_TRAIN;
+        } else count_and_perform_timeout();
+      break;
+  }
+
+  if(message_received) return &message_buffer; else return NULL;
 }

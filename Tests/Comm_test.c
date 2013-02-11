@@ -31,7 +31,7 @@ void initial_test(void)
 
   /*
    To test send this valid message in the emulator:
-  {55,1,4b,75,74,79,61,b6,10,5d}
+  {55,55,55,55,55,55,55,55,55,55,55,55,01,4b,75,74,79,61,55,b6,10}
   Original: 014b75747961
   Flipped: 80d2ae2e9e86
   80d2ae2e9e86
@@ -65,6 +65,14 @@ void reverse_message_buffer(struct message_struct *_message_buffer)
     }
 }
 
+/*
+ * To send a PING:
+ * {55,55,55,55,55,55,55,55,55,55,55,01,36,05,55,0c,6b}
+ *
+ * To identyfy a Register 4 (expected response "P1_4"):
+ * {55,55,55,55,55,55,55,55,55,55,55,01,36,02,04,55,9e,5c,55}
+ *
+ */
 void data_communication_test(void)
 {
   unsigned char p,response_opcode;
@@ -86,7 +94,7 @@ void data_communication_test(void)
             response_opcode = COMMAND_SUCCESS;
             break;
           case IDENTTIFY_REGISTER:
-            message_buffer->content[PARAMETER_START+3] = message_buffer->content[PARAMETER_START];
+            message_buffer->content[PARAMETER_START+3] = message_buffer->content[PARAMETER_START]+'0';
             message_buffer->content[PARAMETER_START] = 'P';
             message_buffer->content[PARAMETER_START+1] = '1';
             message_buffer->content[PARAMETER_START+2] = '_';
@@ -101,7 +109,6 @@ void data_communication_test(void)
             response_opcode = COMMAND_SUCCESS;
             break;
           case PING:
-            bus_flood_test(43,10);
             response_opcode = ECHO;
             break;
           case SET_COMM_SPEED:
