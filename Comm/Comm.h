@@ -38,7 +38,7 @@
 #define NO_TRAIN_RECEIVED 1 // Expected train sequence, got something else => Ignoring communication
 #define MESSAGE_TOO_LONG 2 // Receive buffer length exceeded
 #define MESSAGING_TIMEOUT 3 // Timeout occured - expected but no communication is seen on the bus
-#define COMM_CRC_ERROR 4; // Frame with CRC error received
+#define COMM_CRC_ERROR 4 // Frame with CRC error received
 
 // CRC generator polynomial
 #define CRC16_POLYNOMIAL 0x1021
@@ -125,6 +125,7 @@ struct message_struct
 */
 
 #define COMM_DIRECTION_PIN P3_7
+// States of the communication direction pin
 #define DEVICE_LISTENS 0
 #define DEVICE_SENDS 1
 
