@@ -140,7 +140,11 @@ void main(void)
 
 //  initial_test();
 
-  data_communication_test();
+//  data_communication_test();
 
-
+  while(1)
+  {
+	  delay_msec(100);
+	  P1_4 = !P1_4;
+  }
 }

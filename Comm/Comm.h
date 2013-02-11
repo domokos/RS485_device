@@ -30,7 +30,7 @@
 #define MESSAGE_TIMEOUT_COUNT_LIMIT 50
 
 // Messaging frame structure elements
-#define TRAIN_CHR 0x55
+#define TRAIN_CHR 0xff
 #define ESCAPE_CHR 0x7d
 
 // Messaging error conditions
