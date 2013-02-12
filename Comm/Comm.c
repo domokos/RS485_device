@@ -329,130 +329,119 @@ struct message_struct* get_message(void)
       process_char = TRUE;
       // Reset message timeout counter as a character is received
       message_timeout_counter = 0;
+    } else {
+      if (comm_state != WAITING_FOR_TRAIN) count_and_perform_timeout();
+      return NULL;
     }
 
   switch (comm_state) {
     case WAITING_FOR_TRAIN:
-      if(process_char)
+      if (ch_received == TRAIN_CHR)
         {
-        if (ch_received == TRAIN_CHR)
-          {
-            // Switch the state to wait for the address fileld of the frame
-            // reset the next state by setting train_length to zero
-            train_length = 0;
-            comm_state = RECEIVING_TRAIN;
-            comm_error = NO_ERROR;
-          } else {
-            // Communication error: frame out of sync set the error_condition and
-            // do not change communication state: keep waiting for a start frame.
-            comm_error = NO_TRAIN_RECEIVED;
-          }
+          // Switch the state to wait for the address fileld of the frame
+          // reset the next state by setting train_length to zero
+          train_length = 0;
+          comm_state = RECEIVING_TRAIN;
+          comm_error = NO_ERROR;
         } else {
-         // Do nothing stay in current state
+          // Communication error: frame out of sync set the error_condition and
+          // do not change communication state: keep waiting for a start frame.
+          comm_error = NO_TRAIN_RECEIVED;
         }
       break;
 
     case IN_SYNC:
     case RECEIVING_TRAIN:
-      if(process_char)
+      if (ch_received == TRAIN_CHR)
         {
-        if (ch_received == TRAIN_CHR)
-          {
-            // Recieved the expected character increase the
-            // train length seen so far and cahge state if
-            // enough train is seen
-            train_length++;
-            if(train_length == TRAIN_LENGTH_RCV)
-              {
-                comm_state = IN_SYNC;
-              }
-          } else {
-            if (comm_state ==  RECEIVING_TRAIN)
-              {
-                // Not a train character is received, not yet synced
-                // Go back to Waiting for train state
-                comm_state = WAITING_FOR_TRAIN;
-                comm_error = NO_TRAIN_RECEIVED;
-              } else {
-                // Got a non-train character when synced -
-                // start processig the message: change state
-                comm_state = RECEIVING_MESSAGE;
-                message_buffer.content[0]=ch_received;
-                message_buffer.index = 1;
-                escape_char_received = FALSE;
-              }
-          }
-        } else count_and_perform_timeout();
+          // Recieved the expected character increase the
+          // train length seen so far and cahge state if
+          // enough train is seen
+          train_length++;
+          if(train_length == TRAIN_LENGTH_RCV)
+            {
+              comm_state = IN_SYNC;
+            }
+        } else {
+          if (comm_state ==  RECEIVING_TRAIN)
+            {
+              // Not a train character is received, not yet synced
+              // Go back to Waiting for train state
+              comm_state = WAITING_FOR_TRAIN;
+              comm_error = NO_TRAIN_RECEIVED;
+            } else {
+              // Got a non-train character when synced -
+              // start processig the message: change state
+              comm_state = RECEIVING_MESSAGE;
+              message_buffer.content[0]=ch_received;
+              message_buffer.index = 1;
+              escape_char_received = FALSE;
+            }
+        }
       break;
 
     case RECEIVING_MESSAGE:
-      if(process_char)
+      if(message_buffer.index > MAX_MESSAGE_LENGTH-1)
         {
-          if(message_buffer.index > MAX_MESSAGE_LENGTH-1)
-            {
-              // Set error, start waiting for next train, ignore the rest of the message
-              // and clear the message buffer
-              comm_error = MESSAGE_TOO_LONG;
-              comm_state = WAITING_FOR_TRAIN;
-              escape_char_received = FALSE;
-              message_buffer.index = 0;
+          // Set error, start waiting for next train, ignore the rest of the message
+          // and clear the message buffer
+          comm_error = MESSAGE_TOO_LONG;
+          comm_state = WAITING_FOR_TRAIN;
+          escape_char_received = FALSE;
+          message_buffer.index = 0;
 
-            }else if (ch_received == ESCAPE_CHR && !escape_char_received && message_buffer.index > 2) {
-              // Set the escape flag and wait for the next character
-              escape_char_received = TRUE;
+        }else if (ch_received == ESCAPE_CHR && !escape_char_received && message_buffer.index > 2) {
+          // Set the escape flag and wait for the next character
+          escape_char_received = TRUE;
 
-            } else if (ch_received == TRAIN_CHR && !escape_char_received && message_buffer.index > 2) {
-              // Train character received start receiving the 2 CRC bytes
-                comm_state = RECEIVING_CRC1;
+        } else if (ch_received == TRAIN_CHR && !escape_char_received && message_buffer.index > 2) {
+          // Train character received start receiving the 2 CRC bytes
+            comm_state = RECEIVING_CRC1;
 
-            }else {
-              // Receive the escaped or not escaped message character
-              // and clear the escape flag
-              message_buffer.content[message_buffer.index]=ch_received;
-              message_buffer.index++;
-              escape_char_received = FALSE;
+        }else {
+          // Receive the escaped or not escaped message character
+          // and clear the escape flag
+          message_buffer.content[message_buffer.index]=ch_received;
+          message_buffer.index++;
+          escape_char_received = FALSE;
 
-            }
-        } else count_and_perform_timeout();
+        }
       break;
 
     case RECEIVING_CRC1:
     case RECEIVING_CRC2:
-      if(process_char)
+      // If character is received and it was the first CRC character then
+      // copy the first CRC into buffer and proceed on waiting for the next CRC character
+      if (comm_state == RECEIVING_CRC1)
         {
-          // If character is received and it was the first CRC character then
-          // get the first CRC and proceed on waiting for the next character
-          if (comm_state == RECEIVING_CRC1)
+          // Fix message buffer indes so that it points to the
+          // last message character recieved
+          message_buffer.index--;
+          message_buffer.content[CRC1] = ch_received;
+          comm_state = RECEIVING_CRC2;
+          break;
+        }
+
+      message_buffer.content[CRC2] = ch_received;
+
+      // Check the CRC of the message
+      if (calculate_message_CRC16() == (unsigned int)((message_buffer.content[CRC1] << 8) | (message_buffer.content[CRC2])))
+      {
+          // CRC is OK.
+          CRC_burst_error_count = 0;
+          message_received = TRUE;
+      } else {
+          // CRC is wrong: send error response if this host is the addressee
+          if(host_address == message_buffer.content[SLAVE_ADDRESS])
             {
-              // Fix message buffer indes so that it points to the
-              // last message character recieved
-              message_buffer.index--;
-              message_buffer.content[CRC1] = ch_received;
-              comm_state = RECEIVING_CRC2;
-              break;
+              // Send no parameter in the message
+              message_buffer.index = PARAMETER_START-1;
+              send_response(CRC_ERROR,message_buffer.content[SEQ]);
             }
-
-          message_buffer.content[CRC2] = ch_received;
-
-          // Check the CRC of the message
-          if (calculate_message_CRC16() == (unsigned int)((message_buffer.content[CRC1] << 8) | (message_buffer.content[CRC2])))
-          {
-              // CRC is OK.
-              CRC_burst_error_count = 0;
-              message_received = TRUE;
-          } else {
-              // CRC is wrong: send error response if this host is the addressee
-              if(host_address == message_buffer.content[SLAVE_ADDRESS])
-                {
-                  // Send no parameter in the message
-                  message_buffer.index = PARAMETER_START-1;
-                  send_response(CRC_ERROR,message_buffer.content[SEQ]);
-                }
-              CRC_burst_error_count++;
-              comm_error = COMM_CRC_ERROR;
-          }
-          comm_state = WAITING_FOR_TRAIN;
-        } else count_and_perform_timeout();
+          CRC_burst_error_count++;
+          comm_error = COMM_CRC_ERROR;
+      }
+      comm_state = WAITING_FOR_TRAIN;
       break;
   }
 
