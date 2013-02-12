@@ -345,13 +345,15 @@ struct message_struct* get_message(void)
           comm_error = NO_ERROR;
         } else {
           // Communication error: frame out of sync set the error_condition and
-          // do not change communication state: keep waiting for a start frame.
+          // do not change communication state: keep waiting for a train character.
           comm_error = NO_TRAIN_RECEIVED;
         }
       break;
 
-    case IN_SYNC:
+    // Optimizing for smaller code size for the microcontroller -
+    // hece the two similar states are handled together
     case RECEIVING_TRAIN:
+    case IN_SYNC:
       if (ch_received == TRAIN_CHR)
         {
           // Recieved the expected character increase the
@@ -390,11 +392,11 @@ struct message_struct* get_message(void)
           escape_char_received = FALSE;
           message_buffer.index = 0;
 
-        }else if (ch_received == ESCAPE_CHR && !escape_char_received && message_buffer.index > 2) {
+        }else if (ch_received == ESCAPE_CHR && !escape_char_received) {
           // Set the escape flag and wait for the next character
           escape_char_received = TRUE;
 
-        } else if (ch_received == TRAIN_CHR && !escape_char_received && message_buffer.index > 2) {
+        } else if (ch_received == TRAIN_CHR && !escape_char_received) {
           // Train character received start receiving the 2 CRC bytes
             comm_state = RECEIVING_CRC1;
 
@@ -409,19 +411,14 @@ struct message_struct* get_message(void)
       break;
 
     case RECEIVING_CRC1:
-    case RECEIVING_CRC2:
-      // If character is received and it was the first CRC character then
-      // copy the first CRC into buffer and proceed on waiting for the next CRC character
-      if (comm_state == RECEIVING_CRC1)
-        {
-          // Fix message buffer indes so that it points to the
-          // last message character recieved
-          message_buffer.index--;
-          message_buffer.content[CRC1] = ch_received;
-          comm_state = RECEIVING_CRC2;
-          break;
-        }
+      // Fix message buffer index so that it points to the
+      // last message character recieved
+      message_buffer.index--;
+      message_buffer.content[CRC1] = ch_received;
+      comm_state = RECEIVING_CRC2;
+      break;
 
+    case RECEIVING_CRC2:
       message_buffer.content[CRC2] = ch_received;
 
       // Check the CRC of the message
