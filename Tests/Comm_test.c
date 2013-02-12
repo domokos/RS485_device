@@ -31,7 +31,7 @@ void initial_test(void)
 
   /*
    To test send this valid message in the emulator:
-  {55,55,55,55,55,55,55,55,55,55,55,55,01,4b,75,74,79,61,55,b6,10}
+  {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,01,4b,75,74,79,61,ff,b6,10}
   Original: 014b75747961
   Flipped: 80d2ae2e9e86
   80d2ae2e9e86
@@ -67,10 +67,10 @@ void reverse_message_buffer(struct message_struct *_message_buffer)
 
 /*
  * To send a PING:
- * {55,55,55,55,55,55,55,55,55,55,55,01,36,05,55,0c,6b}
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,01,36,05,ff,0c,6b}
  *
  * To identyfy a Register 4 (expected response "P1_4"):
- * {55,55,55,55,55,55,55,55,55,55,55,01,36,02,04,55,9e,5c,55}
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,01,36,02,04,ff,9e,5c,ff}
  *
  */
 void data_communication_test(void)
@@ -140,11 +140,11 @@ void main(void)
 
 //  initial_test();
 
-//  data_communication_test();
+  data_communication_test();
 
-  while(1)
-  {
-	  delay_msec(100);
-	  P1_4 = !P1_4;
-  }
+//  while(1)
+//  {
+//	  delay_msec(100);
+//	  P1_4 = !P1_4;
+//  }
 }
