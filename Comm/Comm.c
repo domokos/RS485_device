@@ -304,7 +304,8 @@ void send_response(unsigned char opcode, unsigned char seq)
   UART_putchar((unsigned char) ((crc & 0xff00) >> 8));
   UART_putchar((unsigned char) (crc & 0x00ff));
 
-  // Send a train chr to make sure bus communication goes OK while in send mode (Practically a delay)
+  // Send 2 train chrs to make sure bus communication goes OK while in send mode (Practically a delay)
+  UART_putchar(TRAIN_CHR);
   UART_putchar(TRAIN_CHR);
 
   // Listen on the bus
