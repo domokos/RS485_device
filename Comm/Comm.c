@@ -264,6 +264,12 @@ unsigned char get_CRC_burst_error_count(void)
   return CRC_burst_error_count;
 }
 
+// Return the state of the communication
+unsigned char get_comm_state(void)
+{
+  return comm_state;
+}
+
 /* Function to send response to the master on the bus
  * the function expects message content to be prepared by the caller
  * including message SEQ number

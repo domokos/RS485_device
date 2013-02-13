@@ -181,6 +181,9 @@ void set_host_address(unsigned char _host_address);
 // Return the # of CRC errors seen
 unsigned char get_CRC_burst_error_count(void);
 
+// Return the state of the communication
+unsigned char get_comm_state(void);
+
 // Reset the state of the communication
 void reset_comm(void);
 

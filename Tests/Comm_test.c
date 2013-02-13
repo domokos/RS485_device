@@ -76,7 +76,7 @@ void reverse_message_buffer(struct message_struct *_message_buffer)
 void data_communication_test(void)
 {
   unsigned char p,response_opcode;
-  for(;;)
+  while(1)
     {
       if ( (message_buffer = get_message()) != NULL )
         {
@@ -120,10 +120,8 @@ void data_communication_test(void)
            break;
           }
           send_response(response_opcode,message_buffer->content[SEQ]);
-        } else {
-            P1_4 = 1;
         }
-
+      P1 = get_comm_state();
     }
 }
 
