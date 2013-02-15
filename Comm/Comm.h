@@ -12,7 +12,7 @@
 
 #define MAX_MESSAGE_LENGTH 15
 #define TRAIN_LENGTH_RCV 8
-#define TRAIN_LENGTH_SND 16
+#define TRAIN_LENGTH_SND 20
 
 // Messaging states
 #define WAITING_FOR_TRAIN 0
@@ -27,7 +27,7 @@
  * during transmission of a frame but receiving none that will cause
  * it to reset: a timeout limit.
 */
-#define MESSAGE_TIMEOUT_COUNT_LIMIT 50
+#define MESSAGE_TIMEOUT_COUNT_LIMIT 500
 
 // Messaging frame structure elements
 #define TRAIN_CHR 0xff

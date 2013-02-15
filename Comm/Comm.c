@@ -276,7 +276,7 @@ unsigned char get_comm_state(void)
 */
 void send_response(unsigned char opcode, unsigned char seq)
 {
-  unsigned char i;
+  unsigned char i,j;
   unsigned int crc;
   message_buffer.content[OPCODE] = opcode;
   message_buffer.content[SEQ] = seq;
@@ -288,7 +288,7 @@ void send_response(unsigned char opcode, unsigned char seq)
   set_comm_direction(DEVICE_SENDS);
 
   // Send the train sequence
-  for(i=0; i<TRAIN_LENGTH_SND; i++)
+  for(j=0; j<TRAIN_LENGTH_SND; j++)
     {
       UART_putchar(TRAIN_CHR);
     }
@@ -329,10 +329,10 @@ struct message_struct* get_message(void)
 
   if(UART_char_needs_processing)
     {
-      ES = 0; // Disable serial interrupt to make sure we are copying the correct character
+//      ES = 0; // Disable serial interrupt to make sure we are copying the correct character
       UART_char_needs_processing = FALSE;
       ch_received = UART_received_char;
-      ES = 1; // Enable serial interrupt
+//      ES = 1; // Enable serial interrupt
       process_char = TRUE;
       // Reset message timeout counter as a character is received
       message_timeout_counter = 0;

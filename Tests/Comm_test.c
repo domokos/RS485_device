@@ -65,6 +65,16 @@ void reverse_message_buffer(struct message_struct *_message_buffer)
     }
 }
 
+
+void flood_test(void)
+{
+  while (1)
+    {
+      bus_flood_test(SBUF, 500);
+    }
+
+}
+
 /*
  * To send a PING:
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,01,36,05,ff,0c,6b}
@@ -76,7 +86,7 @@ void reverse_message_buffer(struct message_struct *_message_buffer)
 void data_communication_test(void)
 {
   unsigned char p,response_opcode;
-  while(1)
+  for(;;)
     {
       if ( (message_buffer = get_message()) != NULL )
         {
@@ -121,7 +131,12 @@ void data_communication_test(void)
           }
           send_response(response_opcode,message_buffer->content[SEQ]);
         }
-      P1 = get_comm_state();
+      p = get_comm_state();
+      if (p == 1) P1_1 = 1;
+      if (p == 2) P1_2 = 1;
+      if (p == 3) P1_3 = 1;
+      if (p == 4) P1_4 = 1;
+      if (p == 5) P1_5 = 1;
     }
 }
 
@@ -139,6 +154,7 @@ void main(void)
 //  initial_test();
 
   data_communication_test();
+  // flood_test();
 
 //  while(1)
 //  {
