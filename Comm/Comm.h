@@ -135,22 +135,23 @@ struct message_struct
 /**********************************************************************************
  * The messaging format:
  * TRAIN_CHR - n*8 bits - at least TRAIN_LENGTH_RCV
+ * LENGTH - the length of the message
  * SLAVE_ADDRESS - 8 bits
  * SEQ - 8 bits
  * OPCODE - 8 bits
  * PARAMERER - arbitrary number of bytes
  * CRC - 2*8 bits calculated for the data excluding start frame
- * Train_CHR - 8 bits - to make sure bus state remains in send during transmitting CRC
  *
  *  * The SEQ field holds a message sequence number
  *  * Index of the message buffer points to the last parameter byte
  ***********************************************************************************/
 
 // The buffer indexes
-#define SLAVE_ADDRESS 0
-#define SEQ 1
-#define OPCODE 2
-#define PARAMETER_START 3
+#define LENGTH 0
+#define SLAVE_ADDRESS 1
+#define SEQ 2
+#define OPCODE 3
+#define PARAMETER_START 4
 #define CRC1 message_buffer.index+1
 #define CRC2 message_buffer.index+2
 #define PARAMETER_END message_buffer.index

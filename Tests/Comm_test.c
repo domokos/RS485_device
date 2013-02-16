@@ -72,15 +72,14 @@ void flood_test(void)
     {
       bus_flood_test(SBUF, 500);
     }
-
 }
 
 /*
  * To send a PING:
- * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,01,36,05,ff,0c,6b}
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,06,01,36,05,1d,e5}
  *
  * To identyfy a Register 4 (expected response "P1_4"):
- * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,01,36,02,04,ff,9e,5c,ff}
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,07,01,36,02,04,30,9c}
  *
  */
 void data_communication_test(void)
@@ -133,8 +132,6 @@ void data_communication_test(void)
         }
     }
 }
-
-
 
 
 void main(void)

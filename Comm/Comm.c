@@ -18,7 +18,6 @@ static unsigned char rcv_buffer[RBUFLEN], send_buffer[XBUFLEN];
 static unsigned char rcv_counter, send_counter, rcv_position, send_position;
 static bool UART_busy;
 
-static bool escape_char_received;
 static unsigned char train_length;
 static unsigned char comm_error;
 static unsigned char comm_state;
@@ -110,10 +109,10 @@ ISR(SERIAL,0)
   }
   if (TI) {
    TI = 0;
-   if (UART_busy = send_counter) {   /* Assignment, _not_ comparison! */
-       send_counter--;
-       SBUF = send_buffer [send_position++];
-       if (send_position >= XBUFLEN) send_position = 0;
+   if (UART_busy = send_counter) {   // Assignment, _not_ comparison!
+     send_counter--;
+     SBUF = send_buffer [send_position++];
+     if (send_position >= XBUFLEN) send_position = 0;
    }
   }
 }
@@ -154,6 +153,12 @@ static unsigned char UART_is_char_available(void)
    return rcv_counter;
 }
 
+// Is UART character transmission complete?
+unsigned char is_UART_send_complete (void)
+{
+   return XBUFLEN - send_counter;
+}
+
 // Set the direction of communication
 static void set_comm_direction(unsigned char direction)
 {
@@ -187,10 +192,9 @@ void reset_comm(void)
   // Clear message buffer
   message_buffer.index = 0;
 
-  // Clear processing queue
+  // Clear receiving queue
   train_length = 0;
   comm_error = NO_ERROR;
-  escape_char_received = FALSE;
   CRC_burst_error_count = 0;
 
   // Set the initial state
@@ -281,6 +285,7 @@ void send_response(unsigned char opcode, unsigned char seq)
 {
   unsigned char i,j;
   unsigned int crc;
+  message_buffer.content[LENGTH] = message_buffer.index+3;
   message_buffer.content[OPCODE] = opcode;
   message_buffer.content[SEQ] = seq;
 
@@ -297,18 +302,12 @@ void send_response(unsigned char opcode, unsigned char seq)
     }
 
   // Send message body
-  for (i=SLAVE_ADDRESS; i<CRC1; i++)
+  i = 0;
+  while (i<=PARAMETER_END)
     {
-      // Escape special characters
-      if (message_buffer.content[i] == ESCAPE_CHR ||
-          message_buffer.content[i] == TRAIN_CHR)
-            UART_putc(ESCAPE_CHR);
-
       UART_putc(message_buffer.content[i]);
+      i++;
     }
-
-  // Send a train chr to indicate end of message
-  UART_putc(TRAIN_CHR);
 
   UART_putc((unsigned char) ((crc & 0xff00) >> 8));
   UART_putc((unsigned char) (crc & 0x00ff));
@@ -380,61 +379,39 @@ struct message_struct* get_message(void)
               comm_error = NO_TRAIN_RECEIVED;
             } else {
               // Got a non-train character when synced -
-              // start processig the message: change state
-              comm_state = RECEIVING_MESSAGE;
-              message_buffer.content[0]=ch_received;
-              message_buffer.index = 1;
-              escape_char_received = FALSE;
+              // this is the message length check it and if OK, start receiving
+              if(ch_received > MAX_MESSAGE_LENGTH)
+                {
+                  // Set error, start waiting for next train, ignore the rest of the message
+                  // and clear the message buffer
+                  comm_error = MESSAGE_TOO_LONG;
+                  comm_state = WAITING_FOR_TRAIN;
+                } else {
+                  // Clear message buffer and start recieving
+                  comm_state = RECEIVING_MESSAGE;
+                  message_buffer.content[0] = ch_received;
+                  message_buffer.index = 1;
+                }
             }
         }
       break;
 
     case RECEIVING_MESSAGE:
-      if(message_buffer.index > MAX_MESSAGE_LENGTH-1)
+      // Receive the next message character
+      message_buffer.content[message_buffer.index]=ch_received;
+      message_buffer.index++;
+
+      // It at the end of the message check it
+      if(message_buffer.index >= message_buffer.content[0])
         {
-          // Set error, start waiting for next train, ignore the rest of the message
-          // and clear the message buffer
-          comm_error = MESSAGE_TOO_LONG;
-          comm_state = WAITING_FOR_TRAIN;
-          escape_char_received = FALSE;
-          message_buffer.index = 0;
-
-        }else if (ch_received == ESCAPE_CHR && !escape_char_received) {
-          // Set the escape flag and wait for the next character
-          escape_char_received = TRUE;
-
-        } else if (ch_received == TRAIN_CHR && !escape_char_received) {
-          // Train character received start receiving the 2 CRC bytes
-            comm_state = RECEIVING_CRC1;
-
-        }else {
-          // Receive the escaped or not escaped message character
-          // and clear the escape flag
-          message_buffer.content[message_buffer.index]=ch_received;
-          message_buffer.index++;
-          escape_char_received = FALSE;
-
-        }
-      break;
-
-    case RECEIVING_CRC1:
-      // Fix message buffer index so that it points to the
-      // last message character recieved
-      message_buffer.index--;
-      message_buffer.content[CRC1] = ch_received;
-      comm_state = RECEIVING_CRC2;
-      break;
-
-    case RECEIVING_CRC2:
-      message_buffer.content[CRC2] = ch_received;
-
-      // Check the CRC of the message
-      if (calculate_message_CRC16() == (unsigned int)((message_buffer.content[CRC1] << 8) | (message_buffer.content[CRC2])))
-      {
+         message_buffer.index -= 3;
+        // Check the CRC of the message
+        if (calculate_message_CRC16() == (unsigned int)((message_buffer.content[CRC1] << 8) | (message_buffer.content[CRC2])))
+        {
           // CRC is OK.
           CRC_burst_error_count = 0;
           message_received = TRUE;
-      } else {
+        } else {
           // CRC is wrong: send error response if this host is the addressee
           if(host_address == message_buffer.content[SLAVE_ADDRESS])
             {
@@ -444,8 +421,9 @@ struct message_struct* get_message(void)
             }
           CRC_burst_error_count++;
           comm_error = COMM_CRC_ERROR;
-      }
-      comm_state = WAITING_FOR_TRAIN;
+        }
+        comm_state = WAITING_FOR_TRAIN;
+       }
       break;
   }
 
