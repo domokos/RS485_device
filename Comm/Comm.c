@@ -12,10 +12,12 @@
 #include "Comm.h"
 
 // Global variables facilitating communication
-static volatile unsigned char UART_received_char;
-static volatile bool UART_char_needs_processing;
-static volatile bool UART_send_complete;
-static volatile bool UART_char_lost;
+
+
+static unsigned char rcv_buffer[RBUFLEN], send_buffer[XBUFLEN];
+static unsigned char rcv_counter, send_counter, rcv_position, send_position;
+static bool UART_busy;
+
 static bool escape_char_received;
 static unsigned char train_length;
 static unsigned char comm_error;
@@ -44,20 +46,6 @@ __code static const struct comm_speed_struct comm_speeds[] = {
     {0xff,1} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
 };
 
-// Low level flood test of the bus
-void bus_flood_test(unsigned char character, int repeat)
-{
- set_comm_direction(DEVICE_SENDS);
- while(repeat--)
-   {
-     UART_send_complete = FALSE;
-      SBUF = character;
-      do{
-        }while(!UART_send_complete);
-   }
- set_comm_direction(DEVICE_LISTENS);
-}
-
 /*
  * Internal utility functions
  */
@@ -81,63 +69,89 @@ static unsigned char flip_bits(unsigned char byte)
 }
 
 
-// CRC-CCITT (0xFFFF)
+// CRC-CCITT (0xFFFF) calculator
 static unsigned int calculate_message_CRC16()
 {
 unsigned char i,c;
 unsigned int crc = 0xffff;
 unsigned char num;
 
-for (num=0; num < CRC1; num++)           /* Step through bytes in memory */
+// Step through bytes in memory
+for (num=0; num < CRC1; num++)
 {
-    c = flip_bits(message_buffer.content[num]); /* Flip the bits to comply with the true serial bit order */
-//	c = message_buffer.content[num];
-    crc = crc ^ ((unsigned int)c << 8); /* Fetch byte from memory, XOR into  CRC top byte*/
-    for (i = 0; i < 8; i++)      /* Prepare to rotate 8 bits */
+    // Flip the bits to comply with the true serial bit order
+    c = flip_bits(message_buffer.content[num]);
+
+    // Fetch byte from memory, XOR into  CRC top byte
+    crc = crc ^ ((unsigned int)c << 8);
+
+    // Prepare to rotate 8 bits
+    for (i = 0; i < 8; i++)
     {
-        if (crc & 0x8000)       /* b15 is set... */
-        	crc = (crc << 1) ^ CRC16_POLYNOMIAL;    /* rotate and XOR with polynomial */
-        else                     /* b15 is clear... */
-            crc <<= 1;           /* just rotate */
-    }                            /* Loop for 8 bits */
- }                               /* Loop until num=0 */
- return(crc);                    /* Return updated CRC */
+        // b15 is set...
+        if (crc & 0x8000)
+            // rotate and XOR with polynomial
+            crc = (crc << 1) ^ CRC16_POLYNOMIAL;
+        else                     // b15 is clear...
+            // just rotate
+            crc <<= 1;
+    } // Loop for 8 bits
+ } // Loop until num=0
+ return(crc); // Return updated CRC
 }
 
 // The serial ISR for communication
 ISR(SERIAL,0)
 {
-  if(RI == 1)
-  {
-    RI = 0;
-    UART_received_char = SBUF;
-    if (UART_char_needs_processing)
-    {
-    	UART_char_lost = TRUE;
-    }
-    else
-    {
-    	UART_char_needs_processing = TRUE;
-    	UART_char_lost = FALSE;
-    }
-  }else if(TI == 1){
-    TI = 0;
-    UART_send_complete = TRUE;
+  if (RI) {
+   RI = 0;
+   // Don't overwrite chars already in buffer
+   if (rcv_counter < RBUFLEN) rcv_buffer [(unsigned char)(rcv_position+rcv_counter++) % RBUFLEN] = SBUF;
   }
-  return;
+  if (TI) {
+   TI = 0;
+   if (UART_busy = send_counter) {   /* Assignment, _not_ comparison! */
+       send_counter--;
+       SBUF = send_buffer [send_position++];
+       if (send_position >= XBUFLEN) send_position = 0;
+   }
+  }
 }
 
 // Send a character to the UART
-static void UART_putchar(unsigned char value)
+static void UART_putc(unsigned char c)
 {
-  do{
-/*
- * The serial interrupt handler will set the UARTsend_complete flag
- * Optimizer will let us do this as the variable is declared as volatile
-*/
-    }while(!UART_send_complete);
-  UART_send_complete = FALSE;
-  SBUF = value;
+  // Wait for room in buffer
+  while (send_counter >= XBUFLEN);
+  ES = 0;
+  if (UART_busy) {
+    send_buffer[(unsigned char)(send_position+send_counter++) % XBUFLEN] = c;
+  } else {
+    SBUF = c;
+    UART_busy = 1;
+  }
+  ES = 1;
+}
+
+// Read a character from the UART buffer
+static unsigned char UART_getc(void)
+{
+  unsigned char c;
+  // Wait for a character
+  while (!rcv_counter);
+  ES = 0;
+  rcv_counter--;
+  c = rcv_buffer [rcv_position++];
+  if (rcv_position >= RBUFLEN)
+         rcv_position = 0;
+  ES = 1;
+  return c;
+}
+
+// Are there any caharcters in the UART buffer available for reading?
+static unsigned char UART_is_char_available(void)
+{
+   return rcv_counter;
 }
 
 // Set the direction of communication
@@ -160,12 +174,16 @@ static void count_and_perform_timeout(void)
 }
 
 /*
- * Public interface
+ * Public interface functions
  */
 
 // Reset the state of the communication channel
 void reset_comm(void)
 {
+  __bit ES_tmp = ES;
+  ES_tmp = ES;
+
+  ES = 0;
   // Clear message buffer
   message_buffer.index = 0;
 
@@ -179,8 +197,14 @@ void reset_comm(void)
   comm_state = WAITING_FOR_TRAIN;
   message_timeout_counter = 0;
 
+  // Clear serial communication buffers
+  rcv_counter = send_counter = rcv_position = send_position = 0;
+  UART_busy = 0;
+
   // Listen on the bus for commands
   set_comm_direction(DEVICE_LISTENS);
+
+  ES = ES_tmp;
 }
 
 // Initialize the communication module
@@ -204,11 +228,6 @@ void init_comm(unsigned char host_address, unsigned char comm_speed)
   // Set the host address
   set_host_address(host_address);
 
-  // Reset SW flags of the UART
-  UART_char_needs_processing = FALSE;
-  UART_send_complete = TRUE;
-  UART_char_lost = FALSE;
-
   // Reset the communication channel
   reset_comm();
 
@@ -217,6 +236,7 @@ void init_comm(unsigned char host_address, unsigned char comm_speed)
   REN = 1;
 }
 
+// Set the communication speed of the device
 void set_comm_speed(unsigned char comm_speed)
 {
   TR1  = 0; //Stop Timer 1
@@ -226,6 +246,7 @@ void set_comm_speed(unsigned char comm_speed)
   // Setup the serial port timer Timer1
   TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
   TR1  = 1;       // Start Timer 1
+  reset_comm(); // Reset the communication
 }
 
 // Provide access to the message structure
@@ -240,12 +261,6 @@ unsigned char get_comm_error(void)
   return comm_error;
 }
 
-// Indicate if UART has lost a char
-bool is_UART_char_lost(void)
-{
-  return UART_char_lost;
-}
-
 // Return the host address
 unsigned char get_host_address(void)
 {
@@ -256,18 +271,6 @@ unsigned char get_host_address(void)
 void set_host_address(unsigned char _host_address)
 {
   host_address = _host_address;
-}
-
-// Return the # of CRC errors seen
-unsigned char get_CRC_burst_error_count(void)
-{
-  return CRC_burst_error_count;
-}
-
-// Return the state of the communication
-unsigned char get_comm_state(void)
-{
-  return comm_state;
 }
 
 /* Function to send response to the master on the bus
@@ -290,29 +293,29 @@ void send_response(unsigned char opcode, unsigned char seq)
   // Send the train sequence
   for(j=0; j<TRAIN_LENGTH_SND; j++)
     {
-      UART_putchar(TRAIN_CHR);
+      UART_putc(TRAIN_CHR);
     }
 
-   // Send message body
+  // Send message body
   for (i=SLAVE_ADDRESS; i<CRC1; i++)
     {
       // Escape special characters
       if (message_buffer.content[i] == ESCAPE_CHR ||
           message_buffer.content[i] == TRAIN_CHR)
-            UART_putchar(ESCAPE_CHR);
+            UART_putc(ESCAPE_CHR);
 
-      UART_putchar(message_buffer.content[i]);
+      UART_putc(message_buffer.content[i]);
     }
 
   // Send a train chr to indicate end of message
-  UART_putchar(TRAIN_CHR);
+  UART_putc(TRAIN_CHR);
 
-  UART_putchar((unsigned char) ((crc & 0xff00) >> 8));
-  UART_putchar((unsigned char) (crc & 0x00ff));
+  UART_putc((unsigned char) ((crc & 0xff00) >> 8));
+  UART_putc((unsigned char) (crc & 0x00ff));
 
   // Send 2 train chrs to make sure bus communication goes OK while in send mode (Practically a delay)
-  UART_putchar(TRAIN_CHR);
-  UART_putchar(TRAIN_CHR);
+  UART_putc(TRAIN_CHR);
+  UART_putc(TRAIN_CHR);
 
   // Listen on the bus
   set_comm_direction(DEVICE_LISTENS);
@@ -320,19 +323,15 @@ void send_response(unsigned char opcode, unsigned char seq)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-// Logically clean but suboptimal implementation
 struct message_struct* get_message(void)
 {
   unsigned char ch_received = 0;
   bool process_char = FALSE;
   bool message_received = FALSE;
 
-  if(UART_char_needs_processing)
+  if(UART_is_char_available())
     {
-//      ES = 0; // Disable serial interrupt to make sure we are copying the correct character
-      UART_char_needs_processing = FALSE;
-      ch_received = UART_received_char;
-//      ES = 1; // Enable serial interrupt
+      ch_received = UART_getc();
       process_char = TRUE;
       // Reset message timeout counter as a character is received
       message_timeout_counter = 0;
@@ -366,9 +365,10 @@ struct message_struct* get_message(void)
           // Recieved the expected character increase the
           // train length seen so far and cahge state if
           // enough train is seen
-          train_length++;
-          if(train_length == TRAIN_LENGTH_RCV)
+          if (train_length < TRAIN_LENGTH_RCV)
             {
+              train_length++;
+            }else {
               comm_state = IN_SYNC;
             }
         } else {
@@ -450,4 +450,33 @@ struct message_struct* get_message(void)
   }
 
   if(message_received) return &message_buffer; else return NULL;
+}
+
+// Low level flood test of the bus
+void bus_flood_test(unsigned char character, int repeat)
+{
+ set_comm_direction(DEVICE_SENDS);
+ while(repeat--)
+   {
+     UART_putc(character);
+   }
+ set_comm_direction(DEVICE_LISTENS);
+}
+
+// Return the # of CRC errors seen
+unsigned char get_CRC_burst_error_count(void)
+{
+  return CRC_burst_error_count;
+}
+
+// Return the state of the communication
+unsigned char get_comm_state(void)
+{
+  return comm_state;
+}
+
+// Return train length seen
+unsigned char get_train_length(void)
+{
+  return train_length;
 }

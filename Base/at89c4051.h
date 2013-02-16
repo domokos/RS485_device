@@ -76,7 +76,7 @@ ISR(UTX1, 0)
 #define SBIT(address, name) static unsigned char name;
 #define SFR16(addressH, addressL, name) static unsigned short name;
 #define SFRX(address, name) static unsigned char name;
-#define __bit unsigned char;
+#define __bit unsigned char
 
 #else
 #error "Unknown compiler."

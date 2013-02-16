@@ -10,6 +10,9 @@
 
 #include "Base.h"
 
+// Communication parameters
+#define XBUFLEN 4
+#define RBUFLEN 8
 #define MAX_MESSAGE_LENGTH 15
 #define TRAIN_LENGTH_RCV 8
 #define TRAIN_LENGTH_SND 20
@@ -131,12 +134,11 @@ struct message_struct
 
 /**********************************************************************************
  * The messaging format:
- * TRAIN_CHR - n*8 bits
+ * TRAIN_CHR - n*8 bits - at least TRAIN_LENGTH_RCV
  * SLAVE_ADDRESS - 8 bits
  * SEQ - 8 bits
  * OPCODE - 8 bits
  * PARAMERER - arbitrary number of bytes
- * TRAIN_CHR - indicating end of message
  * CRC - 2*8 bits calculated for the data excluding start frame
  * Train_CHR - 8 bits - to make sure bus state remains in send during transmitting CRC
  *
@@ -169,9 +171,6 @@ struct message_struct* get_message_buffer(void);
 // Get the error state of the comm module
 unsigned char get_comm_error(void);
 
-// Indicate if UART has lost a char
-bool is_UART_char_lost(void);
-
 // Return the host address
 unsigned char get_host_address(void);
 
@@ -183,6 +182,9 @@ unsigned char get_CRC_burst_error_count(void);
 
 // Return the state of the communication
 unsigned char get_comm_state(void);
+
+// Return train length seen
+unsigned char get_train_length(void);
 
 // Reset the state of the communication
 void reset_comm(void);
@@ -209,7 +211,14 @@ void bus_flood_test(unsigned char character, int repeat);
 static unsigned char calculate_message_CRC();
 
 // Send a character to the UART
-static void UART_putchar(unsigned char value);
+static void UART_putc(unsigned char c);
+
+// Read a character from the UART buffer
+static unsigned char UART_getc(void);
+
+// Are there any caharcters in the UART buffer available for reading?
+static unsigned char UART_is_char_available(void);
+
 
 // Set the direction of communication
 static void set_comm_direction(unsigned char direction);

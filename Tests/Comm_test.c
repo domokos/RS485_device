@@ -131,12 +131,6 @@ void data_communication_test(void)
           }
           send_response(response_opcode,message_buffer->content[SEQ]);
         }
-      p = get_comm_state();
-      if (p == 1) P1_1 = 1;
-      if (p == 2) P1_2 = 1;
-      if (p == 3) P1_3 = 1;
-      if (p == 4) P1_4 = 1;
-      if (p == 5) P1_5 = 1;
     }
 }
 
