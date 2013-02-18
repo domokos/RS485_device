@@ -9,10 +9,9 @@
 #define COMM_H_
 
 #include "Base.h"
+#include "Comm_common.h"
 
 // Communication parameters
-#define XBUFLEN 4
-#define RBUFLEN 8
 #define MAX_MESSAGE_LENGTH 15
 #define TRAIN_LENGTH_RCV 8
 #define TRAIN_LENGTH_SND 20
@@ -32,87 +31,12 @@
 */
 #define MESSAGE_TIMEOUT_COUNT_LIMIT 500
 
-// Messaging frame structure elements
-#define TRAIN_CHR 0xff
-#define ESCAPE_CHR 0x7d
-
 // Messaging error conditions
 #define NO_ERROR 0 // No error
 #define NO_TRAIN_RECEIVED 1 // Expected train sequence, got something else => Ignoring communication
 #define MESSAGE_TOO_LONG 2 // Receive buffer length exceeded
 #define MESSAGING_TIMEOUT 3 // Timeout occured - expected but no communication is seen on the bus
 #define COMM_CRC_ERROR 4 // Frame with CRC error received
-
-// CRC generator polynomial
-#define CRC16_POLYNOMIAL 0x1021
-
-/*
- * Command opcodes
- */
-
-// Set the value of a register
-#define SET_REGISTER 0
-// Read the value of a register
-#define READ_REGISTER 1
-// Identify a register by returning its description
-#define IDENTTIFY_REGISTER 2
-// Reset the device to its basic state
-#define RESET_DEVICE 3
-// Perform tests
-#define COMM_TEST_REVERSE_MESSAGE 4
-// PING - master expects an echo and the same payload
-#define PING 5
-// Set communication speed
-#define SET_COMM_SPEED 6
-
-
-
-/*
- * COMMAND PARAMETERS
- */
-// Parameters of SET_COMM_SPEED
-// Timer1 reload and SMOD bit PCON values for 11.0592 MHz Crystal
-struct comm_speed_struct
-{
-  unsigned char   reload_value;
-  unsigned char   is_smod_set;
-};
-
-#define COMM_SPEED_300_L 0
-#define COMM_SPEED_1200_L 1
-#define COMM_SPEED_2400_L 2
-#define COMM_SPEED_4800_L 3
-#define COMM_SPEED_9600_L 4
-#define COMM_SPEED_14400_L 5
-#define COMM_SPEED_28800_L 6
-#define COMM_SPEED_300_H 7
-#define COMM_SPEED_1200_H 8
-#define COMM_SPEED_2400_H 9
-#define COMM_SPEED_4800_H 10
-#define COMM_SPEED_9600_H 11
-#define COMM_SPEED_14400_H 12
-#define COMM_SPEED_19200_H 13
-#define COMM_SPEED_28800_H 14
-#define COMM_SPEED_57600_H 15
-
-
-/*
- *  Response opcodes
- */
-
-// The received message contained CRC error
-// The message has a zero length payload. CRC follows the opcode
-#define CRC_ERROR 0
-// Command succesfully received response messge payload
-// contains the information requested by the master
-#define COMMAND_SUCCESS 1
-// Command succesfully received, execution of the
-// requested operation failed, original status preserved or
-// status undefined
-#define COMMAND_FAIL 2
-// Response to a PING message - should contain the same
-// message received in the PING
-#define ECHO 3
 
 
 // Messaging buffer STRUCT
@@ -156,8 +80,14 @@ struct message_struct
 #define CRC2 message_buffer.index+2
 #define PARAMETER_END message_buffer.index
 
-// The ISR prototypes to be included in the main program;
-ISR(SERIAL,0);
+
+extern static unsigned char train_length;
+extern static unsigned char comm_error;
+extern static unsigned char comm_state;
+extern static unsigned char CRC_burst_error_count;
+extern static unsigned int message_timeout_counter;
+extern static struct message_struct message_buffer;
+
 
 /*
  * Public function library
@@ -207,19 +137,6 @@ void bus_flood_test(unsigned char character, int repeat);
 /*
  * Internal functions - should not be called from outside of the comm modul
 */
-
-//Calculate the 16-Bit checksum of the message
-static unsigned char calculate_message_CRC();
-
-// Send a character to the UART
-static void UART_putc(unsigned char c);
-
-// Read a character from the UART buffer
-static unsigned char UART_getc(void);
-
-// Are there any caharcters in the UART buffer available for reading?
-static unsigned char UART_is_char_available(void);
-
 
 // Set the direction of communication
 static void set_comm_direction(unsigned char direction);
