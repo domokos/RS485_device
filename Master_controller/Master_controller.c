@@ -5,4 +5,13 @@
  *      Author: dmolnar
  */
 
+#include "Master_controller.h"
 
+int main(void)
+{
+  int a=1;
+  while(1)
+    {
+      a--;
+    }
+}

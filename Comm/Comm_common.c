@@ -114,6 +114,47 @@ unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position)
 	 return(crc); // Return updated CRC
 }
 
+// Set the communication speed of the device
+void set_comm_speed(unsigned char comm_speed)
+{
+  TR1  = 0; //Stop Timer 1
+  TL1  = 0xff;    // Start from 255
+  TH1 = comm_speeds[comm_speed].reload_value;
+  if(comm_speeds[comm_speed].is_smod_set) PCON|=SMOD; else PCON&=0x7F;
+  // Setup the serial port timer Timer1
+  TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
+  TR1  = 1;       // Start Timer 1
+  reset_serial(); // Reset the communication
+}
+
+
+// Reset serial communication
+void reset_serial(void)
+{
+  // Disable serial communication
+  ES = 0;
+
+  // Setup the serial port operation mode
+  // Reset receive and transmit interrupt flags and disable receiver enable
+  RI  = 0;TI  = 0;REN = 0;
+  // 8-bit UART mode for serial TIMER1 Mode2 SMOD=1
+  SM1 = 1;SM0 = 0;
+
+  // Set serial RxD and TxD lines to high
+  P3_1=1; P3_0 =1;
+
+  // Multiprocessor communication disabled
+  SM2 = 0;
+
+  // Clear serial communication buffers
+  rcv_counter = send_counter = rcv_position = send_position = 0;
+  UART_busy = 0;
+
+  // Enable Serial interrupt and start listening on the bus
+  ES = 1;
+  REN = 1;
+}
+
 // Send a character to the UART
 void UART_putc(unsigned char c)
 {

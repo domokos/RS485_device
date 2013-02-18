@@ -81,6 +81,10 @@ struct message_struct
 #define PARAMETER_END message_buffer.index
 
 
+/*
+ * Variable definitions of the module
+ */
+
 extern static unsigned char train_length;
 extern static unsigned char comm_error;
 extern static unsigned char comm_state;
@@ -101,12 +105,6 @@ struct message_struct* get_message_buffer(void);
 
 // Get the error state of the comm module
 unsigned char get_comm_error(void);
-
-// Return the host address
-unsigned char get_host_address(void);
-
-// Set the host address
-void set_host_address(unsigned char _host_address);
 
 // Return the # of CRC errors seen
 unsigned char get_CRC_burst_error_count(void);

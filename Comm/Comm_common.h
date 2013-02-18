@@ -117,6 +117,15 @@ static unsigned char flip_bits(unsigned char byte);
  * Public utility functions
  */
 
+//Calculate the 16-Bit checksum of the message
+unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
+
+// Set the communication speed of the device
+void set_comm_speed(unsigned char comm_speed);
+
+// Reset serial communication
+void reset_serial(void);
+
 // Send a character to the UART
 void UART_putc(unsigned char c);
 
@@ -129,8 +138,11 @@ unsigned char UART_is_char_available(void);
 // Is UART character transmission complete?
 char is_UART_send_complete (void);
 
-//Calculate the 16-Bit checksum of the message
-unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
+// Return the host address
+unsigned char get_host_address(void);
+
+// Set the host address
+void set_host_address(unsigned char _host_address);
 
 
 #endif /* COMM_COMMON_H_ */

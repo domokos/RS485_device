@@ -133,9 +133,10 @@ void data_communication_test(void)
     }
 }
 
-
 void main(void)
 {
+  // Enable interrupts
+  EA = 1;
 
   P1=0;
   // Set 4800 baud @ 11.0592 MHz Crystal

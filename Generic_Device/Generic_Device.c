@@ -11,11 +11,9 @@ int a=0;
 void main()
 {
 
- while(a>0)
+ while(1)
    {
 
      a++;
    }
-
-
 }

@@ -20,7 +20,6 @@ static unsigned int message_timeout_counter;
 static struct message_struct message_buffer;
 
 
-
 // Set the direction of communication
 static void set_comm_direction(unsigned char direction)
 {
@@ -47,10 +46,6 @@ static void count_and_perform_timeout(void)
 // Reset the state of the communication channel
 void reset_comm(void)
 {
-  __bit ES_tmp = ES;
-  ES_tmp = ES;
-
-  ES = 0;
   // Clear message buffer
   message_buffer.index = 0;
 
@@ -63,31 +58,15 @@ void reset_comm(void)
   comm_state = WAITING_FOR_TRAIN;
   message_timeout_counter = 0;
 
-  // Clear serial communication buffers
-  rcv_counter = send_counter = rcv_position = send_position = 0;
-  UART_busy = 0;
+  reset_serial();
 
   // Listen on the bus for commands
   set_comm_direction(DEVICE_LISTENS);
-
-  ES = ES_tmp;
 }
 
 // Initialize the communication module
 void init_comm(unsigned char host_address, unsigned char comm_speed)
 {
-  // Setup the serial port operation mode
-  // Reset receive and transmit interrupt flags and disable receiver enable
-  RI  = 0;TI  = 0;REN = 0;
-  // 8-bit UART mode for serial TIMER1 Mode2 SMOD=1
-  SM1 = 1;SM0 = 0;
-
-  // Set serial RxD and TxD lines to high
-  P3_1=1; P3_0 =1;
-
-  // Multiprocessor communication disabled
-  SM2 = 0;
-
   // Set the communication speed
   set_comm_speed(comm_speed);
 
@@ -96,23 +75,6 @@ void init_comm(unsigned char host_address, unsigned char comm_speed)
 
   // Reset the communication channel
   reset_comm();
-
-  // Enable Serial interrupt and start listening on the bus
-  ES = 1; EA = 1;
-  REN = 1;
-}
-
-// Set the communication speed of the device
-void set_comm_speed(unsigned char comm_speed)
-{
-  TR1  = 0; //Stop Timer 1
-  TL1  = 0xff;    // Start from 255
-  TH1 = comm_speeds[comm_speed].reload_value;
-  if(comm_speeds[comm_speed].is_smod_set) PCON|=SMOD; else PCON&=0x7F;
-  // Setup the serial port timer Timer1
-  TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
-  TR1  = 1;       // Start Timer 1
-  reset_comm(); // Reset the communication
 }
 
 // Provide access to the message structure
@@ -264,7 +226,7 @@ struct message_struct* get_message(void)
           message_received = TRUE;
         } else {
           // CRC is wrong: send error response if this host is the addressee
-          if(host_address == message_buffer.content[SLAVE_ADDRESS])
+          if(get_host_address() == message_buffer.content[SLAVE_ADDRESS])
             {
               // Send no parameter in the message
               message_buffer.index = PARAMETER_START-1;
