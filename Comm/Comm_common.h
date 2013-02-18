@@ -23,6 +23,31 @@
 #define CRC16_POLYNOMIAL 0x1021
 
 
+/**********************************************************************************
+ * The messaging format:
+ * TRAIN_CHR - n*8 bits - at least TRAIN_LENGTH_RCV
+ * LENGTH - the length of the message
+ * SLAVE_ADDRESS - 8 bits
+ * SEQ - 8 bits
+ * OPCODE - 8 bits
+ * PARAMERER - arbitrary number of bytes
+ * CRC - 2*8 bits calculated for the data excluding start frame
+ *
+ *  * The SEQ field holds a message sequence number
+ *  * Index of the message buffer points to the last parameter byte
+ ***********************************************************************************/
+
+// The message indexes
+#define LENGTH 0
+#define SLAVE_ADDRESS 1
+#define SEQ 2
+#define OPCODE 3
+#define PARAMETER_START 4
+#define PARAMETER_END message_end
+#define CRC1 message_end+1
+#define CRC2 message_buffer.index+2
+
+
 /*
  * Command opcodes
  */

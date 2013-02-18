@@ -21,8 +21,6 @@
 #define RECEIVING_TRAIN 1
 #define IN_SYNC 2
 #define RECEIVING_MESSAGE 3
-#define RECEIVING_CRC1 4
-#define RECEIVING_CRC2 5
 
 /*
  * The number after which get_message is called while waiting for a character
@@ -56,29 +54,22 @@ struct message_struct
 #define DEVICE_LISTENS 0
 #define DEVICE_SENDS 1
 
-/**********************************************************************************
- * The messaging format:
- * TRAIN_CHR - n*8 bits - at least TRAIN_LENGTH_RCV
- * LENGTH - the length of the message
- * SLAVE_ADDRESS - 8 bits
- * SEQ - 8 bits
- * OPCODE - 8 bits
- * PARAMERER - arbitrary number of bytes
- * CRC - 2*8 bits calculated for the data excluding start frame
- *
- *  * The SEQ field holds a message sequence number
- *  * Index of the message buffer points to the last parameter byte
- ***********************************************************************************/
 
-// The buffer indexes
-#define LENGTH 0
-#define SLAVE_ADDRESS 1
-#define SEQ 2
-#define OPCODE 3
-#define PARAMETER_START 4
-#define CRC1 message_buffer.index+1
-#define CRC2 message_buffer.index+2
+// Redefine message position macros
+#ifdef PARAMETER_END
+#undef PARAMETER_END
 #define PARAMETER_END message_buffer.index
+#endif
+
+#ifdef CRC1
+#undef CRC1
+#define CRC1 message_buffer.index+1
+#endif
+
+#ifdef CRC2
+#undef CRC2
+#define CRC2 message_buffer.index+2
+#endif
 
 
 /*
