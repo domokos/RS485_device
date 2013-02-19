@@ -11,49 +11,6 @@
 
 struct message_struct *MSG_buffer;
 
-void initial_test(void)
-{
-  struct message_struct *test;
-
-  unsigned char a=0;
-  test = get_message_buffer();
-
-  test -> content[0]='A';
-  test -> content[1]='l';
-  test -> content[2]='m';
-  test -> content[3]='a';
-  test -> content[4]='f';
-  test -> content[5]='a';
-  test ->index=5;
-
-  send_response('m','l');
-
-
-  /*
-   To test send this valid message in the emulator:
-  {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,01,4b,75,74,79,61,ff,b6,10}
-  Original: 014b75747961
-  Flipped: 80d2ae2e9e86
-  80d2ae2e9e86
-  CRC flipped: b610
-  */
-
-  for(;;)
-    {
-      if ( (MSG_buffer = get_device_message(MESSAGE_TIMEOUT_COUNT_LIMIT)) != NULL )
-        {
-          MSG_buffer -> content[0]='S';
-          MSG_buffer -> content[1]='i';
-          MSG_buffer -> content[2]='k';
-          MSG_buffer -> content[3]='e';
-          MSG_buffer -> content[4]='r';
-          MSG_buffer -> index=4;
-          send_response('k','i');
-        }
-      a--;
-    }
-}
-
 void reverse_MSG_buffer(struct message_struct *_MSG_buffer)
 {
   unsigned char i, j=_MSG_buffer -> index, tmp;
@@ -68,10 +25,10 @@ void reverse_MSG_buffer(struct message_struct *_MSG_buffer)
 
 /*
  * To send a PING:
- * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,06,01,36,05,1d,e5}
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,07,01,01,36,05,37,cf}
  *
  * To identyfy a Register 4 (expected response "P1_4"):
- * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,07,01,36,02,04,30,9c}
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,08,01,01,36,02,04,2c,d8}
  *
  */
 void data_communication_test(void)

@@ -24,9 +24,11 @@ static void set_device_comm_direction(unsigned char direction)
 // Reset the state of the communication channel
 void reset_device_comm(void)
 {
-  reset_comm();
   // Listen on the bus for commands
   set_device_comm_direction(DEVICE_LISTENS);
+
+  // Reset the serial communication interface
+  reset_comm();
 }
 
 // Initialize the communication module
@@ -66,14 +68,18 @@ struct message_struct* get_device_message(unsigned int timeout_counter_limit)
 
   if ((msg=get_message(timeout_counter_limit)) != NULL)
     {
+    // If this slave is the addressee of the message then check CRC
     if(get_host_address() == msg->content[SLAVE_ADDRESS])
       {
+       // If there is a CRC error then respond with a CRC error message and
+       // do not return it to the caller
        if (get_comm_error() == COMM_CRC_ERROR)
          {
          msg -> index = PARAMETER_START-1;
          send_response(CRC_ERROR,msg->content[SEQ]);
          return NULL;
-       } else {
+         } else {
+         // CRC was OK return the message
          return msg;
        }
       }

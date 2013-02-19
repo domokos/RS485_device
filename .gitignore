@@ -1,12 +1,7 @@
-/CommTest
 /Release
 /.cproject
 /.project
 /.settings
-/CommTests
-/Debug
-/Test
 *.ser
-/Generic_device_test
-/Generic_Device_Test
 /Master_controller_test
+/Generic_Device_Test

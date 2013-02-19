@@ -44,14 +44,15 @@
 // Messaging buffer STRUCT
 struct message_struct
 {
-  unsigned char   content[MAX_MESSAGE_LENGTH];
   unsigned char   index;
+  unsigned char   content[MAX_MESSAGE_LENGTH];
 };
 
 /**********************************************************************************
  * The messaging format:
  * TRAIN_CHR - n*8 bits - at least TRAIN_LENGTH_RCV
  * LENGTH - the length of the message
+ * MASTER_ADDRESS - 8 bits the address of the master
  * SLAVE_ADDRESS - 8 bits
  * SEQ - 8 bits
  * OPCODE - 8 bits
@@ -64,10 +65,11 @@ struct message_struct
 
 // The message indexes
 #define LENGTH 0
-#define SLAVE_ADDRESS 1
-#define SEQ 2
-#define OPCODE 3
-#define PARAMETER_START 4
+#define MASTER_ADDRESS 1
+#define SLAVE_ADDRESS 2
+#define SEQ 3
+#define OPCODE 4
+#define PARAMETER_START 5
 #define PARAMETER_END 0 // message_end - index+0
 #define CRC1 1 // - index+1
 #define CRC2 2 // - index+2
