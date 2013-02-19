@@ -88,7 +88,7 @@ struct message_struct* get_master_message(unsigned int timeout_counter_limit)
        if (get_comm_error() == COMM_CRC_ERROR)
          {
          msg -> index = PARAMETER_START-1;
-         send_response(CRC_ERROR,msg->content[SEQ]);
+//         send_response(CRC_ERROR,msg->content[SEQ]);
          return NULL;
          } else {
          // CRC was OK return the message
