@@ -117,18 +117,6 @@ struct comm_speed_struct
 
 
 /*
- * Variable definitions
-*/
-
-extern static unsigned char rcv_buffer[RBUFLEN], send_buffer[XBUFLEN];
-extern static unsigned char rcv_counter, send_counter, rcv_position, send_position;
-extern static bool UART_busy;
-extern static unsigned char host_address;
-
-extern  __code static const struct comm_speed_struct comm_speeds[];
-
-
-/*
  * Internal utility functions
  */
 

@@ -5,7 +5,7 @@
  *      Author: dmolnar
  */
 
-#include "Comm.h"
+#include "Slave_comm.h"
 
 #define HOST_ID 1
 

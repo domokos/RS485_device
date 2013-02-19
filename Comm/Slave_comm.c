@@ -9,8 +9,7 @@
  */
 
 #include "Base.h"
-#include "Comm_common.h"
-#include "Comm.h"
+#include "Slave_comm.h"
 
 static unsigned char train_length;
 static unsigned char comm_error;
@@ -96,7 +95,7 @@ unsigned char get_comm_error(void)
 */
 void send_response(unsigned char opcode, unsigned char seq)
 {
-  unsigned char i,j;
+  unsigned char i;
   unsigned int crc;
   message_buffer.content[LENGTH] = message_buffer.index+3;
   message_buffer.content[OPCODE] = opcode;
@@ -109,9 +108,11 @@ void send_response(unsigned char opcode, unsigned char seq)
   set_comm_direction(DEVICE_SENDS);
 
   // Send the train sequence
-  for(j=0; j<TRAIN_LENGTH_SND; j++)
+  i=TRAIN_LENGTH_SND;
+  while(i != 0)
     {
       UART_putc(TRAIN_CHR);
+      i--;
     }
 
   // Send message body

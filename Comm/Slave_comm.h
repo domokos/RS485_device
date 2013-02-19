@@ -73,18 +73,6 @@ struct message_struct
 
 
 /*
- * Variable definitions of the module
- */
-
-extern static unsigned char train_length;
-extern static unsigned char comm_error;
-extern static unsigned char comm_state;
-extern static unsigned char CRC_burst_error_count;
-extern static unsigned int message_timeout_counter;
-extern static struct message_struct message_buffer;
-
-
-/*
  * Public function library
  */
 
