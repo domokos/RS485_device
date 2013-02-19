@@ -40,7 +40,7 @@ void initial_test(void)
 
   for(;;)
     {
-      if ( (MSG_buffer = get_message()) != NULL )
+      if ( (MSG_buffer = get_device_message(MESSAGE_TIMEOUT_COUNT_LIMIT)) != NULL )
         {
           MSG_buffer -> content[0]='S';
           MSG_buffer -> content[1]='i';
@@ -66,14 +66,6 @@ void reverse_MSG_buffer(struct message_struct *_MSG_buffer)
 }
 
 
-void flood_test(void)
-{
-  while (1)
-    {
-      bus_flood_test(SBUF, 500);
-    }
-}
-
 /*
  * To send a PING:
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,06,01,36,05,1d,e5}
@@ -87,7 +79,7 @@ void data_communication_test(void)
   unsigned char p,response_opcode;
   for(;;)
     {
-      if ( (MSG_buffer = get_message()) != NULL )
+      if ((MSG_buffer = get_device_message(MESSAGE_TIMEOUT_COUNT_LIMIT)) != NULL )
         {
           switch (MSG_buffer->content[OPCODE])
           {
@@ -140,7 +132,7 @@ void main(void)
 
   P1=0;
   // Set 4800 baud @ 11.0592 MHz Crystal
-  init_comm(HOST_ID,COMM_SPEED_4800_H);
+  init_device_comm(HOST_ID,COMM_SPEED_4800_H);
 
 
 //  initial_test();

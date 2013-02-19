@@ -14,7 +14,6 @@
 #define XBUFLEN 4
 #define RBUFLEN 8
 
-
 // Messaging frame structure elements
 #define TRAIN_CHR 0xff
 #define ESCAPE_CHR 0x7d
@@ -22,6 +21,32 @@
 // CRC generator polynomial
 #define CRC16_POLYNOMIAL 0x1021
 
+
+// Communication parameters
+#define MAX_MESSAGE_LENGTH 15
+#define TRAIN_LENGTH_RCV 8
+#define TRAIN_LENGTH_SND 20
+
+// Messaging states
+#define WAITING_FOR_TRAIN 0
+#define RECEIVING_TRAIN 1
+#define IN_SYNC 2
+#define RECEIVING_MESSAGE 3
+
+// Messaging error conditions
+#define NO_ERROR 0 // No error
+#define NO_TRAIN_RECEIVED 1 // Expected train sequence, got something else => Ignoring communication
+#define MESSAGE_TOO_LONG 2 // Receive buffer length exceeded
+#define MESSAGING_TIMEOUT 3 // Timeout occured - expected but no communication is seen on the bus
+#define COMM_CRC_ERROR 4 // Frame with CRC error received
+
+
+// Messaging buffer STRUCT
+struct message_struct
+{
+  unsigned char   content[MAX_MESSAGE_LENGTH];
+  unsigned char   index;
+};
 
 /**********************************************************************************
  * The messaging format:
@@ -43,9 +68,9 @@
 #define SEQ 2
 #define OPCODE 3
 #define PARAMETER_START 4
-#define PARAMETER_END message_end
-#define CRC1 message_end+1
-#define CRC2 message_buffer.index+2
+#define PARAMETER_END 0 // message_end - index+0
+#define CRC1 1 // - index+1
+#define CRC2 2 // - index+2
 
 
 /*
@@ -126,6 +151,23 @@ ISR(SERIAL,0);
 // Flip the bits in a byte
 static unsigned char flip_bits(unsigned char byte);
 
+// Reset serial communication
+static void reset_serial(void);
+
+// Send a character to the UART
+static void UART_putc(unsigned char c);
+
+// Read a character from the UART buffer
+static unsigned char UART_getc(void);
+
+// Are there any caharcters in the UART buffer available for reading?
+static unsigned char UART_is_char_available(void);
+
+// Is UART character transmission complete?
+static char is_UART_send_complete (void);
+
+
+
 /*
  * Public utility functions
  */
@@ -136,20 +178,11 @@ unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
 // Set the communication speed of the device
 void set_comm_speed(unsigned char comm_speed);
 
-// Reset serial communication
-void reset_serial(void);
+// Handle timeout events
+unsigned char count_and_perform_timeout(unsigned int timeout_count_limit);
 
-// Send a character to the UART
-void UART_putc(unsigned char c);
-
-// Read a character from the UART buffer
-unsigned char UART_getc(void);
-
-// Are there any caharcters in the UART buffer available for reading?
-unsigned char UART_is_char_available(void);
-
-// Is UART character transmission complete?
-char is_UART_send_complete (void);
+// Reset communication
+void reset_comm(void);
 
 // Return the host address
 unsigned char get_host_address(void);
@@ -157,5 +190,22 @@ unsigned char get_host_address(void);
 // Set the host address
 void set_host_address(unsigned char _host_address);
 
+// Provide access to the message structure
+struct message_struct* get_message_buffer(void);
+
+// Get the error state of the comm module
+unsigned char get_comm_error(void);
+
+// Send a message on the seria line
+void send_message(unsigned char opcode, unsigned char seq);
+
+// Periodically listen for/get a message on the serial line
+struct message_struct* get_message(unsigned int timeout_counter_limit);
+
+// Return the # of CRC errors seen
+unsigned char get_CRC_burst_error_count(void);
+
+// Return the state of the communication
+unsigned char get_comm_state(void);
 
 #endif /* COMM_COMMON_H_ */

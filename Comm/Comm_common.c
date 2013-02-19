@@ -8,12 +8,20 @@
 #include "Comm_common.h"
 
 
-// Global variables facilitating communication
-
+// Global variables facilitating serial communication
 static unsigned char rcv_buffer[RBUFLEN], send_buffer[XBUFLEN];
 static unsigned char rcv_counter, send_counter, rcv_position, send_position;
 static bool UART_busy;
 static unsigned char host_address;
+
+// Global variables facilitating messaging communication
+static unsigned char train_length;
+static unsigned char comm_error;
+static unsigned char comm_state;
+static unsigned char CRC_burst_error_count;
+static unsigned int message_timeout_counter;
+static struct message_struct message_buffer;
+
 
 __code static const struct comm_speed_struct comm_speeds[] = {
     {0xa0,0}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
@@ -78,65 +86,16 @@ static unsigned char flip_bits(unsigned char byte)
 }
 
 
-
-/*
- * Public functions
- */
-
-// CRC-CCITT (0xFFFF) calculator
-unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position)
-{
-	unsigned char i,c;
-	unsigned int crc = 0xffff;
-	unsigned char num;
-
-	// Step through bytes in memory
-	for (num=0; num < end_position; num++)
-	{
-		// Flip the bits to comply with the true serial bit order
-		c = flip_bits(buf[num]);
-
-		// Fetch byte from memory, XOR into  CRC top byte
-		crc = crc ^ ((unsigned int)c << 8);
-
-		// Prepare to rotate 8 bits
-		for (i = 0; i < 8; i++)
-		{
-			// b15 is set...
-			if (crc & 0x8000)
-				// rotate and XOR with polynomial
-				crc = (crc << 1) ^ CRC16_POLYNOMIAL;
-			else                     // b15 is clear...
-				// just rotate
-				crc <<= 1;
-		} // Loop for 8 bits
-	 } // Loop until num=0
-	 return(crc); // Return updated CRC
-}
-
-// Set the communication speed of the device
-void set_comm_speed(unsigned char comm_speed)
-{
-  TR1  = 0; //Stop Timer 1
-  TL1  = 0xff;    // Start from 255
-  TH1 = comm_speeds[comm_speed].reload_value;
-  if(comm_speeds[comm_speed].is_smod_set) PCON|=SMOD; else PCON&=0x7F;
-  // Setup the serial port timer Timer1
-  TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
-  TR1  = 1;       // Start Timer 1
-  reset_serial(); // Reset the communication
-}
-
-
 // Reset serial communication
-void reset_serial(void)
+static void reset_serial(void)
 {
   // Disable serial communication
   ES = 0;
 
   // Setup the serial port operation mode
   // Reset receive and transmit interrupt flags and disable receiver enable
-  RI  = 0;TI  = 0;REN = 0;
+  RI  = 0;TI  = 0;
+  REN = 0;
   // 8-bit UART mode for serial TIMER1 Mode2 SMOD=1
   SM1 = 1;SM0 = 0;
 
@@ -156,7 +115,7 @@ void reset_serial(void)
 }
 
 // Send a character to the UART
-void UART_putc(unsigned char c)
+static void UART_putc(unsigned char c)
 {
   // Wait for room in buffer
   while (send_counter >= XBUFLEN);
@@ -171,7 +130,7 @@ void UART_putc(unsigned char c)
 }
 
 // Read a character from the UART buffer
-unsigned char UART_getc(void)
+static unsigned char UART_getc(void)
 {
   unsigned char c;
   // Wait for a character
@@ -186,15 +145,98 @@ unsigned char UART_getc(void)
 }
 
 // Are there any caharcters in the UART buffer available for reading?
-unsigned char UART_is_char_available(void)
+static unsigned char UART_is_char_available(void)
 {
    return rcv_counter;
 }
 
+/*
 // Is UART character transmission complete?
-char is_UART_send_complete (void)
+static char is_UART_send_complete (void)
 {
    return XBUFLEN - send_counter;
+}
+*/
+
+/*
+ * Public functions
+ */
+
+// CRC-CCITT (0xFFFF) calculator
+unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position)
+{
+  unsigned char i,c;
+  unsigned int crc = 0xffff;
+  unsigned char num;
+
+  // Step through bytes in memory
+  for (num=0; num < end_position; num++)
+  {
+    // Flip the bits to comply with the true serial bit order
+    c = flip_bits(buf[num]);
+
+    // Fetch byte from memory, XOR into  CRC top byte
+    crc = crc ^ ((unsigned int)c << 8);
+
+    // Prepare to rotate 8 bits
+    for (i = 0; i < 8; i++)
+    {
+      // b15 is set...
+      if (crc & 0x8000)
+              // rotate and XOR with polynomial
+              crc = (crc << 1) ^ CRC16_POLYNOMIAL;
+      else                     // b15 is clear...
+              // just rotate
+              crc <<= 1;
+    } // Loop for 8 bits
+   } // Loop until num=0
+  return crc; // Return updated CRC
+}
+
+// Set the communication speed of the device
+void set_comm_speed(unsigned char comm_speed)
+{
+  TR1  = 0; //Stop Timer 1
+  TL1  = 0xff;    // Start from 255
+  TH1 = comm_speeds[comm_speed].reload_value;
+  if(comm_speeds[comm_speed].is_smod_set) PCON|=SMOD; else PCON&=0x7F;
+  // Setup the serial port timer Timer1
+  TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
+  TR1  = 1;       // Start Timer 1
+  reset_serial(); // Reset the communication
+}
+
+// Handle timeout events
+unsigned char count_and_perform_timeout(unsigned int timeout_count_limit)
+{
+  // Increase timeout counter
+  message_timeout_counter++;
+  // If timeout limit is reached start waiting for train
+  if (message_timeout_counter > timeout_count_limit)
+    {
+      comm_state = WAITING_FOR_TRAIN;
+      comm_error = MESSAGING_TIMEOUT;
+      message_buffer.index = 0;
+      return 1;
+    }
+  return 0;
+}
+
+void reset_comm(void)
+{
+  // Clear message buffer
+  message_buffer.index = 0;
+
+  // Clear receiving queue
+  train_length = 0;
+  comm_error = NO_ERROR;
+  CRC_burst_error_count = 0;
+
+  // Set the initial state
+  comm_state = WAITING_FOR_TRAIN;
+  message_timeout_counter = 0;
+
+  reset_serial();
 }
 
 // Return the host address
@@ -207,4 +249,167 @@ unsigned char get_host_address(void)
 void set_host_address(unsigned char _host_address)
 {
   host_address = _host_address;
+}
+
+// Provide access to the message structure
+struct message_struct* get_message_buffer(void)
+{
+  return &message_buffer;
+}
+
+// Return the comm error
+unsigned char get_comm_error(void)
+{
+  return comm_error;
+}
+
+// Send a message on the seria line
+void send_message(unsigned char opcode, unsigned char seq)
+{
+  unsigned char i;
+  unsigned int crc;
+  message_buffer.content[LENGTH] = message_buffer.index+3;
+  message_buffer.content[OPCODE] = opcode;
+  message_buffer.content[SEQ] = seq;
+
+  // Calculate the CRC
+  crc = calculate_CRC16(message_buffer.content, message_buffer.index+CRC1);
+
+  // Send the train sequence
+  i=TRAIN_LENGTH_SND;
+  while(i != 0)
+    {
+      UART_putc(TRAIN_CHR);
+      i--;
+    }
+
+  // Send message body
+  i = 0;
+  while (i <= message_buffer.index+PARAMETER_END)
+    {
+      UART_putc(message_buffer.content[i]);
+      i++;
+    }
+
+  UART_putc((unsigned char) ((crc & 0xff00) >> 8));
+  UART_putc((unsigned char) (crc & 0x00ff));
+
+  // Send 2 train chrs to make sure bus communication goes OK while in send mode (Practically a delay)
+  UART_putc(TRAIN_CHR);
+  UART_putc(TRAIN_CHR);
+}
+
+// Periodically listen for/get a message on the serial line
+struct message_struct* get_message(unsigned int timeout_counter_limit)
+{
+  unsigned char ch_received = 0;
+  bool process_char = FALSE;
+  bool message_received = FALSE;
+
+  if(UART_is_char_available())
+    {
+      ch_received = UART_getc();
+      process_char = TRUE;
+      // Reset message timeout counter as a character is received
+      message_timeout_counter = 0;
+    } else {
+      if (comm_state != WAITING_FOR_TRAIN) count_and_perform_timeout(timeout_counter_limit);
+      return NULL;
+    }
+
+  switch (comm_state) {
+    case WAITING_FOR_TRAIN:
+      if (ch_received == TRAIN_CHR)
+        {
+          // Switch the state to wait for the address fileld of the frame
+          // reset the next state by setting train_length to zero
+          train_length = 0;
+          comm_state = RECEIVING_TRAIN;
+          comm_error = NO_ERROR;
+        } else {
+          // Communication error: frame out of sync set the error_condition and
+          // do not change communication state: keep waiting for a train character.
+          comm_error = NO_TRAIN_RECEIVED;
+        }
+      break;
+
+    // Optimizing for smaller code size for the microcontroller -
+    // hece the two similar states are handled together
+    case RECEIVING_TRAIN:
+    case IN_SYNC:
+      if (ch_received == TRAIN_CHR)
+        {
+          // Recieved the expected character increase the
+          // train length seen so far and cahge state if
+          // enough train is seen
+          if (train_length < TRAIN_LENGTH_RCV)
+            {
+              train_length++;
+            }else {
+              comm_state = IN_SYNC;
+            }
+        } else {
+          if (comm_state ==  RECEIVING_TRAIN)
+            {
+              // Not a train character is received, not yet synced
+              // Go back to Waiting for train state
+              comm_state = WAITING_FOR_TRAIN;
+              comm_error = NO_TRAIN_RECEIVED;
+            } else {
+              // Got a non-train character when synced -
+              // this is the message length check it and if OK, start receiving
+              if(ch_received > MAX_MESSAGE_LENGTH)
+                {
+                  // Set error, start waiting for next train, ignore the rest of the message
+                  // and clear the message buffer
+                  comm_error = MESSAGE_TOO_LONG;
+                  comm_state = WAITING_FOR_TRAIN;
+                } else {
+                  // Clear message buffer and start recieving
+                  comm_state = RECEIVING_MESSAGE;
+                  message_buffer.content[0] = ch_received;
+                  message_buffer.index = 1;
+                }
+            }
+        }
+      break;
+
+    case RECEIVING_MESSAGE:
+      // Receive the next message character
+      message_buffer.content[message_buffer.index]=ch_received;
+      message_buffer.index++;
+
+      // At the end of the message
+      if(message_buffer.index >= message_buffer.content[0])
+        {
+         message_buffer.index -= 3;
+        // Check the CRC of the message
+        if (calculate_CRC16(message_buffer.content, message_buffer.index+CRC1) == (unsigned int)((message_buffer.content[message_buffer.index+CRC1] << 8) | (message_buffer.content[message_buffer.index+CRC2])))
+        {
+          // CRC is OK.
+          CRC_burst_error_count = 0;
+        } else {
+          // CRC is wrong: set error condition
+          CRC_burst_error_count++;
+          comm_error = COMM_CRC_ERROR;
+        }
+        comm_state = WAITING_FOR_TRAIN;
+        message_received = TRUE;
+       }
+      break;
+  }
+
+  if(message_received) return &message_buffer; else return NULL;
+}
+
+// Return the # of CRC errors seen
+unsigned char get_CRC_burst_error_count(void)
+{
+  return CRC_burst_error_count;
+}
+
+// Return the state of the communication
+unsigned char get_comm_state(void)
+{
+  return comm_state;
 }
