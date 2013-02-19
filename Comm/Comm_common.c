@@ -272,7 +272,7 @@ void set_comm_speed(unsigned char speed)
 }
 
 // Return the currently set communication speed
-unsigned char get_comm_speed(void)
+__bit get_comm_speed(void)
 {
   return comm_speed;
 }

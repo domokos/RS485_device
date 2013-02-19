@@ -184,7 +184,7 @@ unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
 void set_comm_speed(unsigned char comm_speed);
 
 // Return the currently set communication speed
-unsigned char get_comm_speed(void);
+__bit get_comm_speed(void);
 
 // Handle timeout events
 unsigned char count_and_perform_timeout(unsigned int timeout_count_limit);
