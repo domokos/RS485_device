@@ -99,11 +99,14 @@ struct message_struct
  * COMMAND PARAMETERS
  */
 // Parameters of SET_COMM_SPEED
-// Timer1 reload and SMOD bit PCON values for 11.0592 MHz Crystal
+// Timer1 reload, SMOD bit PCON values for 11.0592 MHz Crystal and
+// messaging timeout in baud generator timer interrupt count -
+//  for host master message exchange timeout 4 times the value needs to be used
 struct comm_speed_struct
 {
   unsigned char   reload_value;
   unsigned char   is_smod_set;
+  unsigned int    timeout;
 };
 
 #define COMM_SPEED_300_L 0
@@ -179,6 +182,9 @@ unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
 
 // Set the communication speed of the device
 void set_comm_speed(unsigned char comm_speed);
+
+// Return the currently set communication speed
+unsigned char get_comm_speed(void);
 
 // Handle timeout events
 unsigned char count_and_perform_timeout(unsigned int timeout_count_limit);

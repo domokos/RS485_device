@@ -81,7 +81,7 @@ struct message_struct* get_master_message(unsigned int timeout_counter_limit)
   if ((msg=get_message(timeout_counter_limit)) != NULL)
     {
     // If the master is the addressee of the message then check CRC
-    if(get_host_address() == msg->content[SLAVE_ADDRESS])
+    if(get_host_address() == msg->content[MASTER_ADDRESS])
       {
        // If there is a CRC error then respond with a CRC error message and
        // do not return it to the caller
