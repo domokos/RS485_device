@@ -40,6 +40,9 @@
 #define MESSAGING_TIMEOUT 3 // Timeout occured - expected but no communication is seen on the bus
 #define COMM_CRC_ERROR 4 // Frame with CRC error received
 
+// Messaging timeout types
+#define MSG_TIMEOUT 0
+#define RSP_TIMEOUT 1
 
 // Messaging buffer STRUCT
 struct message_struct
@@ -96,17 +99,59 @@ struct message_struct
 
 
 /*
+ * TIMEOUT VALUES
+ */
+
+/*
+Miliseconds  (ms)
+Baud    Bit time        Byte time       15byte          ~Messaging      ~Response
+                                        message time    timeout         timeout
+300     3.333333333     33.33333333     500             500             2000
+1200    0.833333333     8.333333333     125             125             500
+2400    0.416666667     4.166666667     62.5            63              250
+4800    0.208333333     2.083333333     31.25           32              125
+9600    0.104166667     1.041666667     15.625          16              63
+14400   0.069444444     0.694444444     10.41666667     11              42
+19200   0.052083333     0.520833333     7.8125          8               32
+28800   0.034722222     0.347222222     5.208333333     6               21
+57600   0.017361111     0.173611111     2.604166667     3               11
+
+
+Timeout values
+
+LO (SMOD=0 in PCON)     int
+baud    cycles          ms              ~int to 1 ms    ~msg timeout ms #int to msg timeout
+300     96              0.104166667     10              500             4800
+1200    24              0.026041667     38              125             4800
+.....
+
+HI (SMOD=1 in PCON)     int
+baud    cycles          ms              ~int to 1 ms    ~msg timeout ms #int to msg timeout
+300     192             0.208333333     5               500             2400
+1200    48              0.052083333     19              125             2400
+.....
+
+Timer1 reload, SMOD bit PCON values for 11.0592 MHz Crystal and
+messaging timeout in baud generator timer interrupt count.
+Bus master should use 4 times messaging timeout for communication timeout
+*/
+
+#define MSG_TIMEOUT_HI_VALUE 2400
+#define MSG_TIMEOUT_LO_VALUE 4800
+
+
+/*
  * COMMAND PARAMETERS
  */
 // Parameters of SET_COMM_SPEED
 // Timer1 reload, SMOD bit PCON values for 11.0592 MHz Crystal and
 // messaging timeout in baud generator timer interrupt count -
 //  for host master message exchange timeout 4 times the value needs to be used
+
 struct comm_speed_struct
 {
   unsigned char   reload_value;
   unsigned char   is_smod_set;
-  unsigned int    timeout;
 };
 
 #define COMM_SPEED_300_L 0
@@ -153,6 +198,9 @@ struct comm_speed_struct
 // The ISR prototypes to be included in the main program;
 ISR(SERIAL,0);
 
+// Measure time ticks for messaging timeout
+ISR(TIMER1,0);
+
 // Flip the bits in a byte
 static unsigned char flip_bits(unsigned char byte);
 
@@ -184,7 +232,7 @@ unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
 void set_comm_speed(unsigned char comm_speed);
 
 // Return the currently set communication speed
-__bit get_comm_speed(void);
+unsigned char get_comm_speed(void);
 
 // Handle timeout events
 unsigned char count_and_perform_timeout(unsigned int timeout_count_limit);
@@ -215,5 +263,11 @@ unsigned char get_CRC_burst_error_count(void);
 
 // Return the state of the communication
 unsigned char get_comm_state(void);
+
+// Reset the messaging timeout counter
+void reset_timeout_counter();
+
+// Return if there was a messaging or response timeout
+unsigned char timeout_occured(unsigned char timeout_type);
 
 #endif /* COMM_COMMON_H_ */

@@ -18,52 +18,11 @@ static unsigned char host_address;
 static unsigned char train_length;
 static unsigned char comm_error;
 static unsigned char comm_state;
-static unsigned int  baud_generator_ticks;
-static unsigned char CRC_burst_error_count;
+static unsigned int baud_generator_interrupt_ticks;
 static unsigned int message_timeout_counter;
+static unsigned char CRC_burst_error_count;
 static struct message_struct message_buffer;
 
-/*
-Miliseconds  (ms)
-Baud    Bit time        Byte time       15byte          ~Messaging      ~Response
-                                        message time    timeout         timeout
-300     3.333333333     33.33333333     500             500             2000
-1200    0.833333333     8.333333333     125             125             500
-2400    0.416666667     4.166666667     62.5            63              250
-4800    0.208333333     2.083333333     31.25           32              125
-9600    0.104166667     1.041666667     15.625          16              63
-14400   0.069444444     0.694444444     10.41666667     11              42
-19200   0.052083333     0.520833333     7.8125          8               32
-28800   0.034722222     0.347222222     5.208333333     6               21
-57600   0.017361111     0.173611111     2.604166667     3               11
-
-
-Timeout values
-
-LO (SMOD=0 in PCON)     int
-baud    cycles          ms              ~int to 1 ms    ~msg timeout ms #int to msg timeout
-300     96              0.104166667     10              500             4800
-1200    24              0.026041667     38              125             4800
-.....
-
-HI (SMOD=1 in PCON)     int
-baud    cycles          ms              ~int to 1 ms    ~msg timeout ms #int to msg timeout
-300     192             0.208333333     5               500             2400
-1200    48              0.052083333     19              125             2400
-.....
-
-Timer1 reload, SMOD bit PCON values for 11.0592 MHz Crystal and
-messaging timeout in baud generator timer interrupt count.
-Bus master should use 4 times messaging timeout for communication timeout
-*/
-
-// Value holding the information if HI or LO timeout value
-// needs to be used for messaging timeout
-static __bit comm_speed;
-#define TIMEOUT_HI 1
-#define TIMEOUT_HI_VALUE 2400
-#define TIMEOUT_LO 0
-#define TIMEOUT_LO_VALUE 4800
 
 __code static const struct comm_speed_struct comm_speeds[] = {
     {0xa0,0}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
@@ -111,7 +70,7 @@ ISR(SERIAL,0)
 // Measure time ticks for messaging timeout
 ISR(TIMER1,0)
 {
-  baud_generator_ticks+=1;
+  baud_generator_interrupt_ticks+=1;
 }
 
 // Flip the bits in a byte
@@ -245,15 +204,6 @@ unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position)
 // Set the communication speed of the device
 void set_comm_speed(unsigned char speed)
 {
-  // Remember messaging timeout timing information
-  if (speed > COMM_SPEED_28800_L)
-    comm_speed = TIMEOUT_HI;
-  else
-    comm_speed = TIMEOUT_LO;
-
-  // Reset timeout counter
-  baud_generator_ticks = 0;
-
   TR1  = 0; //Stop Timer 1
   TL1  = 0xff;    // Start from 255
 
@@ -261,7 +211,7 @@ void set_comm_speed(unsigned char speed)
   TH1 = comm_speeds[speed].reload_value;
 
   // Set the SMOD bit in PCON according to speed mode
-  if(comm_speeds[speed].is_smod_set) PCON|=SMOD; else PCON&=0x7F;
+  if(comm_speeds[speed].is_smod_set) PCON |= SMOD; else PCON &= 0x7F;
 
   // Set the timer  mode for the baud generator Timer1
   TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
@@ -269,12 +219,6 @@ void set_comm_speed(unsigned char speed)
   TR1  = 1;             // Start Timer 1
   ET1  = 1;             // Enable timer1 interrupt to count ticks for messaging timeout
   reset_serial();       // Reset the communication
-}
-
-// Return the currently set communication speed
-__bit get_comm_speed(void)
-{
-  return comm_speed;
 }
 
 // Handle timeout events
@@ -483,4 +427,39 @@ unsigned char get_CRC_burst_error_count(void)
 unsigned char get_comm_state(void)
 {
   return comm_state;
+}
+
+// Reset the messaging timeout counter
+void reset_timeout_counter()
+{
+  message_timeout_counter = baud_generator_interrupt_ticks;
+}
+
+// Return if there was a messaging or response timeout
+unsigned char timeout_occured(unsigned char timeout_type)
+{
+ unsigned char timeout, timeout_multiplier;
+ unsigned int ticks_difference;
+
+ // Set the reference timeout ticks value based on what kind of timeout status is queried
+ timeout_multiplier = 1;
+ if (timeout_type == RSP_TIMEOUT ) timeout_multiplier = 4;
+
+ // If there is no owerflow in the interrupt ticks
+ if (baud_generator_interrupt_ticks > message_timeout_counter)
+   {
+     ticks_difference = baud_generator_interrupt_ticks - message_timeout_counter;
+ // There was an overflow - no multiple overflow is expected - timer must firs be reset and then queried regularily
+   } else {
+     ticks_difference = ((unsigned int)((unsigned int) 0xffff - message_timeout_counter)) + baud_generator_interrupt_ticks;
+   }
+
+ // If SMOD is set in PCON then HI else LO timeout value is used
+ if (PCON & SMOD)
+   timeout = (ticks_difference >= ((unsigned int)MSG_TIMEOUT_HI_VALUE) * timeout_multiplier);
+ // comm_speed == TIMEOUT_LO
+ else
+   timeout = (ticks_difference >= ((unsigned int)MSG_TIMEOUT_LO_VALUE) * timeout_multiplier);
+
+ return timeout;
 }
