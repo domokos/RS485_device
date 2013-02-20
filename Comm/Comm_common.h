@@ -103,33 +103,19 @@ struct message_struct
  */
 
 /*
-Miliseconds  (ms)
-Baud    Bit time        Byte time       15byte          ~Messaging      ~Response
-                                        message time    timeout         timeout
-300     3.333333333     33.33333333     500             500             2000
-1200    0.833333333     8.333333333     125             125             500
-2400    0.416666667     4.166666667     62.5            63              250
-4800    0.208333333     2.083333333     31.25           32              125
-9600    0.104166667     1.041666667     15.625          16              63
-14400   0.069444444     0.694444444     10.41666667     11              42
-19200   0.052083333     0.520833333     7.8125          8               32
-28800   0.034722222     0.347222222     5.208333333     6               21
-57600   0.017361111     0.173611111     2.604166667     3               11
+Miliseconds	(ms)		tick duration:		0.001085069
+Baud	Bit			Byte		15 byte		Resp		LO 		int			#int to	 HI same...
+		time		time		(timeout)	timeout		ticks	interval 	timeout
+300		3.333333333	33.33333333	500			2000		96	0.104166667	4800	192	0.208333333	2400
+1200	0.833333333	8.333333333	125			500			24	0.026041667	4800	48	0.052083333	2400
+2400	0.416666667	4.166666667	62.5		250			12	0.013020833	4800	24	0.026041667	2400
+4800	0.208333333	2.083333333	31.25		125			6	0.006510417	4800	12	0.013020833	2400
+9600	0.104166667	1.041666667	15.625		62.5		3	0.003255208	4800	6	0.006510417	2400
+14400	0.069444444	0.694444444	10.41666667	41.66666667	2	0.002170139	4800	4	0.004340278	2400
+19200	0.052083333	0.520833333	7.8125		31.25								3	0.003255208	2400
+28800	0.034722222	0.347222222	5.208333333	20.83333333	1	0.001085069	4800	2	0.002170139	2400
+57600	0.017361111	0.173611111	2.604166667	10.41666667							1	0.001085069	2400
 
-
-Timeout values
-
-LO (SMOD=0 in PCON)     int
-baud    cycles          ms              ~int to 1 ms    ~msg timeout ms #int to msg timeout
-300     96              0.104166667     10              500             4800
-1200    24              0.026041667     38              125             4800
-.....
-
-HI (SMOD=1 in PCON)     int
-baud    cycles          ms              ~int to 1 ms    ~msg timeout ms #int to msg timeout
-300     192             0.208333333     5               500             2400
-1200    48              0.052083333     19              125             2400
-.....
 
 Timer1 reload, SMOD bit PCON values for 11.0592 MHz Crystal and
 messaging timeout in baud generator timer interrupt count.
@@ -265,7 +251,7 @@ unsigned char get_CRC_burst_error_count(void);
 unsigned char get_comm_state(void);
 
 // Reset the messaging timeout counter
-void reset_timeout_counter();
+void reset_timeout();
 
 // Return if there was a messaging or response timeout
 unsigned char timeout_occured(unsigned char timeout_type);

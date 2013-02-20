@@ -33,9 +33,20 @@ void reverse_MSG_buffer(struct message_struct *_MSG_buffer)
  */
 void data_communication_test(void)
 {
+
   unsigned char p,response_opcode;
+  unsigned int nr_calls=0;
+  reset_timeout();
   for(;;)
     {
+	  if (nr_calls++ >= 44)
+	  {
+		  nr_calls = 0;
+		  timeout_occured(MSG_TIMEOUT);
+		  reset_timeout();
+	  }
+
+
       if ((MSG_buffer = get_device_message(MESSAGE_TIMEOUT_COUNT_LIMIT)) != NULL )
         {
           switch (MSG_buffer->content[OPCODE])

@@ -35,7 +35,7 @@ __code static const struct comm_speed_struct comm_speeds[] = {
 
     {0x40,1}, //COMM_SPEED_300_H 0x40,SMOD set in PCON
     {0xd0,1}, //COMM_SPEED_1200_H 0xd0,SMOD set in PCON
-    {0x8e,1}, //COMM_SPEED_2400_H 0x8e,SMOD set in PCON
+    {0xe8,1}, //COMM_SPEED_2400_H 0xe8,SMOD set in PCON
     {0xf4,1}, //COMM_SPEED_4800_H 0xf4,SMOD set in PCON
     {0xfa,1}, //COMM_SPEED_9600_H 0xfa,SMOD set in PCON
     {0xfc,1}, //COMM_SPEED_14400_H 0xfc,SMOD set in PCON
@@ -430,7 +430,7 @@ unsigned char get_comm_state(void)
 }
 
 // Reset the messaging timeout counter
-void reset_timeout_counter()
+void reset_timeout()
 {
   message_timeout_counter = baud_generator_interrupt_ticks;
 }
@@ -442,6 +442,7 @@ unsigned char timeout_occured(unsigned char timeout_type)
  unsigned int ticks_difference;
 
  // Set the reference timeout ticks value based on what kind of timeout status is queried
+ // Suppose MSG_TIMEOUT
  timeout_multiplier = 1;
  if (timeout_type == RSP_TIMEOUT ) timeout_multiplier = 4;
 
