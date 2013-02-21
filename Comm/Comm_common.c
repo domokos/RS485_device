@@ -6,42 +6,60 @@
  */
 
 #include "Comm_common.h"
+#include "Comm_variables.h"
+
 
 
 // Global variables facilitating serial communication
 static unsigned char rcv_buffer[RBUFLEN], send_buffer[XBUFLEN];
-static unsigned char rcv_counter, send_counter, rcv_position, send_position;
-static bool UART_busy;
+static volatile unsigned char rcv_counter, send_counter, rcv_position, send_position;
+static volatile bool UART_busy;
 static unsigned char host_address;
+static unsigned char comm_speed;
 
 // Global variables facilitating messaging communication
+
+static unsigned char comm_state;
+static unsigned char CRC_burst_error_count;
 static unsigned char train_length;
 static unsigned char comm_error;
-static unsigned char comm_state;
-static unsigned int baud_generator_interrupt_ticks;
-static unsigned int message_timeout_counter;
-static unsigned char CRC_burst_error_count;
-static struct message_struct message_buffer;
+
+
+/*
+ * Timeout values miliseconds
+ *
+Baud    BIt time        Byte time       Messaging               Response timeout
+                                        timeout (15 bytes)      4xmsg timeout + 100 ms
+300     3.333333333     33.33333333     500                     2100
+1200    0.833333333     8.333333333     125                     600
+2400    0.416666667     4.166666667     62.5                    350
+4800    0.208333333     2.083333333     31.25                   225
+9600    0.104166667     1.041666667     15.625                  162.5
+14400   0.069444444     0.694444444     10.41666667             141.66666667
+19200   0.052083333     0.520833333     7.8125                  131.25
+28800   0.034722222     0.347222222     5.208333333             120.83333333
+57600   0.017361111     0.173611111     2.604166667             110.41666667
+*/
 
 
 __code static const struct comm_speed_struct comm_speeds[] = {
-    {0xa0,0}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
-    {0xe8,0}, //COMM_SPEED_1200_L 0xe8,SMOD not set in PCON
-    {0xf4,0}, //COMM_SPEED_2400_L 0xf4,SMOD not set in PCON
-    {0xfa,0}, //COMM_SPEED_4800_L 0xfa,SMOD not set in PCON
-    {0xfd,0}, //COMM_SPEED_9600_L 0xfd,SMOD not set in PCON
-    {0xfe,0}, //COMM_SPEED_14400_L 0xfe,SMOD not set in PCON
-    {0xff,0}, //COMM_SPEED_28800_L 0xff,SMOD not set in PCON
+    {0xa0,0,500,2100}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
+    {0xe8,0,125,600}, //COMM_SPEED_1200_L 0xe8,SMOD not set in PCON
+    {0xf4,0,63,350}, //COMM_SPEED_2400_L 0xf4,SMOD not set in PCON
+    {0xfa,0,31,225}, //COMM_SPEED_4800_L 0xfa,SMOD not set in PCON
+    {0xfd,0,16,163}, //COMM_SPEED_9600_L 0xfd,SMOD not set in PCON
+    {0xfe,0,10,142}, //COMM_SPEED_14400_L 0xfe,SMOD not set in PCON
+    {0xff,0,5,121}, //COMM_SPEED_28800_L 0xff,SMOD not set in PCON
 
-    {0x40,1}, //COMM_SPEED_300_H 0x40,SMOD set in PCON
-    {0xd0,1}, //COMM_SPEED_1200_H 0xd0,SMOD set in PCON
-    {0xe8,1}, //COMM_SPEED_2400_H 0xe8,SMOD set in PCON
-    {0xf4,1}, //COMM_SPEED_4800_H 0xf4,SMOD set in PCON
-    {0xfa,1}, //COMM_SPEED_9600_H 0xfa,SMOD set in PCON
-    {0xfc,1}, //COMM_SPEED_14400_H 0xfc,SMOD set in PCON
-    {0xfd,1}, //COMM_SPEED_19200_H 0xfd,SMOD set in PCON
-    {0xfe,1}, //COMM_SPEED_28800_H 0xfe,SMOD set in PCON
-    {0xff,1} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
+    {0x40,1,500,2100}, //COMM_SPEED_300_H 0x40,SMOD set in PCON
+    {0xd0,1,125,600}, //COMM_SPEED_1200_H 0xd0,SMOD set in PCON
+    {0xe8,1,63,350}, //COMM_SPEED_2400_H 0xe8,SMOD set in PCON
+    {0xf4,1,31,225}, //COMM_SPEED_4800_H 0xf4,SMOD set in PCON
+    {0xfa,1,16,163}, //COMM_SPEED_9600_H 0xfa,SMOD set in PCON
+    {0xfc,1,10,142}, //COMM_SPEED_14400_H 0xfc,SMOD set in PCON
+    {0xfd,1,8,131}, //COMM_SPEED_19200_H 0xfd,SMOD set in PCON
+    {0xfe,1,5,121}, //COMM_SPEED_28800_H 0xfe,SMOD set in PCON
+    {0xff,1,3,110} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
 };
 
 
@@ -65,12 +83,6 @@ ISR(SERIAL,0)
      if (send_position >= XBUFLEN) send_position = 0;
    }
   }
-}
-
-// Measure time ticks for messaging timeout
-ISR(TIMER1,0)
-{
-  baud_generator_interrupt_ticks+=1;
 }
 
 // Flip the bits in a byte
@@ -166,12 +178,8 @@ static char is_UART_send_complete (void)
 }
 */
 
-/*
- * Public functions
- */
-
 // CRC-CCITT (0xFFFF) calculator
-unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position)
+static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position)
 {
   unsigned char i,c;
   unsigned int crc = 0xffff;
@@ -201,11 +209,32 @@ unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position)
   return crc; // Return updated CRC
 }
 
+// Handle timeout events
+static unsigned char evaluate_timeout()
+{
+  if ( timeout_occured(comm_speeds[comm_speed].msg_timeout))
+    {
+      comm_state = WAITING_FOR_TRAIN;
+      comm_error = MESSAGING_TIMEOUT;
+      message_buffer.index = 0;
+      return 1;
+    }
+  return 0;
+}
+
+
+/*
+ * Public functions
+ */
+
+
 // Set the communication speed of the device
 void set_comm_speed(unsigned char speed)
 {
   TR1  = 0; //Stop Timer 1
   TL1  = 0xff;    // Start from 255
+
+  comm_speed = speed;
 
   // Set the reload value for the baud generator
   TH1 = comm_speeds[speed].reload_value;
@@ -216,27 +245,12 @@ void set_comm_speed(unsigned char speed)
   // Set the timer  mode for the baud generator Timer1
   TMOD = (TMOD&0x0f)|0x20;    // Set Timer 1 Autoreload mode
 
+  ET1  = 0;             // Disable timer1 interrupt to ensure smooth baud rate generation
   TR1  = 1;             // Start Timer 1
-  ET1  = 1;             // Enable timer1 interrupt to count ticks for messaging timeout
   reset_serial();       // Reset the communication
 }
 
-// Handle timeout events
-unsigned char count_and_perform_timeout(unsigned int timeout_count_limit)
-{
-  // Increase timeout counter
-  message_timeout_counter++;
-  // If timeout limit is reached start waiting for train
-  if (message_timeout_counter > timeout_count_limit)
-    {
-      comm_state = WAITING_FOR_TRAIN;
-      comm_error = MESSAGING_TIMEOUT;
-      message_buffer.index = 0;
-      return 1;
-    }
-  return 0;
-}
-
+// Reset communication
 void reset_comm(void)
 {
   // Clear message buffer
@@ -249,7 +263,6 @@ void reset_comm(void)
 
   // Set the initial state
   comm_state = WAITING_FOR_TRAIN;
-  message_timeout_counter = 0;
 
   reset_serial();
 }
@@ -315,7 +328,7 @@ void send_message(unsigned char opcode, unsigned char seq)
 }
 
 // Periodically listen for/get a message on the serial line
-struct message_struct* get_message(unsigned int timeout_counter_limit)
+struct message_struct* get_message(void)
 {
   unsigned char ch_received = 0;
   bool process_char = FALSE;
@@ -326,9 +339,9 @@ struct message_struct* get_message(unsigned int timeout_counter_limit)
       ch_received = UART_getc();
       process_char = TRUE;
       // Reset message timeout counter as a character is received
-      message_timeout_counter = 0;
+      reset_timeout();
     } else {
-      if (comm_state != WAITING_FOR_TRAIN) count_and_perform_timeout(timeout_counter_limit);
+      if (comm_state != WAITING_FOR_TRAIN) evaluate_timeout();
       return NULL;
     }
 
@@ -429,38 +442,20 @@ unsigned char get_comm_state(void)
   return comm_state;
 }
 
-// Reset the messaging timeout counter
-void reset_timeout()
+// Return the actual communication speed
+unsigned char get_comm_speed(void)
 {
-  message_timeout_counter = baud_generator_interrupt_ticks;
+  return comm_speed;
 }
 
-// Return if there was a messaging or response timeout
-unsigned char timeout_occured(unsigned char timeout_type)
+// Return the messaging timeout value for the actual communication speed
+unsigned char get_messaging_timeout(void)
 {
- unsigned char timeout, timeout_multiplier;
- unsigned int ticks_difference;
+  return comm_speeds[comm_speed].msg_timeout;
+}
 
- // Set the reference timeout ticks value based on what kind of timeout status is queried
- // Suppose MSG_TIMEOUT
- timeout_multiplier = 1;
- if (timeout_type == RSP_TIMEOUT ) timeout_multiplier = 4;
-
- // If there is no owerflow in the interrupt ticks
- if (baud_generator_interrupt_ticks > message_timeout_counter)
-   {
-     ticks_difference = baud_generator_interrupt_ticks - message_timeout_counter;
- // There was an overflow - no multiple overflow is expected - timer must firs be reset and then queried regularily
-   } else {
-     ticks_difference = ((unsigned int)((unsigned int) 0xffff - message_timeout_counter)) + baud_generator_interrupt_ticks;
-   }
-
- // If SMOD is set in PCON then HI else LO timeout value is used
- if (PCON & SMOD)
-   timeout = (ticks_difference >= ((unsigned int)MSG_TIMEOUT_HI_VALUE) * timeout_multiplier);
- // comm_speed == TIMEOUT_LO
- else
-   timeout = (ticks_difference >= ((unsigned int)MSG_TIMEOUT_LO_VALUE) * timeout_multiplier);
-
- return timeout;
+// Return the response timeout value for the actual communication speed
+unsigned char get_response_timeout(void)
+{
+  return comm_speeds[comm_speed].resp_timeout;
 }

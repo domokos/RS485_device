@@ -48,7 +48,7 @@ void set_comm_speed(unsigned char comm_speed);
 // Must be called periodically to allow comm module to perform housekeeping
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-struct message_struct* get_device_message(unsigned int timeout_counter_limit);
+struct message_struct* get_device_message(void);
 
 /*
  * Internal functions - should not be called from outside of the comm modul

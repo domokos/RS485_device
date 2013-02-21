@@ -11,16 +11,18 @@
 
 struct message_struct *MSG_buffer;
 
-void reverse_MSG_buffer(struct message_struct *_MSG_buffer)
+
+void reverse_MSG_buffer(void)
 {
-  unsigned char i, j=_MSG_buffer -> index, tmp;
-  for(i=PARAMETER_START;i<=_MSG_buffer -> index;i++)
+  unsigned char i, j=MSG_buffer -> index, tmp;
+  for(i=PARAMETER_START;i<=MSG_buffer -> index;i++)
     {
-      tmp = _MSG_buffer -> content[i];
-      _MSG_buffer -> content[i] = _MSG_buffer -> content[j];
-      _MSG_buffer -> content[j] = tmp;
+      tmp = MSG_buffer -> content[i];
+      MSG_buffer -> content[i] = MSG_buffer -> content[j];
+      MSG_buffer -> content[j] = tmp;
     }
 }
+
 
 
 /*
@@ -35,19 +37,20 @@ void data_communication_test(void)
 {
 
   unsigned char p,response_opcode;
-  unsigned int nr_calls=0;
+  unsigned int nr_calls=0, timeout;
+
+  timeout = get_messaging_timeout();
   reset_timeout();
   for(;;)
     {
-	  if (nr_calls++ >= 44)
-	  {
-		  nr_calls = 0;
-		  timeout_occured(MSG_TIMEOUT);
-		  reset_timeout();
-	  }
+      if (nr_calls++ >= 380)
+      {
+        nr_calls = 0;
+        timeout_occured(timeout);
+        reset_timeout();
+      }
 
-
-      if ((MSG_buffer = get_device_message(MESSAGE_TIMEOUT_COUNT_LIMIT)) != NULL )
+      if ((MSG_buffer = get_device_message()) != NULL )
         {
           switch (MSG_buffer->content[OPCODE])
           {
@@ -74,7 +77,7 @@ void data_communication_test(void)
             response_opcode = COMMAND_SUCCESS;
             break;
           case COMM_TEST_REVERSE_MESSAGE:
-            reverse_MSG_buffer(MSG_buffer);
+            reverse_MSG_buffer();
             response_opcode = COMMAND_SUCCESS;
             break;
           case PING:

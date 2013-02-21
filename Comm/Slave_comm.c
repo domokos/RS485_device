@@ -62,11 +62,11 @@ void send_response(unsigned char opcode, unsigned char seq)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-struct message_struct* get_device_message(unsigned int timeout_counter_limit)
+struct message_struct* get_device_message()
 {
   struct message_struct* msg;
 
-  if ((msg=get_message(timeout_counter_limit)) != NULL)
+  if ((msg=get_message()) != NULL)
     {
     // If this slave is the addressee of the message then check CRC
     if(get_host_address() == msg->content[SLAVE_ADDRESS])

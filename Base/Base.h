@@ -17,16 +17,34 @@
 
 typedef __bit bool;
 
+#define ONE_MS_TIMEOUT 1
+
+/*
+ * Internal utility functions
+ */
+
 // The timer ISR routine prototype to be included in the main file
 ISR(TIMER0,0);
 
-// Base routine headers
-void delay_100us(unsigned int _100usec_time);
+// Initiaize the timer
+static void init_timer(void);
+
+
+/*
+ * Public functions
+ */
+
+// Wait for seconds
+void delay_sec(unsigned int sec);
 
 // Wait for milliseconds
 void delay_msec(unsigned int msec);
 
-// Wait for seconds
-void delay_sec(unsigned int sec);
+// start and reset the messaging timeout counter
+void reset_timeout();
+
+// Return if there was a timeout
+// The calling parameter holds the timeout limit in miliseconds
+unsigned char timeout_occured(unsigned int timeout_limit);
 
 #endif /* BASE_H_ */

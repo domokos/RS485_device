@@ -74,11 +74,11 @@ void init_master(unsigned char host_address, unsigned char comm_speed)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-struct message_struct* get_master_message(unsigned int timeout_counter_limit)
+struct message_struct* get_master_message()
 {
   struct message_struct* msg;
 
-  if ((msg=get_message(timeout_counter_limit)) != NULL)
+  if ((msg=get_message()) != NULL)
     {
     // If the master is the addressee of the message then check CRC
     if(get_host_address() == msg->content[MASTER_ADDRESS])

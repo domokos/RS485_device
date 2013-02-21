@@ -99,34 +99,6 @@ struct message_struct
 
 
 /*
- * TIMEOUT VALUES
- */
-
-/*
-Miliseconds	(ms)		tick duration:		0.001085069
-Baud	Bit			Byte		15 byte		Resp		LO 		int			#int to	 HI same...
-		time		time		(timeout)	timeout		ticks	interval 	timeout
-300		3.333333333	33.33333333	500			2000		96	0.104166667	4800	192	0.208333333	2400
-1200	0.833333333	8.333333333	125			500			24	0.026041667	4800	48	0.052083333	2400
-2400	0.416666667	4.166666667	62.5		250			12	0.013020833	4800	24	0.026041667	2400
-4800	0.208333333	2.083333333	31.25		125			6	0.006510417	4800	12	0.013020833	2400
-9600	0.104166667	1.041666667	15.625		62.5		3	0.003255208	4800	6	0.006510417	2400
-14400	0.069444444	0.694444444	10.41666667	41.66666667	2	0.002170139	4800	4	0.004340278	2400
-19200	0.052083333	0.520833333	7.8125		31.25								3	0.003255208	2400
-28800	0.034722222	0.347222222	5.208333333	20.83333333	1	0.001085069	4800	2	0.002170139	2400
-57600	0.017361111	0.173611111	2.604166667	10.41666667							1	0.001085069	2400
-
-
-Timer1 reload, SMOD bit PCON values for 11.0592 MHz Crystal and
-messaging timeout in baud generator timer interrupt count.
-Bus master should use 4 times messaging timeout for communication timeout
-*/
-
-#define MSG_TIMEOUT_HI_VALUE 2400
-#define MSG_TIMEOUT_LO_VALUE 4800
-
-
-/*
  * COMMAND PARAMETERS
  */
 // Parameters of SET_COMM_SPEED
@@ -138,6 +110,8 @@ struct comm_speed_struct
 {
   unsigned char   reload_value;
   unsigned char   is_smod_set;
+  unsigned int    msg_timeout;
+  unsigned int    resp_timeout;
 };
 
 #define COMM_SPEED_300_L 0
@@ -184,9 +158,6 @@ struct comm_speed_struct
 // The ISR prototypes to be included in the main program;
 ISR(SERIAL,0);
 
-// Measure time ticks for messaging timeout
-ISR(TIMER1,0);
-
 // Flip the bits in a byte
 static unsigned char flip_bits(unsigned char byte);
 
@@ -205,23 +176,22 @@ static unsigned char UART_is_char_available(void);
 // Is UART character transmission complete?
 static char is_UART_send_complete (void);
 
+//Calculate the 16-Bit checksum of the message
+static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
 
+
+// Handle timeout events
+static unsigned char evaluate_timeout();
 
 /*
  * Public utility functions
  */
-
-//Calculate the 16-Bit checksum of the message
-unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
 
 // Set the communication speed of the device
 void set_comm_speed(unsigned char comm_speed);
 
 // Return the currently set communication speed
 unsigned char get_comm_speed(void);
-
-// Handle timeout events
-unsigned char count_and_perform_timeout(unsigned int timeout_count_limit);
 
 // Reset communication
 void reset_comm(void);
@@ -242,7 +212,7 @@ unsigned char get_comm_error(void);
 void send_message(unsigned char opcode, unsigned char seq);
 
 // Periodically listen for/get a message on the serial line
-struct message_struct* get_message(unsigned int timeout_counter_limit);
+struct message_struct* get_message(void);
 
 // Return the # of CRC errors seen
 unsigned char get_CRC_burst_error_count(void);
@@ -250,10 +220,13 @@ unsigned char get_CRC_burst_error_count(void);
 // Return the state of the communication
 unsigned char get_comm_state(void);
 
-// Reset the messaging timeout counter
-void reset_timeout();
+// Return the actual communication speed
+unsigned char get_comm_speed(void);
 
-// Return if there was a messaging or response timeout
-unsigned char timeout_occured(unsigned char timeout_type);
+// Return the messaging timeout value for the actual communication speed
+unsigned char get_messaging_timeout(void);
+
+// Return the response timeout value for the actual communication speed
+unsigned char get_response_timeout(void);
 
 #endif /* COMM_COMMON_H_ */
