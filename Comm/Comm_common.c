@@ -42,7 +42,7 @@ Baud    BIt time        Byte time       Messaging               Response timeout
 */
 
 
-__code static const struct comm_speed_struct comm_speeds[] = {
+__code const struct comm_speed_struct comm_speeds[] = {
     {0xa0,0,500,2100}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
     {0xe8,0,125,600}, //COMM_SPEED_1200_L 0xe8,SMOD not set in PCON
     {0xf4,0,63,350}, //COMM_SPEED_2400_L 0xf4,SMOD not set in PCON
@@ -212,7 +212,7 @@ static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_positi
 // Handle timeout events
 static unsigned char evaluate_timeout()
 {
-  if ( timeout_occured(comm_speeds[comm_speed].msg_timeout))
+  if ( timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout))
     {
       comm_state = WAITING_FOR_TRAIN;
       comm_error = MESSAGING_TIMEOUT;
@@ -339,7 +339,7 @@ struct message_struct* get_message(void)
       ch_received = UART_getc();
       process_char = TRUE;
       // Reset message timeout counter as a character is received
-      reset_timeout();
+      reset_timeout(MSG_TIMEOUT);
     } else {
       if (comm_state != WAITING_FOR_TRAIN) evaluate_timeout();
       return NULL;

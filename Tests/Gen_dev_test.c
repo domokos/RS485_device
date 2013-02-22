@@ -40,14 +40,14 @@ void data_communication_test(void)
   unsigned int nr_calls=0, timeout;
 
   timeout = get_messaging_timeout();
-  reset_timeout();
+  reset_timeout(RESPONSE_TIMEOUT);
   for(;;)
     {
       if (nr_calls++ >= 380)
       {
         nr_calls = 0;
-        timeout_occured(timeout);
-        reset_timeout();
+        timeout_occured(RESPONSE_TIMEOUT, timeout);
+        reset_timeout(RESPONSE_TIMEOUT);
       }
 
       if ((MSG_buffer = get_device_message()) != NULL )

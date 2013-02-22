@@ -9,8 +9,8 @@
 
 // Global variables
 bool timer_initialized = FALSE;
-volatile unsigned int  time_counter;
-unsigned int timeout_start;
+static volatile unsigned int  time_counter;
+static unsigned int msg_timeout_start, response_timeout_start, delay_timeout_start;
 
 /*
  * Internal utility functions
@@ -52,9 +52,9 @@ void delay_sec(unsigned int sec)
 {
   if ( sec == 0 ) return;   // Return if delaytime is zero
 
-  reset_timeout();
+  reset_timeout(DELAY_TIMEOUT);
 
-  while ( !timeout_occured(1000))
+  while ( !timeout_occured(DELAY_TIMEOUT, ONE_SEC_TIMEOUT))
     {
       __asm nop __endasm;
     }             // Wait delaytime
@@ -74,9 +74,9 @@ void delay_msec(unsigned int msec)
  *      We will use 922 ticks - to reload timer registers: FC66
  */
 
-  reset_timeout();
+  reset_timeout(DELAY_TIMEOUT);
 
-  while ( !timeout_occured(ONE_MS_TIMEOUT))
+  while ( !timeout_occured(DELAY_TIMEOUT, ONE_MS_TIMEOUT))
     {
       __asm nop __endasm;
     }             // Wait delaytime
@@ -85,19 +85,38 @@ void delay_msec(unsigned int msec)
 
 
 // start and reset the messaging timeout counter
-void reset_timeout()
+void reset_timeout(unsigned char type)
 {
   // Initialize timer if it is not initialized
   if(!timer_initialized) init_timer();
 
-  timeout_start = time_counter;
+  if (type == MSG_TIMEOUT)
+    {
+      msg_timeout_start = time_counter;
+    } else if (type == RESPONSE_TIMEOUT) {
+      response_timeout_start = time_counter;
+    // DELAY_TIMEOUT
+    } else {
+      delay_timeout_start = time_counter;
+    }
 }
 
 // Return if there was a timeout
 // The calling parameter holds the timeout limit in miliseconds
-unsigned char timeout_occured(unsigned int timeout_limit)
+unsigned char timeout_occured(unsigned char type, unsigned int timeout_limit)
 {
-  unsigned int ticks_difference;
+  unsigned int ticks_difference, timeout_start;
+
+  // Set the start of the timeout based on timeout type
+  if (type == MSG_TIMEOUT)
+    {
+      timeout_start = msg_timeout_start;
+    } else if (type == RESPONSE_TIMEOUT) {
+      timeout_start = response_timeout_start;
+    // DELAY_TIMEOUT
+    } else {
+      timeout_start = delay_timeout_start;
+    }
 
  // If there is no owerflow in the interrupt ticks
  // (equality as regarded as no timeout - just started)

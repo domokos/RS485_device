@@ -18,6 +18,12 @@
 typedef __bit bool;
 
 #define ONE_MS_TIMEOUT 1
+#define ONE_SEC_TIMEOUT 1000
+
+// Timeout types
+#define MSG_TIMEOUT 0
+#define RESPONSE_TIMEOUT 1
+#define DELAY_TIMEOUT 2
 
 /*
  * Internal utility functions
@@ -41,10 +47,10 @@ void delay_sec(unsigned int sec);
 void delay_msec(unsigned int msec);
 
 // start and reset the messaging timeout counter
-void reset_timeout();
+void reset_timeout(unsigned char type);
 
 // Return if there was a timeout
 // The calling parameter holds the timeout limit in miliseconds
-unsigned char timeout_occured(unsigned int timeout_limit);
+unsigned char timeout_occured(unsigned char type, unsigned int timeout_limit);
 
 #endif /* BASE_H_ */

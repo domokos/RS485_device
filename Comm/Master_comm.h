@@ -24,9 +24,8 @@
 
 // Master communication state machine states
 #define SM_MASTER_LISTENS_TO_HOST 0
-#define SM_MASTER_SENDS_ON_BUS 1
-#define SM_MASTER_LISTENS_ON_BUS 2
-#define SM_MASTER_SENDS_TO_HOST 3
+#define SM_MASTER_LISTENS_ON_BUS 1
+
 
 
 /*

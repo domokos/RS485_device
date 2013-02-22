@@ -132,6 +132,8 @@ struct comm_speed_struct
 #define COMM_SPEED_57600_H 15
 
 
+extern const struct comm_speed_struct comm_speeds[];
+
 /*
  *  Response opcodes
  */
@@ -149,6 +151,8 @@ struct comm_speed_struct
 // Response to a PING message - should contain the same
 // message received in the PING
 #define ECHO 3
+// timaout report to the host by the master
+#define TIMEOUT 4
 
 
 /*
