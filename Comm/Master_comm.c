@@ -140,15 +140,21 @@ void operate_master(void)
           // Handle messaging timeout and notify master of bus CRC error
             if ( timeout_occured(RESPONSE_TIMEOUT, comm_speeds[comm_speed].resp_timeout))
               {
-                message -> index = PARAMETER_START-1;
-                send_message(TIMEOUT,message->content[SEQ]);
+                set_master_comm_state(MASTER_TALKS_TO_HOST);
 
-               master_sm_state = SM_MASTER_LISTENS_TO_HOST;
+                message -> index = PARAMETER_START-1;
+
+                send_message(response_opcodes[TIMEOUT], message->content[SEQ]);
+
+                master_sm_state = SM_MASTER_LISTENS_TO_HOST;
               }
             if (get_comm_error() == COMM_CRC_ERROR)
               {
+                set_master_comm_state(MASTER_TALKS_TO_HOST);
+
                 message -> index = PARAMETER_START-1;
-                send_message(CRC_ERROR, message->content[SEQ]);
+
+                send_message(response_opcodes[CRC_ERROR], message->content[SEQ]);
 
                 master_sm_state = SM_MASTER_LISTENS_TO_HOST;
               }

@@ -134,9 +134,14 @@ struct comm_speed_struct
 
 extern const struct comm_speed_struct comm_speeds[];
 
+
+
 /*
  *  Response opcodes
  */
+
+// This must hold values to workaround SDCC bug of trying to call lptrput
+extern const unsigned char response_opcodes[];
 
 // The received message contained CRC error
 // The message has a zero length payload. CRC follows the opcode

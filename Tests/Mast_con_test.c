@@ -7,12 +7,13 @@
 
 #include "Master_comm.h"
 
-#define MASTER_HOST_ID 0
+#define MASTER_HOST_ID 1
 
 struct message_struct *MSG_buffer;
 
 void main(void)
 {
+  EA = 1;
   init_master(MASTER_HOST_ID, COMM_SPEED_4800_H);
   operate_master();
 }

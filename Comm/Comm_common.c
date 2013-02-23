@@ -6,14 +6,13 @@
  */
 
 #include "Comm_common.h"
-#include "Comm_variables.h"
 
 
 
 // Global variables facilitating serial communication
 static unsigned char rcv_buffer[RBUFLEN], send_buffer[XBUFLEN];
 static volatile unsigned char rcv_counter, send_counter, rcv_position, send_position;
-static volatile bool UART_busy;
+static volatile __bit UART_busy;
 static unsigned char host_address;
 static unsigned char comm_speed;
 
@@ -24,6 +23,7 @@ static unsigned char CRC_burst_error_count;
 static unsigned char train_length;
 static unsigned char comm_error;
 
+static struct message_struct message_buffer;
 
 /*
  * Timeout values miliseconds
@@ -62,6 +62,10 @@ __code const struct comm_speed_struct comm_speeds[] = {
     {0xff,1,3,110} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
 };
 
+// SDCC bug. Opcodes must be taken from this instead of using macros directly
+__code const unsigned char response_opcodes[] = {
+    CRC_ERROR,COMMAND_SUCCESS,COMMAND_FAIL,ECHO,TIMEOUT
+};
 
 /*
  * Internal utility functions
@@ -77,7 +81,7 @@ ISR(SERIAL,0)
   }
   if (TI) {
    TI = 0;
-   if (UART_busy = send_counter) {   // Assignment, _not_ comparison!
+   if (UART_busy = (send_counter>0)) {   // Assignment, _not_ comparison!
      send_counter--;
      SBUF = send_buffer [send_position++];
      if (send_position >= XBUFLEN) send_position = 0;
@@ -85,25 +89,22 @@ ISR(SERIAL,0)
   }
 }
 
-// Flip the bits in a byte
-static unsigned char flip_bits(unsigned char byte)
+static unsigned char reverse_bits(unsigned char byte)
 {
-  unsigned char flipped_byte = 0;
-  char i;
-  unsigned char j=7;
+  unsigned char r = byte; // r will be reversed bits of v; first get LSB of v
+  unsigned char s = 7; // extra shift needed at end
 
-  for (i = 7; i >= -7;)
-    {
-      if (i>0)
-          flipped_byte |= ((byte << i) & (0x01 << j));
-        else
-          flipped_byte |= ((byte >> (-i)) & (0x01 << j));
-      i = i-2;
-      j = j-1;
-    }
-  return flipped_byte;
+  for (byte >>= 1; byte; byte >>= 1)
+  {
+    r <<= 1;
+    r |= byte & 1;
+    s--;
+  }
+
+  // shift when byte's highest bits are zero
+  r <<= s;
+  return r;
 }
-
 
 // Reset serial communication
 static void reset_serial(void)
@@ -170,11 +171,11 @@ static unsigned char UART_is_char_available(void)
 }
 
 /*
- * Currently not in use - comment out to get rid of compiler mockering about it
-// Is UART character transmission complete?
-static char is_UART_send_complete (void)
+Not used as of now
+// Is UART buffer transmission complete?
+static char is_UART_send_complete(void)
 {
-   return XBUFLEN - send_counter;
+   return !UART_busy;
 }
 */
 
@@ -189,7 +190,7 @@ static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_positi
   for (num=0; num < end_position; num++)
   {
     // Flip the bits to comply with the true serial bit order
-    c = flip_bits(buf[num]);
+    c = reverse_bits(buf[num]);
 
     // Fetch byte from memory, XOR into  CRC top byte
     crc = crc ^ ((unsigned int)c << 8);
@@ -322,9 +323,9 @@ void send_message(unsigned char opcode, unsigned char seq)
   UART_putc((unsigned char) ((crc & 0xff00) >> 8));
   UART_putc((unsigned char) (crc & 0x00ff));
 
-  // Send 2 train chrs to make sure bus communication goes OK while in send mode (Practically a delay)
   UART_putc(TRAIN_CHR);
-  UART_putc(TRAIN_CHR);
+
+  while (UART_busy);
 }
 
 // Periodically listen for/get a message on the serial line
