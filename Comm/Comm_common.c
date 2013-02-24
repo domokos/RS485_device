@@ -292,7 +292,7 @@ unsigned char get_comm_error(void)
   return comm_error;
 }
 
-// Send a message on the seria line
+// Send a message on the serial line
 void send_message(unsigned char opcode, unsigned char seq)
 {
   unsigned char i;
@@ -424,6 +424,10 @@ struct message_struct* get_message(void)
         }
         comm_state = WAITING_FOR_TRAIN;
         message_received = TRUE;
+       } else if (message_buffer.index > MAX_MESSAGE_LENGTH) {
+           // Message is too long: set error condition
+          comm_error = MESSAGE_TOO_LONG;
+          comm_state = WAITING_FOR_TRAIN;
        }
       break;
   }
