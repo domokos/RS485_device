@@ -16,7 +16,6 @@
 
 // Messaging frame structure elements
 #define TRAIN_CHR 0xff
-#define ESCAPE_CHR 0x7d
 
 // CRC generator polynomial
 #define CRC16_POLYNOMIAL 0x1021
@@ -25,7 +24,7 @@
 // Communication parameters
 #define MAX_MESSAGE_LENGTH 15
 #define TRAIN_LENGTH_RCV 8
-#define TRAIN_LENGTH_SND 20
+#define TRAIN_LENGTH_SND 15
 
 // Messaging states
 #define WAITING_FOR_TRAIN 0
@@ -135,7 +134,6 @@ struct comm_speed_struct
 extern const struct comm_speed_struct comm_speeds[];
 
 
-
 /*
  *  Response opcodes
  */
@@ -156,7 +154,7 @@ extern const unsigned char response_opcodes[];
 // Response to a PING message - should contain the same
 // message received in the PING
 #define ECHO 3
-// timaout report to the host by the master
+// timeout report to the host by the master
 #define TIMEOUT 4
 
 

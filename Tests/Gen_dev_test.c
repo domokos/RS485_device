@@ -23,8 +23,6 @@ void reverse_MSG_buffer(void)
     }
 }
 
-
-
 /*
  * To send a PING:
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,07,01,01,36,05,37,cf}
@@ -101,19 +99,10 @@ void main(void)
   // Enable interrupts
   EA = 1;
 
-  P1=0;
   // Set 4800 baud @ 11.0592 MHz Crystal
   init_device_comm(HOST_ID,COMM_SPEED_4800_H);
 
 
-//  initial_test();
-
   data_communication_test();
-  // flood_test();
 
-//  while(1)
-//  {
-//	  delay_msec(100);
-//	  P1_4 = !P1_4;
-//  }
 }
