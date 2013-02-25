@@ -23,7 +23,7 @@ static unsigned char CRC_burst_error_count;
 static unsigned char train_length;
 static unsigned char comm_error;
 
-__near static message_type message_buffer;
+static struct message_struct message_buffer;
 
 /*
  * Timeout values milliseconds
@@ -287,14 +287,20 @@ unsigned char get_comm_error(void)
   return comm_error;
 }
 
-// Send a message on the serial line
-void send_message(unsigned char opcode, unsigned char seq)
+// Send a message on the serial line explicitely specifying SEQ
+void send_message_seq(unsigned char opcode, unsigned char seq)
+{
+  message_buffer.content[SEQ] = seq;
+  send_message(opcode);
+}
+
+// Send a message on the serial line using the SEQ just received
+void send_message(unsigned char opcode)
 {
   unsigned char i;
   unsigned int crc;
   message_buffer.content[LENGTH] = message_buffer.index+3;
   message_buffer.content[OPCODE] = opcode;
-  message_buffer.content[SEQ] = seq;
 
   // Calculate the CRC
   crc = calculate_CRC16(message_buffer.content, message_buffer.index+CRC1);
@@ -324,7 +330,7 @@ void send_message(unsigned char opcode, unsigned char seq)
 }
 
 // Periodically listen for/get a message on the serial line
-__near message_type* get_message(void)
+struct message_struct* get_message(void)
 {
   unsigned char ch_received = 0;
   bool process_char = FALSE;

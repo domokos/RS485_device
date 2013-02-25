@@ -48,7 +48,7 @@ typedef struct message_struct
 {
   unsigned char   index;
   unsigned char   content[MAX_MESSAGE_LENGTH];
-} message_type;
+};
 
 /**********************************************************************************
  * The messaging format:
@@ -213,11 +213,14 @@ struct message_struct* get_message_buffer(void);
 // Get the error state of the comm module
 unsigned char get_comm_error(void);
 
-// Send a message on the serial line
-void send_message(unsigned char opcode, unsigned char seq);
+// Send a message on the serial line explicitely specifying SEQ
+void send_message_seq(unsigned char opcode, unsigned char seq);
+
+// Send a message on the serial line using the SEQ just received
+void send_message(unsigned char opcode);
 
 // Periodically listen for/get a message on the serial line
-__near message_type* get_message(void);
+struct message_struct* get_message(void);
 
 // Return the # of CRC errors seen
 unsigned char get_CRC_burst_error_count(void);

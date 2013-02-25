@@ -9,7 +9,7 @@
 
 #define HOST_ID 1
 
-__near message_type *MSG_buffer;
+static struct message_struct *MSG_buffer;
 
 
 void reverse_MSG_buffer(void)
@@ -48,7 +48,7 @@ void data_communication_test(void)
         reset_timeout(RESPONSE_TIMEOUT);
       }
 
-      if ((MSG_buffer = get_device_message()) != NULL )
+      if (get_device_message() != NULL )
         {
           switch (MSG_buffer->content[OPCODE])
           {
@@ -89,7 +89,7 @@ void data_communication_test(void)
             response_opcode = COMMAND_FAIL;
            break;
           }
-          send_response(response_opcode,MSG_buffer->content[SEQ]);
+          send_response(response_opcode);
         }
     }
 }
@@ -102,6 +102,7 @@ void main(void)
   // Set 4800 baud @ 11.0592 MHz Crystal
   init_device_comm(HOST_ID,COMM_SPEED_4800_H);
 
+  MSG_buffer = get_message_buffer();
 
   data_communication_test();
 

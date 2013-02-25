@@ -48,13 +48,13 @@ void init_device_comm(unsigned char host_address, unsigned char comm_speed)
  * the function expects message content to be prepared by the caller
  * including message SEQ number
 */
-void send_response(unsigned char opcode, unsigned char seq)
+void send_response(unsigned char opcode)
 {
   // Set bus direction to transmit
   set_device_comm_direction(DEVICE_SENDS);
 
   // Now send the message
-  send_message(opcode, seq);
+  send_message(opcode);
 
   // Listen on the bus
   set_device_comm_direction(DEVICE_LISTENS);
@@ -62,11 +62,11 @@ void send_response(unsigned char opcode, unsigned char seq)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-__near message_type* get_device_message()
+struct message_struct* get_device_message(void)
 {
-  __near message_type* msg;
+  struct message_struct* msg = get_message_buffer();
 
-  if ((msg=get_message()) != NULL)
+  if (get_message() != NULL)
     {
     // If this slave is the addressee of the message then check CRC
     if(get_host_address() == msg->content[SLAVE_ADDRESS])
@@ -76,7 +76,7 @@ __near message_type* get_device_message()
        if (get_comm_error() == COMM_CRC_ERROR)
          {
          msg -> index = PARAMETER_START-1;
-         send_response(CRC_ERROR, msg->content[SEQ]);
+         send_response(CRC_ERROR);
          return NULL;
          } else {
          // CRC was OK return the message

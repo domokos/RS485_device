@@ -16,6 +16,8 @@
 __bit master_sm_state;
 unsigned char comm_speed;
 
+static struct message_struct *MSG_buffer;
+
 /*
  * Internal Utility functions
  */
@@ -74,25 +76,24 @@ void init_master(unsigned char host_address, unsigned char _comm_speed)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-message_type* get_master_message()
+struct message_struct* get_master_message()
 {
-  __near message_type* msg;
-  if ((msg=get_message()) != NULL)
+  if ((MSG_buffer = get_message()) != NULL)
     {
     // If the master is the addressee of the message then check CRC
-    if(get_host_address() == msg->content[MASTER_ADDRESS])
+    if(get_host_address() == MSG_buffer->content[MASTER_ADDRESS])
       {
        // If there is a CRC error then respond with a CRC error message and
        // do not return it to the caller
        if (get_comm_error() == COMM_CRC_ERROR)
          {
-         msg -> index = PARAMETER_START-1;
-         send_message(CRC_ERROR,msg->content[SEQ]);
-         return NULL;
+           MSG_buffer -> index = PARAMETER_START-1;
+           send_message(CRC_ERROR);
+           return NULL;
          } else {
-         // CRC was OK return the message
-         return msg;
-       }
+           // CRC was OK return the message
+           return MSG_buffer;
+         }
       }
     }
  return NULL;
@@ -101,18 +102,18 @@ message_type* get_master_message()
 
 void operate_master(void)
 {
-  message_type* message;
+  struct message_struct* MSG_buffer = get_message_buffer();
 
   while(TRUE)
     {
       if (master_sm_state == SM_MASTER_LISTENS_TO_HOST)
       {
-        if ((message = get_master_message()) != NULL)
+        if (get_master_message() != NULL)
           {
             set_master_comm_state(MASTER_TALKS_TO_BUS);
             set_master_bus_comm_direction(MASTER_SENDS_ON_BUS);
 
-            send_message(message->content[OPCODE],message->content[SEQ]);
+            send_message(MSG_buffer->content[OPCODE]);
 
             set_master_bus_comm_direction(MASTER_LISTENS_ON_BUS);
             master_sm_state = SM_MASTER_LISTENS_ON_BUS;
@@ -120,19 +121,19 @@ void operate_master(void)
             reset_timeout(RESPONSE_TIMEOUT);
 
             // If command is SET_COMM_SPEED then set the communication speed
-            if (message->content[OPCODE] == SET_COMM_SPEED)
+            if (MSG_buffer->content[OPCODE] == SET_COMM_SPEED)
               {
-                set_comm_speed(message -> content[PARAMETER_START]);
-                comm_speed = message -> content[PARAMETER_START];
+                set_comm_speed(MSG_buffer -> content[PARAMETER_START]);
+                comm_speed = MSG_buffer -> content[PARAMETER_START];
               }
           }
         // SM_MASTER_LISTENS_ON_BUS
       } else {
-        if ((message = get_master_message()) != NULL)
+        if (get_master_message() != NULL)
           {
             set_master_comm_state(MASTER_TALKS_TO_HOST);
 
-            send_message(message->content[OPCODE],message->content[SEQ]);
+            send_message(MSG_buffer->content[OPCODE]);
 
             master_sm_state = SM_MASTER_LISTENS_TO_HOST;
           } else {
@@ -141,9 +142,8 @@ void operate_master(void)
               {
                 set_master_comm_state(MASTER_TALKS_TO_HOST);
 
-                message -> index = PARAMETER_START-1;
-
-                send_message(TIMEOUT, message->content[SEQ]);
+                MSG_buffer -> index = PARAMETER_START-1;
+                send_message(TIMEOUT);
 
                 master_sm_state = SM_MASTER_LISTENS_TO_HOST;
               }
@@ -151,9 +151,8 @@ void operate_master(void)
               {
                 set_master_comm_state(MASTER_TALKS_TO_HOST);
 
-                message -> index = PARAMETER_START-1;
-
-                send_message(CRC_ERROR, message->content[SEQ]);
+                MSG_buffer -> index = PARAMETER_START-1;
+                send_message(CRC_ERROR);
 
                 master_sm_state = SM_MASTER_LISTENS_TO_HOST;
               }
