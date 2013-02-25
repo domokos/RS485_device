@@ -44,11 +44,11 @@
 #define RSP_TIMEOUT 1
 
 // Messaging buffer STRUCT
-struct message_struct
+typedef struct message_struct
 {
   unsigned char   index;
   unsigned char   content[MAX_MESSAGE_LENGTH];
-};
+} message_type;
 
 /**********************************************************************************
  * The messaging format:
@@ -138,16 +138,14 @@ extern const struct comm_speed_struct comm_speeds[];
  *  Response opcodes
  */
 
-// This must hold values to workaround SDCC bug of trying to call lptrput
-extern const unsigned char response_opcodes[];
 
 // The received message contained CRC error
 // The message has a zero length payload. CRC follows the opcode
 #define CRC_ERROR 0
-// Command succesfully received response messge payload
+// Command successfully received response message payload
 // contains the information requested by the master
 #define COMMAND_SUCCESS 1
-// Command succesfully received, execution of the
+// Command successfully received, execution of the
 // requested operation failed, original status preserved or
 // status undefined
 #define COMMAND_FAIL 2
@@ -177,7 +175,7 @@ static void UART_putc(unsigned char c);
 // Read a character from the UART buffer
 static unsigned char UART_getc(void);
 
-// Are there any caharcters in the UART buffer available for reading?
+// Are there any characters in the UART buffer available for reading?
 static unsigned char UART_is_char_available(void);
 
 // Is UART character transmission complete?
@@ -215,11 +213,11 @@ struct message_struct* get_message_buffer(void);
 // Get the error state of the comm module
 unsigned char get_comm_error(void);
 
-// Send a message on the seria line
+// Send a message on the serial line
 void send_message(unsigned char opcode, unsigned char seq);
 
 // Periodically listen for/get a message on the serial line
-struct message_struct* get_message(void);
+__near message_type* get_message(void);
 
 // Return the # of CRC errors seen
 unsigned char get_CRC_burst_error_count(void);

@@ -23,10 +23,10 @@ static unsigned char CRC_burst_error_count;
 static unsigned char train_length;
 static unsigned char comm_error;
 
-static struct message_struct message_buffer;
+__near static message_type message_buffer;
 
 /*
- * Timeout values miliseconds
+ * Timeout values milliseconds
  *
 Baud    BIt time        Byte time       Messaging               Response timeout
                                         timeout (15 bytes)      4xmsg timeout + 100 ms
@@ -60,11 +60,6 @@ __code const struct comm_speed_struct comm_speeds[] = {
     {0xfd,1,8,131}, //COMM_SPEED_19200_H 0xfd,SMOD set in PCON
     {0xfe,1,5,121}, //COMM_SPEED_28800_H 0xfe,SMOD set in PCON
     {0xff,1,3,110} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
-};
-
-// SDCC bug. Opcodes must be taken from this instead of using macros directly
-__code const unsigned char response_opcodes[] = {
-    CRC_ERROR,COMMAND_SUCCESS,COMMAND_FAIL,ECHO,TIMEOUT
 };
 
 /*
@@ -329,7 +324,7 @@ void send_message(unsigned char opcode, unsigned char seq)
 }
 
 // Periodically listen for/get a message on the serial line
-struct message_struct* get_message(void)
+__near message_type* get_message(void)
 {
   unsigned char ch_received = 0;
   bool process_char = FALSE;
@@ -363,13 +358,13 @@ struct message_struct* get_message(void)
       break;
 
     // Optimizing for smaller code size for the microcontroller -
-    // hece the two similar states are handled together
+    // Hence the two similar states are handled together
     case RECEIVING_TRAIN:
     case IN_SYNC:
       if (ch_received == TRAIN_CHR)
         {
-          // Recieved the expected character increase the
-          // train length seen so far and cahge state if
+          // Received the expected character increase the
+          // train length seen so far and change state if
           // enough train is seen
           if (train_length < TRAIN_LENGTH_RCV)
             {
@@ -405,7 +400,7 @@ struct message_struct* get_message(void)
 
     case RECEIVING_MESSAGE:
       // Receive the next message character
-      message_buffer.content[message_buffer.index]=ch_received;
+      message_buffer.content[message_buffer.index] = ch_received;
       message_buffer.index++;
 
       // At the end of the message

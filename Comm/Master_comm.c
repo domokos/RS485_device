@@ -74,10 +74,9 @@ void init_master(unsigned char host_address, unsigned char _comm_speed)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-struct message_struct* get_master_message()
+message_type* get_master_message()
 {
-  struct message_struct* msg;
-
+  __near message_type* msg;
   if ((msg=get_message()) != NULL)
     {
     // If the master is the addressee of the message then check CRC
@@ -102,7 +101,7 @@ struct message_struct* get_master_message()
 
 void operate_master(void)
 {
-  struct message_struct* message;
+  message_type* message;
 
   while(TRUE)
     {
@@ -144,7 +143,7 @@ void operate_master(void)
 
                 message -> index = PARAMETER_START-1;
 
-                send_message(response_opcodes[TIMEOUT], message->content[SEQ]);
+                send_message(TIMEOUT, message->content[SEQ]);
 
                 master_sm_state = SM_MASTER_LISTENS_TO_HOST;
               }
@@ -154,7 +153,7 @@ void operate_master(void)
 
                 message -> index = PARAMETER_START-1;
 
-                send_message(response_opcodes[CRC_ERROR], message->content[SEQ]);
+                send_message(CRC_ERROR, message->content[SEQ]);
 
                 master_sm_state = SM_MASTER_LISTENS_TO_HOST;
               }
@@ -162,3 +161,4 @@ void operate_master(void)
       }
     }
 }
+

@@ -14,8 +14,8 @@
 #define __at(x)
 #define __interrupt(x)
 #define __using(x)
-#define __xdata
 #define __code
+#define __near
 #endif
 
 #define SFRBIT(address, name, bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0) \

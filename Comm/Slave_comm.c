@@ -62,9 +62,9 @@ void send_response(unsigned char opcode, unsigned char seq)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-struct message_struct* get_device_message()
+__near message_type* get_device_message()
 {
-  struct message_struct* msg;
+  __near message_type* msg;
 
   if ((msg=get_message()) != NULL)
     {

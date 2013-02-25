@@ -9,7 +9,7 @@
 
 #define HOST_ID 1
 
-struct message_struct *MSG_buffer;
+__near message_type *MSG_buffer;
 
 
 void reverse_MSG_buffer(void)
@@ -27,7 +27,7 @@ void reverse_MSG_buffer(void)
  * To send a PING:
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,07,01,01,36,05,37,cf}
  *
- * To identyfy a Register 4 (expected response "P1_4"):
+ * To identify a Register 4 (expected response "P1_4"):
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,08,01,01,36,02,04,2c,d8}
  *
  */
