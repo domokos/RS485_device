@@ -91,10 +91,12 @@ typedef struct message_struct
 #define RESET_DEVICE 3
 // Perform tests
 #define COMM_TEST_REVERSE_MESSAGE 4
-// PING - master expects an echo and the same payload
-#define PING 5
+// PING - host expects a DEVICE_ECHO from the device and the same payload
+#define PING_DEVICE 5
 // Set communication speed
 #define SET_COMM_SPEED 6
+// Host pings master - master does not forward the message to the bus, responds with a MASTER_ECHO
+#define PING_MASTER 7
 
 
 /*
@@ -151,10 +153,11 @@ extern const struct comm_speed_struct comm_speeds[];
 #define COMMAND_FAIL 2
 // Response to a PING message - should contain the same
 // message received in the PING
-#define ECHO 3
+#define DEVICE_ECHO 3
 // timeout report to the host by the master
 #define TIMEOUT 4
-
+// Master responsd with echo to host
+#define MASTER_ECHO 5
 
 /*
  * Internal utility functions

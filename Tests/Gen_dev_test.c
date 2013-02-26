@@ -37,8 +37,11 @@ void data_communication_test(void)
   unsigned char p,response_opcode;
   unsigned int nr_calls=0, timeout;
 
+  MSG_buffer = get_message_buffer();
+
   timeout = get_messaging_timeout();
   reset_timeout(RESPONSE_TIMEOUT);
+
   for(;;)
     {
       if (nr_calls++ >= 380)
@@ -78,8 +81,8 @@ void data_communication_test(void)
             reverse_MSG_buffer();
             response_opcode = COMMAND_SUCCESS;
             break;
-          case PING:
-            response_opcode = ECHO;
+          case PING_DEVICE:
+            response_opcode = DEVICE_ECHO;
             break;
           case SET_COMM_SPEED:
             set_comm_speed(MSG_buffer->content[PARAMETER_START]);
@@ -101,8 +104,6 @@ void main(void)
 
   // Set 4800 baud @ 11.0592 MHz Crystal
   init_device_comm(HOST_ID,COMM_SPEED_4800_H);
-
-  MSG_buffer = get_message_buffer();
 
   data_communication_test();
 

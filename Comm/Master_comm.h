@@ -38,6 +38,13 @@ static void set_master_comm_state(unsigned char direction);
 // Set master's communication direction when communicating on the bus
 static void set_master_bus_comm_direction(unsigned char direction);
 
+// Returns void* to the caller if no message is received
+// returns a pointer to the message if a message is received
+static struct message_struct* get_master_message();
+
+// Relay the message to the bus
+static void relay_message_to_bus(void);
+
 
 /*
  * Public module functions

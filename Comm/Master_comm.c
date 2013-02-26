@@ -35,6 +35,39 @@ static void set_master_bus_comm_direction(unsigned char direction)
   MASTER_BUS_COMM_DIRECTION_PIN = direction;
 }
 
+// Returns void* to the caller if no message is received
+// returns a pointer to the message if a message is received
+static struct message_struct* get_master_message()
+{
+  if ((MSG_buffer = get_message()) != NULL)
+    {
+    // If the master is the addressee of the message then check CRC
+    if(get_host_address() == MSG_buffer->content[MASTER_ADDRESS])
+      {
+       // If there is a CRC error then respond with a CRC error message and
+       // do not return it to the caller
+       if (get_comm_error() == COMM_CRC_ERROR)
+         {
+           MSG_buffer -> index = PARAMETER_START-1;
+           send_message(CRC_ERROR);
+           return NULL;
+         } else {
+           // CRC was OK return the message
+           return MSG_buffer;
+         }
+      }
+    }
+ return NULL;
+}
+
+
+static void relay_message_to_bus(void)
+{
+  set_master_comm_state(MASTER_TALKS_TO_BUS);
+  set_master_bus_comm_direction(MASTER_SENDS_ON_BUS);
+
+  send_message(MSG_buffer->content[OPCODE]);
+}
 
 /*
  * Public module functions
@@ -74,35 +107,13 @@ void init_master(unsigned char host_address, unsigned char _comm_speed)
 }
 
 
-// Returns void* to the caller if no message is received
-// returns a pointer to the message if a message is received
-struct message_struct* get_master_message()
-{
-  if ((MSG_buffer = get_message()) != NULL)
-    {
-    // If the master is the addressee of the message then check CRC
-    if(get_host_address() == MSG_buffer->content[MASTER_ADDRESS])
-      {
-       // If there is a CRC error then respond with a CRC error message and
-       // do not return it to the caller
-       if (get_comm_error() == COMM_CRC_ERROR)
-         {
-           MSG_buffer -> index = PARAMETER_START-1;
-           send_message(CRC_ERROR);
-           return NULL;
-         } else {
-           // CRC was OK return the message
-           return MSG_buffer;
-         }
-      }
-    }
- return NULL;
-}
 
 
 void operate_master(void)
 {
-  struct message_struct* MSG_buffer = get_message_buffer();
+  bool master_wants_response_on_bus;
+
+  MSG_buffer = get_message_buffer();
 
   while(TRUE)
     {
@@ -110,21 +121,35 @@ void operate_master(void)
       {
         if (get_master_message() != NULL)
           {
-            set_master_comm_state(MASTER_TALKS_TO_BUS);
-            set_master_bus_comm_direction(MASTER_SENDS_ON_BUS);
-
-            send_message(MSG_buffer->content[OPCODE]);
-
-            set_master_bus_comm_direction(MASTER_LISTENS_ON_BUS);
-            master_sm_state = SM_MASTER_LISTENS_ON_BUS;
-
-            reset_timeout(RESPONSE_TIMEOUT);
-
-            // If command is SET_COMM_SPEED then set the communication speed
-            if (MSG_buffer->content[OPCODE] == SET_COMM_SPEED)
-              {
+            master_wants_response_on_bus = TRUE;
+            switch (MSG_buffer->content[OPCODE])
+            {
+            case SET_COMM_SPEED:
+                relay_message_to_bus();
+                // Set the communication speed and remember it
                 set_comm_speed(MSG_buffer -> content[PARAMETER_START]);
                 comm_speed = MSG_buffer -> content[PARAMETER_START];
+              break;
+
+            case PING_MASTER:
+              // Respond with an echo
+              send_message(MASTER_ECHO);
+              // Do not start listening on bus
+              master_wants_response_on_bus = FALSE;
+              break;
+
+            default:
+              // Just relay the message and then change state
+              relay_message_to_bus();
+              break;
+            }
+            // If master relayed a message to the bus - and is already talking to bus then
+            // start listening to the response - change state
+            if (master_wants_response_on_bus)
+              {
+                set_master_bus_comm_direction(MASTER_LISTENS_ON_BUS);
+                master_sm_state = SM_MASTER_LISTENS_ON_BUS;
+                reset_timeout(RESPONSE_TIMEOUT);
               }
           }
         // SM_MASTER_LISTENS_ON_BUS

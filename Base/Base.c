@@ -17,7 +17,7 @@ static unsigned int msg_timeout_start, response_timeout_start, delay_timeout_sta
  */
 
 
-// The timer ISR - set up to occur every 1 ms
+// The timer ISR - set up to occur every 1 ms for a 11.0592 MHz Crystal
 ISR(TIMER0,0)
 {
   time_counter++;
