@@ -111,16 +111,3 @@ void onewire_example(void)
 }
 
 
-
-
-
-
-/* printf needs putchar() to "know" where to print */
-
-void putchar(char c)
-{
-//	pm2_cout(c);
-}
-
-
-

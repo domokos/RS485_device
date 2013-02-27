@@ -1,26 +1,28 @@
 #include "Onewire.h"
 
-#define ONEWIRE_PIN P1_7
-
-
+#define ONEWIRE_PIN _P1_7
 
 void onewire_write_byte(unsigned char b)
 {
-	unsigned char i;
+	unsigned char i=8;
 
-	for (i=0; i<8; i++) {
-		onewire_write_bit(b);
-		b >>= 1;
-	}
+	while(i)
+	  {
+            onewire_write_bit(b);
+            b >>= 1;
+            i--;
+	  }
 }
 
 unsigned char onewire_read_byte(void)
 {
-	unsigned char i, b=0;
-
-	for (i=0; i<8; i++) {
-		b = (b >> 1) | (onewire_read_bit() << 7);
-	}
+	unsigned char i,b;
+	b=0;i=8;
+	while (i)
+	  {
+	    b = (b >> 1) | (onewire_read_bit() << 7);
+	    i--;
+	  }
 	return b;
 }
 
@@ -54,15 +56,13 @@ unsigned char onewire_crc_check(unsigned char *p, unsigned char num)
 	return crc;
 }
 
-
-
 // disable "must return value", sdcc can't tell the asm
 // code is actually returning a value
+#pragma save
 #pragma disable_warning 59
 
 // Do a 1-wire reset cycle
 // return 1 if presense pulse detected, 0 if no device(s) present
-//
 char onewire_reset(void)
 {
 	__asm
@@ -85,7 +85,7 @@ char onewire_reset(void)
 void onewire_write_bit(unsigned char bit0)
 {
 	bit0;
-	_asm
+	__asm
 	mov	a, dpl
 	push	ie
 	clr	ea
@@ -99,12 +99,12 @@ onewire_write_bit0:
 	lcall	_delay_60us
 	setb	ONEWIRE_PIN
 	pop	ie
-	_endasm;
+	__endasm;
 }
 
 unsigned char onewire_read_bit(void)
 {
-	_asm
+	__asm
 	push	ie
 	clr	ea
 	clr	ONEWIRE_PIN
@@ -121,38 +121,75 @@ onewire_read_bit_wait:
 	mov	r2, #40
 onewire_read_cycle_wait:
 	djnz	r2, onewire_read_cycle_wait
-	_endasm;
+	__endasm;
 }
 
+#pragma restore
 
 
+
+// CRYSTAL_SPEED_11.0592
+// 921600 cycle/sec
+// 1085.0694 ns
+//
+// 480 us = 442 cycles = 2*221
+// 60 us = 55 cycles = 5*11
+//
+// CRYSTAL_SPEED_22.1184
 // 1843200 cycle/sec
 // 542.53 ns
 //
-// 480 us = 885 cycles
-// 60 us = 110.6 cycles
-//
+// 480 us = 885 cycles = 5*177
+// 60 us = 110.6 cycles = 2*52
 
+
+#ifdef  CRYSTAL_SPEED_LO
+
+// Wait for 60us - used for 1wire timing
 void delay_60us(void)
 {
-	_asm
-	mov	r2, #52
+        __asm
+        mov     r2, #11
 delay_60us_loop:
-	djnz	r2, delay_60us_loop
-	_endasm;
+        nop
+        nop
+        nop
+        djnz    r2, delay_60us_loop
+        __endasm;
 }
 
-
+// Wait for 480us - used for 1wire timing
 void delay_480us(void)
 {
-	_asm
-	mov	r2, #177
+        __asm
+        mov     r2, #221
 delay_480us_loop:
-	nop
-	nop
-	nop
-	djnz	r2, delay_480us_loop
-	_endasm;
+        djnz    r2, delay_480us_loop
+        __endasm;
 }
 
+#elif defined CRYSTAL_SPEED_HI
 
+// Wait for 60us - used for 1wire timing
+void delay_60us(void)
+{
+        __asm
+        mov     r2, #52
+delay_60us_loop:
+        djnz    r2, delay_60us_loop
+        __endasm;
+}
+
+// Wait for 480us - used for 1wire timing
+void delay_480us(void)
+{
+        __asm
+        mov     r2, #177
+delay_480us_loop:
+        nop
+        nop
+        nop
+        djnz    r2, delay_480us_loop
+        __endasm;
+}
+#endif

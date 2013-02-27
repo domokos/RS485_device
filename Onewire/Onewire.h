@@ -10,15 +10,37 @@
 
 #include "Base.h"
 
+/*
+ * Public module functions
+ */
+
+// Do a 1-wire reset cycle
+// return 1 if presense pulse detected, 0 if no device(s) present
 char onewire_reset(void);
+
+// Write a byte to the onewire bus
 void onewire_write_byte(unsigned char b);
+
+// Read a byte from the onewire bus
 unsigned char onewire_read_byte(void);
+
+// Check the crc of the onewire bus message
 unsigned char onewire_crc_check(unsigned char *p, unsigned char num);
 
-void onewire_write_bit(unsigned char bit0);
-unsigned char onewire_read_bit(void);
+// Wait for 60us - used for 1wire timing
 void delay_60us(void);
+
+// Wait for 480us - used for 1wire timing
 void delay_480us(void);
 
+/*
+ * Internal utility functions
+ */
+
+// Write a bit to the onewire bus
+static void onewire_write_bit(unsigned char bit0);
+
+// Read a bit from the onewire bus
+static unsigned char onewire_read_bit(void);
 
 #endif /* ONEWIRE_H_ */

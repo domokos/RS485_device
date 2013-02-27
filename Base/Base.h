@@ -15,6 +15,10 @@
 #define TRUE 1
 #define FALSE 0
 
+// Speed of the crystal
+#define CRYSTAL_SPEED_LO // 11.0592MHz
+// #define CRYSTAL_SPEED_HI // 22.1184MHz
+
 typedef __bit bool;
 
 #define ONE_MS_TIMEOUT 1
