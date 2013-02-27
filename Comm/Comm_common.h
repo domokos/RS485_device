@@ -44,7 +44,7 @@
 #define RSP_TIMEOUT 1
 
 // Messaging buffer STRUCT
-typedef struct message_struct
+struct message_struct
 {
   unsigned char   index;
   unsigned char   content[MAX_MESSAGE_LENGTH];
@@ -223,7 +223,7 @@ void send_message_seq(unsigned char opcode, unsigned char seq);
 void send_message(unsigned char opcode);
 
 // Periodically listen for/get a message on the serial line
-struct message_struct* get_message(void);
+bool get_message(void);
 
 // Return the # of CRC errors seen
 unsigned char get_CRC_burst_error_count(void);

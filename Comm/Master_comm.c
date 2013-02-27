@@ -13,15 +13,18 @@
  */
 
 // The state of the master state machine
-__bit master_sm_state;
-unsigned char comm_speed;
-
+static __bit master_sm_state;
+// After handling a host message does master need to listen for a
+// response on the bus and relay it back to host
+static bool master_wants_response_on_bus;
+// The actual communication speed
+static unsigned char comm_speed;
+// The pointer to the message buffer
 static struct message_struct *MSG_buffer;
 
 /*
  * Internal Utility functions
  */
-
 
 // Set the direction of communication
 static void set_master_comm_state(unsigned char direction)
@@ -37,9 +40,9 @@ static void set_master_bus_comm_direction(unsigned char direction)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-static struct message_struct* get_master_message()
+static bool get_master_message()
 {
-  if ((MSG_buffer = get_message()) != NULL)
+  if (get_message())
     {
     // If the master is the addressee of the message then check CRC
     if(get_host_address() == MSG_buffer->content[MASTER_ADDRESS])
@@ -50,14 +53,14 @@ static struct message_struct* get_master_message()
          {
            MSG_buffer -> index = PARAMETER_START-1;
            send_message(CRC_ERROR);
-           return NULL;
+           return FALSE;
          } else {
            // CRC was OK return the message
-           return MSG_buffer;
+           return TRUE;
          }
       }
     }
- return NULL;
+ return FALSE;
 }
 
 
@@ -106,20 +109,15 @@ void init_master(unsigned char host_address, unsigned char _comm_speed)
   reset_master_comm();
 }
 
-
-
-
 void operate_master(void)
 {
-  bool master_wants_response_on_bus;
-
   MSG_buffer = get_message_buffer();
 
   while(TRUE)
     {
       if (master_sm_state == SM_MASTER_LISTENS_TO_HOST)
       {
-        if (get_master_message() != NULL)
+        if (get_master_message())
           {
             master_wants_response_on_bus = TRUE;
             switch (MSG_buffer->content[OPCODE])
@@ -154,7 +152,7 @@ void operate_master(void)
           }
         // SM_MASTER_LISTENS_ON_BUS
       } else {
-        if (get_master_message() != NULL)
+        if (get_master_message())
           {
             set_master_comm_state(MASTER_TALKS_TO_HOST);
 

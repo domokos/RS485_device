@@ -330,7 +330,7 @@ void send_message(unsigned char opcode)
 }
 
 // Periodically listen for/get a message on the serial line
-struct message_struct* get_message(void)
+bool get_message(void)
 {
   unsigned char ch_received = 0;
   bool process_char = FALSE;
@@ -344,7 +344,7 @@ struct message_struct* get_message(void)
       reset_timeout(MSG_TIMEOUT);
     } else {
       if (comm_state != WAITING_FOR_TRAIN) evaluate_timeout();
-      return NULL;
+      return FALSE;
     }
 
   switch (comm_state) {
@@ -433,7 +433,7 @@ struct message_struct* get_message(void)
       break;
   }
 
-  if(message_received) return &message_buffer; else return NULL;
+  return message_received;
 }
 
 // Return the # of CRC errors seen

@@ -26,8 +26,6 @@
 #define SM_MASTER_LISTENS_TO_HOST 0
 #define SM_MASTER_LISTENS_ON_BUS 1
 
-
-
 /*
  * Internal Utility function prototypes
  */
@@ -40,7 +38,7 @@ static void set_master_bus_comm_direction(unsigned char direction);
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-static struct message_struct* get_master_message();
+static bool get_master_message();
 
 // Relay the message to the bus
 static void relay_message_to_bus(void);

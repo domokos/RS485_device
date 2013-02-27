@@ -11,6 +11,9 @@
 #include "Base.h"
 #include "Slave_comm.h"
 
+
+static struct message_struct *MSG_struct;
+
 // Set the direction of communication
 static void set_device_comm_direction(unsigned char direction)
 {
@@ -42,6 +45,9 @@ void init_device_comm(unsigned char host_address, unsigned char comm_speed)
 
   // Reset the communication channel
   reset_device_comm();
+
+  // get a pointer to the message buffer
+  MSG_struct = get_message_buffer();
 }
 
 /* Function to send response to the master on the bus
@@ -62,27 +68,25 @@ void send_response(unsigned char opcode)
 
 // Returns void* to the caller if no message is received
 // returns a pointer to the message if a message is received
-struct message_struct* get_device_message(void)
+bool get_device_message(void)
 {
-  struct message_struct* msg = get_message_buffer();
-
-  if (get_message() != NULL)
+  if (get_message())
     {
     // If this slave is the addressee of the message then check CRC
-    if(get_host_address() == msg->content[SLAVE_ADDRESS])
+    if(get_host_address() == MSG_struct->content[SLAVE_ADDRESS])
       {
        // If there is a CRC error then respond with a CRC error message and
        // do not return it to the caller
        if (get_comm_error() == COMM_CRC_ERROR)
          {
-         msg -> index = PARAMETER_START-1;
+    	   MSG_struct -> index = PARAMETER_START-1;
          send_response(CRC_ERROR);
-         return NULL;
+         return FALSE;
          } else {
          // CRC was OK return the message
-         return msg;
+         return TRUE;
        }
       }
     }
- return NULL;
+ return FALSE;
 }

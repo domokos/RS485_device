@@ -51,7 +51,7 @@ void data_communication_test(void)
         reset_timeout(RESPONSE_TIMEOUT);
       }
 
-      if (get_device_message() != NULL )
+      if (get_device_message())
         {
           switch (MSG_buffer->content[OPCODE])
           {
