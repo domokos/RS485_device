@@ -19,7 +19,7 @@
 char onewire_reset(unsigned char pinmask);
 
 // Write a byte to the onewire bus
-void onewire_write_byte(unsigned char b);
+void onewire_write_byte(unsigned char b, unsigned char pinmask);
 
 // Read a byte from the onewire bus
 unsigned char onewire_read_byte(unsigned char pinmask);

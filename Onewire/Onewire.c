@@ -2,13 +2,13 @@
 
 #define ONEWIRE_PIN _P1_7
 
-void onewire_write_byte(unsigned char b)
+void onewire_write_byte(unsigned char b, unsigned char pinmask)
 {
 	unsigned char i=8;
-        if(b>0) b=1; else b=2;
+
 	while(i)
 	  {
-            onewire_write_bit(b);
+            onewire_write_bit((unsigned int)(pinmask << 8) | b);
             b >>= 1;
             i--;
 	  }
@@ -16,8 +16,8 @@ void onewire_write_byte(unsigned char b)
 
 unsigned char onewire_read_byte(unsigned char pinmask)
 {
-	unsigned char i,b;
-	b=0;i=8;
+	unsigned char i=8,b=0;
+
 	while (i)
 	  {
 	    b = (b >> 1) | (onewire_read_bit(pinmask) << 7);
@@ -76,16 +76,16 @@ char onewire_reset(unsigned char pinmask)
 	                        // P1 &= ~pinmask - pull bus pin low
 	lcall	_delay_480us
 	push	ie
-	clr		ea				// disable interrupts
+	clr	ea		// disable interrupts
 	mov     a, r7
 	orl     _P1, a          // P1 |= pinmask - pull bus pin high
-	lcall	_delay_60us		// waint for the presence pulse
-	mov     a, r7
-	anl		a, _P1  		// read the presence pulse
-	pop		ie				// restore interrupt status
+	lcall	_delay_60us	// wait for the presence pulse
+	mov     a, r7           // read the presence pulse
+	anl	a, _P1
+	pop	ie		// restore interrupt status
 	mov     dpl, #0
 	jnz     no_presence_pulse
-	inc     dpl
+	inc     dptr
 no_presence_pulse:
 	sjmp	_delay_480us	// wait the rest of init cycle - ugly but fast?
 	__endasm;
@@ -95,31 +95,31 @@ no_presence_pulse:
 #endif
 }
 
-void onewire_write_bit(unsigned int bit0_pinmask)
+void onewire_write_bit(unsigned int pinmask_bit0)
 {
 #ifdef SDCC
-	bit0_pinmask;
+        pinmask_bit0;
 #endif
 	__asm
 	mov	a, dpl
 	mov     r6, a           // Store bit to be sent in r6
 	mov     a, dph
-	mov     r7, dph         // Store bitmask in r7
+	mov     r7, dph         // Store pinmask in r7
 	push	ie
-	clr		ea
+	clr	ea
 	cpl     a
-    anl     _P1, a          // P1 &= ~pinmask - pull bus pin low
-    mov     a, r6
-	jnz		onewire_write_bit0
+        anl     _P1, a          // P1 &= ~pinmask - pull bus pin low
+        mov     a, r6
+	jnb	acc.0, onewire_write_bit0
 onewire_write_bit1:
-    mov     a, r7
-    orl     _P1, a          // P1 |= pinmask - pull bus pin high
-	pop		ie
+        mov     a, r7
+        orl     _P1, a          // P1 |= pinmask - pull bus pin high
+	pop	ie
 	sjmp	_delay_60us
 onewire_write_bit0:
 	lcall	_delay_60us
-    mov     a, r7
-    orl     _P1, a          // P1 |= pinmask  - pull bus pin high
+        mov     a, r7
+        orl     _P1, a          // P1 |= pinmask  - pull bus pin high
 	pop	ie
 	__endasm;
 }
@@ -133,13 +133,13 @@ unsigned char onewire_read_bit(unsigned char pinmask)
 	mov     a, dph
 	mov     r7, dph         // Store bitmask in r7
 	push	ie
-	clr		ea
+	clr	ea
 	cpl     a
 	anl     _P1, a          // P1 &= ~pinmask - pull bus pin low
 #ifdef  CRYSTAL_SPEED_HI
-    mov		r2, #14
+	mov		r2, #14
 #elif defined CRYSTAL_SPEED_LO
-    mov     r2, #28
+	mov     r2, #28
 #else
 #error "No or incorrect crystal speed defined."
 #endif
@@ -147,13 +147,13 @@ unsigned char onewire_read_bit(unsigned char pinmask)
 	orl     _P1, a          // P1 |= pinmask - pull bus pin high
 onewire_read_bit_wait:
 	djnz	r2, onewire_read_bit_wait
-    mov     a, r7
-    anl     a, _P1          // read the bus
-	pop		ie
-	clr		dpl
-	jnz    	no_presence
-	inc     dpl
-no_presence:
+	mov     a, r7
+	anl     a, _P1          // read the bus
+	pop	ie
+	mov	dpl, #0
+	jz    	read_zero
+	inc     dptr
+read_zero:
 	lcall	_delay_60us
 #ifdef  CRYSTAL_SPEED_HI
 	mov	r2, #40
@@ -246,22 +246,23 @@ delay_480us_loop:
 unsigned char asmtest(unsigned char b)
 {
 
-	return P1 & b;
+	return (P1 & b) == 0;
 }
 
 
 void onewire_test(void)
 {
 	unsigned char pinmask, b=0;
+	unsigned int bitwrite_param=0;
 	pinmask = 0x04;
 
 	while (TRUE) {
-		if(onewire_reset(pinmask))
-		{
-			b=1+b;
-		}else{
-			b=2-0x34;
-		}
+	onewire_reset(pinmask);
+
+	bitwrite_param = (unsigned int)pinmask << 8 | 0x01;
+	onewire_write_bit(bitwrite_param);
+	onewire_read_bit(pinmask);
+	onewire_write_byte(0x55, pinmask);
 	}
 }
 

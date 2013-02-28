@@ -36,7 +36,7 @@ void onewire_example(void)
 		// the code below can be removed if you only
 		// use one type of sensor.
 ///		printf("ROM: ");
-		onewire_write_byte(CMD_READ_ROM);
+		onewire_write_byte(CMD_READ_ROM, pinmask);
 		for (i=0; i<8; i++) {
 			buf[i] = onewire_read_byte(pinmask);
 //			printf("%x ", buf[i]);
@@ -55,15 +55,15 @@ void onewire_example(void)
 */
 		// if it's a configurable resolution, set it for 12 bits
 		if ((type == 0x28 || type == 0x22) && (buf[4] & 0x60) != 0x60) {
-			onewire_write_byte(CMD_WRITE_SCRATCHPAD);
-			onewire_write_byte(0);
-			onewire_write_byte(0);
-			onewire_write_byte(0x7F); // config
+			onewire_write_byte(CMD_WRITE_SCRATCHPAD, pinmask);
+			onewire_write_byte(0, pinmask);
+			onewire_write_byte(0, pinmask);
+			onewire_write_byte(0x7F, pinmask); // config
 		}
 //		printf("Begin temperature measurement\r\n");
 		onewire_reset(pinmask);
-		onewire_write_byte(CMD_SKIP_ROM);
-		onewire_write_byte(CMD_CONVERT_T);
+		onewire_write_byte(CMD_SKIP_ROM, pinmask);
+		onewire_write_byte(CMD_CONVERT_T, pinmask);
 		STRONG_PULLUP_PIN = 0;  // turn on strong pullup transistor
 		for (dly=0; dly<1563; dly++) {
 			delay_480us();
@@ -71,15 +71,15 @@ void onewire_example(void)
 		STRONG_PULLUP_PIN = 1;  // turn off strong pullup
 		onewire_reset(pinmask);
 		// Temperature measurement is complete, now read it
-		onewire_write_byte(CMD_SKIP_ROM);
-		onewire_write_byte(CMD_READ_SCRATCHPAD);
+		onewire_write_byte(CMD_SKIP_ROM, pinmask);
+		onewire_write_byte(CMD_READ_SCRATCHPAD, pinmask);
 //		printf("Data: ");
 		for (i=0; i<9; i++) {
 			buf[i] = onewire_read_byte(pinmask);
 //			printf("%x ", buf[i]);
 		}
 //		printf(" CRC=%s\r\n",
-			onewire_crc_check(buf, 9);
+//			onewire_crc_check(buf, 9);
 		temperature = buf[0] | (buf[1] << 8);
 		// if it's DS18S20, scale up to 12 bit resolution
 		if (type == 0x10) {
@@ -94,9 +94,9 @@ void onewire_example(void)
 		}
 #ifdef NICE_OUTPUT
 //		printf("Temperature: %.2f Celsius\r\n",
-			(float)temperature * 0.0625;
+//			(float)temperature * 0.0625;
 //		printf("Temperature: %.2f Fahrenheit\r\n",
-			(float)temperature * 0.1125 + 32.0;
+//			(float)temperature * 0.1125 + 32.0;
 #else
 		// result is deg_C * 16
 		printf("Temperature: %d / 16\r\n", temperature);
