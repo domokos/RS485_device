@@ -6,6 +6,7 @@
  */
 
 #include "Slave_comm.h"
+#include "Onewire.h"
 
 #define HOST_ID 1
 

@@ -22,10 +22,6 @@
 #define printf printf_fast
 #endif
 
-void onewire_test(void)
-{
-
-}
 
 void onewire_example(void)
 {

@@ -33,6 +33,8 @@ void delay_60us(void);
 // Wait for 480us - used for 1wire timing
 void delay_480us(void);
 
+void onewire_test(void);
+
 /*
  * Internal utility functions
  */
