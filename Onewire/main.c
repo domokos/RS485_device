@@ -22,13 +22,18 @@
 #define printf printf_fast
 #endif
 
+void onewire_test(void)
+{
+
+}
+
 void onewire_example(void)
 {
-	unsigned char i, buf[9], type;
+	unsigned char i, buf[9], type, pinmask = 0x04;
 	int dly, temperature;
 
 //	printf("1-wire Temperature Test:\r\n");
-	if (onewire_reset()) {
+	if (onewire_reset(pinmask)) {
 //		printf("presence pulse ok\r\n");
 		// It isn't really necessary to read the ROM if
 		// you know which chip is connected.  A lot of
@@ -37,7 +42,7 @@ void onewire_example(void)
 ///		printf("ROM: ");
 		onewire_write_byte(CMD_READ_ROM);
 		for (i=0; i<8; i++) {
-			buf[i] = onewire_read_byte();
+			buf[i] = onewire_read_byte(pinmask);
 //			printf("%x ", buf[i]);
 		}
 //		printf(" CRC=%s\r\n",
@@ -60,7 +65,7 @@ void onewire_example(void)
 			onewire_write_byte(0x7F); // config
 		}
 //		printf("Begin temperature measurement\r\n");
-		onewire_reset();
+		onewire_reset(pinmask);
 		onewire_write_byte(CMD_SKIP_ROM);
 		onewire_write_byte(CMD_CONVERT_T);
 		STRONG_PULLUP_PIN = 0;  // turn on strong pullup transistor
@@ -68,13 +73,13 @@ void onewire_example(void)
 			delay_480us();
 		}
 		STRONG_PULLUP_PIN = 1;  // turn off strong pullup
-		onewire_reset();
+		onewire_reset(pinmask);
 		// Temperature measurement is complete, now read it
 		onewire_write_byte(CMD_SKIP_ROM);
 		onewire_write_byte(CMD_READ_SCRATCHPAD);
 //		printf("Data: ");
 		for (i=0; i<9; i++) {
-			buf[i] = onewire_read_byte();
+			buf[i] = onewire_read_byte(pinmask);
 //			printf("%x ", buf[i]);
 		}
 //		printf(" CRC=%s\r\n",

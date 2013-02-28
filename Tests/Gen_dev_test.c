@@ -105,6 +105,7 @@ void main(void)
   // Set 4800 baud @ 11.0592 MHz Crystal
   init_device_comm(HOST_ID,COMM_SPEED_4800_H);
 
-  data_communication_test();
+  onewire_test();
+  //data_communication_test();
 
 }

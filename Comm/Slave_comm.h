@@ -10,6 +10,7 @@
 
 #include "Base.h"
 #include "Comm_common.h"
+#include "Onewire.h"
 
 /*
  * The number after which get_message is called while waiting for a character

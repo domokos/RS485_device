@@ -16,13 +16,13 @@
 
 // Do a 1-wire reset cycle
 // return 1 if presense pulse detected, 0 if no device(s) present
-char onewire_reset(void);
+char onewire_reset(unsigned char pinmask);
 
 // Write a byte to the onewire bus
 void onewire_write_byte(unsigned char b);
 
 // Read a byte from the onewire bus
-unsigned char onewire_read_byte(void);
+unsigned char onewire_read_byte(unsigned char pinmask);
 
 // Check the crc of the onewire bus message
 unsigned char onewire_crc_check(unsigned char *p, unsigned char num);
@@ -38,9 +38,9 @@ void delay_480us(void);
  */
 
 // Write a bit to the onewire bus
-static void onewire_write_bit(unsigned char bit0);
+static void onewire_write_bit(unsigned int bit0_pinmask);
 
 // Read a bit from the onewire bus
-static unsigned char onewire_read_bit(void);
+static unsigned char onewire_read_bit(unsigned char pinmask);
 
 #endif /* ONEWIRE_H_ */
