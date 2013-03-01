@@ -19,8 +19,6 @@ static __bit master_sm_state;
 static bool master_wants_response_on_bus;
 // The actual communication speed
 static unsigned char comm_speed;
-// The pointer to the message buffer
-static struct message_struct *MSG_buffer;
 
 /*
  * Internal Utility functions
@@ -45,13 +43,13 @@ static bool get_master_message()
   if (get_message())
     {
     // If the master is the addressee of the message then check CRC
-    if(get_host_address() == MSG_buffer->content[MASTER_ADDRESS])
+    if(get_host_address() == message_buffer.content[MASTER_ADDRESS])
       {
        // If there is a CRC error then respond with a CRC error message and
        // do not return it to the caller
        if (get_comm_error() == COMM_CRC_ERROR)
          {
-           MSG_buffer -> index = PARAMETER_START-1;
+           message_buffer.index = PARAMETER_START-1;
            send_message(CRC_ERROR);
            return FALSE;
          } else {
@@ -69,7 +67,7 @@ static void relay_message_to_bus(void)
   set_master_comm_state(MASTER_TALKS_TO_BUS);
   set_master_bus_comm_direction(MASTER_SENDS_ON_BUS);
 
-  send_message(MSG_buffer->content[OPCODE]);
+  send_message(message_buffer.content[OPCODE]);
 }
 
 /*
@@ -111,7 +109,6 @@ void init_master(unsigned char host_address, unsigned char _comm_speed)
 
 void operate_master(void)
 {
-  MSG_buffer = get_message_buffer();
 
   while(TRUE)
     {
@@ -120,13 +117,13 @@ void operate_master(void)
         if (get_master_message())
           {
             master_wants_response_on_bus = TRUE;
-            switch (MSG_buffer->content[OPCODE])
+            switch (message_buffer.content[OPCODE])
             {
             case SET_COMM_SPEED:
                 relay_message_to_bus();
                 // Set the communication speed and remember it
-                set_comm_speed(MSG_buffer -> content[PARAMETER_START]);
-                comm_speed = MSG_buffer -> content[PARAMETER_START];
+                set_comm_speed(message_buffer.content[PARAMETER_START]);
+                comm_speed = message_buffer.content[PARAMETER_START];
               break;
 
             case PING_MASTER:
@@ -156,7 +153,7 @@ void operate_master(void)
           {
             set_master_comm_state(MASTER_TALKS_TO_HOST);
 
-            send_message(MSG_buffer->content[OPCODE]);
+            send_message(message_buffer.content[OPCODE]);
 
             master_sm_state = SM_MASTER_LISTENS_TO_HOST;
           } else {
@@ -165,7 +162,7 @@ void operate_master(void)
               {
                 set_master_comm_state(MASTER_TALKS_TO_HOST);
 
-                MSG_buffer -> index = PARAMETER_START-1;
+                message_buffer.index = PARAMETER_START-1;
                 send_message(TIMEOUT);
 
                 master_sm_state = SM_MASTER_LISTENS_TO_HOST;
@@ -174,7 +171,7 @@ void operate_master(void)
               {
                 set_master_comm_state(MASTER_TALKS_TO_HOST);
 
-                MSG_buffer -> index = PARAMETER_START-1;
+                message_buffer.index = PARAMETER_START-1;
                 send_message(CRC_ERROR);
 
                 master_sm_state = SM_MASTER_LISTENS_TO_HOST;

@@ -50,6 +50,9 @@ struct message_struct
   unsigned char   content[MAX_MESSAGE_LENGTH];
 };
 
+// The message buffer is publicly visible - no RAM for pointers :(
+extern struct message_struct message_buffer;
+
 /**********************************************************************************
  * The messaging format:
  * TRAIN_CHR - n*8 bits - at least TRAIN_LENGTH_RCV
@@ -111,18 +114,22 @@ struct comm_speed_struct
 {
   unsigned char   reload_value;
   unsigned char   is_smod_set;
-  unsigned int    msg_timeout;
+  unsigned char   msg_timeout;
   unsigned int    resp_timeout;
 };
 
-#define COMM_SPEED_300_L 0
-#define COMM_SPEED_1200_L 1
-#define COMM_SPEED_2400_L 2
-#define COMM_SPEED_4800_L 3
-#define COMM_SPEED_9600_L 4
-#define COMM_SPEED_14400_L 5
+extern const unsigned char comm_speed_multipliers[];
+
+
+#define COMM_SPEED_1200_L 0
+#define COMM_SPEED_2400_L 1
+#define COMM_SPEED_4800_L 2
+#define COMM_SPEED_9600_L 3
+#define COMM_SPEED_14400_L 4
+#define COMM_SPEED_19200_L 5
 #define COMM_SPEED_28800_L 6
 #define COMM_SPEED_57600_L 7
+
 #define COMM_SPEED_300_H 8
 #define COMM_SPEED_1200_H 9
 #define COMM_SPEED_2400_H 10

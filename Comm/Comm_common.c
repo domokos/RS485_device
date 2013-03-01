@@ -23,68 +23,57 @@ static unsigned char CRC_burst_error_count;
 static unsigned char train_length;
 static unsigned char comm_error;
 
-static struct message_struct message_buffer;
+struct message_struct message_buffer;
 
-#ifdef CRYSTAL_SPEED_LO
 /*
- * Timeout values milliseconds for CRYSTAL_SPEED_LO - 11.0592MHz
- *
-Baud    BIt time        Byte time       Messaging               Response timeout
-                                        timeout (15 bytes)      4xmsg timeout + 100 ms
-300     3.333333333     33.33333333     500                     2100
-1200    0.833333333     8.333333333     125                     600
-2400    0.416666667     4.166666667     62.5                    350
-4800    0.208333333     2.083333333     31.25                   225
-9600    0.104166667     1.041666667     15.625                  162.5
-14400   0.069444444     0.694444444     10.41666667             141.66666667
-19200   0.052083333     0.520833333     7.8125                  131.25
-28800   0.034722222     0.347222222     5.208333333             120.83333333
-57600   0.017361111     0.173611111     2.604166667             110.41666667
+ * reload and timeout values in milliseconds
 */
 
-
+#ifdef CRYSTAL_SPEED_LO
 __code const struct comm_speed_struct comm_speeds[] = {
-    {0xa0,0,500,2100}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
-    {0xe8,0,125,600}, //COMM_SPEED_1200_L 0xe8,SMOD not set in PCON
-    {0xf4,0,63,350}, //COMM_SPEED_2400_L 0xf4,SMOD not set in PCON
-    {0xfa,0,31,225}, //COMM_SPEED_4800_L 0xfa,SMOD not set in PCON
-    {0xfd,0,16,163}, //COMM_SPEED_9600_L 0xfd,SMOD not set in PCON
-    {0xfe,0,10,142}, //COMM_SPEED_14400_L 0xfe,SMOD not set in PCON
-    {0xff,0,5,121}, //COMM_SPEED_28800_L 0xff,SMOD not set in PCON
-    {0,0,0,0}, //COMM_SPEED_57600_L Not available with this crystal speed
+    {0xe8,0,120,580}, //COMM_SPEED_1200_L,SMOD not set in PCON
+    {0xf4,0,60,340}, //COMM_SPEED_2400_L,SMOD not set in PCON
+    {0xfa,0,30,220}, //COMM_SPEED_4800_L,SMOD not set in PCON
+    {0xfd,0,15,160}, //COMM_SPEED_9600_L,SMOD not set in PCON
+    {0xfe,0,14,140}, //COMM_SPEED_14400_L,SMOD not set in PCON
+    {0x00,0,0,0}, //COMM_SPEED_19200_L,SMOD not set in PCON
+    {0xff,0,5,120}, //COMM_SPEED_28800_L,SMOD not set in PCON
+    {0x00,0,0,0}, //COMM_SPEED_57600_L,SMOD not set in PCON
 
-    {0x40,1,500,2100}, //COMM_SPEED_300_H 0x40,SMOD set in PCON
-    {0xd0,1,125,600}, //COMM_SPEED_1200_H 0xd0,SMOD set in PCON
-    {0xe8,1,63,350}, //COMM_SPEED_2400_H 0xe8,SMOD set in PCON
-    {0xf4,1,31,225}, //COMM_SPEED_4800_H 0xf4,SMOD set in PCON
-    {0xfa,1,16,163}, //COMM_SPEED_9600_H 0xfa,SMOD set in PCON
-    {0xfc,1,10,142}, //COMM_SPEED_14400_H 0xfc,SMOD set in PCON
-    {0xfd,1,8,131}, //COMM_SPEED_19200_H 0xfd,SMOD set in PCON
-    {0xfe,1,5,121}, //COMM_SPEED_28800_H 0xfe,SMOD set in PCON
-    {0xff,1,3,110}, //COMM_SPEED_57600_H 0xff,SMOD set in PCON
-    {0,0,0,0}// COMM_SPEED_115200_H Not available with this crystal speed
+    {0x40,0,0,0}, //COMM_SPEED_300_H,SMOD set in PCON
+    {0xd0,0,0,0}, //COMM_SPEED_1200_H,SMOD set in PCON
+    {0xe8,1,60,340}, //COMM_SPEED_2400_H,SMOD set in PCON
+    {0xf4,1,30,220}, //COMM_SPEED_4800_H,SMOD set in PCON
+    {0xfa,1,15,160}, //COMM_SPEED_9600_H,SMOD set in PCON
+    {0xfc,1,14,140}, //COMM_SPEED_14400_H,SMOD set in PCON
+    {0xfd,1,10,130}, //COMM_SPEED_19200_H,SMOD set in PCON
+    {0xfe,1,5,120}, //COMM_SPEED_28800_H,SMOD set in PCON
+    {0xff,1,3,110}, //COMM_SPEED_57600_H,SMOD set in PCON
+    {0x00,0,0,0} //COMM_SPEED_115200_H,SMOD set in PCON
 };
 
 #elif defined CRYSTAL_SPEED_HI
 
 __code const struct comm_speed_struct comm_speeds[] = {
-    {0xa0,0,500,2100}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
-    {0xe8,0,125,600}, //COMM_SPEED_1200_L 0xe8,SMOD not set in PCON
-    {0xf4,0,63,350}, //COMM_SPEED_2400_L 0xf4,SMOD not set in PCON
-    {0xfa,0,31,225}, //COMM_SPEED_4800_L 0xfa,SMOD not set in PCON
-    {0xfd,0,16,163}, //COMM_SPEED_9600_L 0xfd,SMOD not set in PCON
-    {0xfe,0,10,142}, //COMM_SPEED_14400_L 0xfe,SMOD not set in PCON
-    {0xff,0,5,121}, //COMM_SPEED_28800_L 0xff,SMOD not set in PCON
+    {0xd0,0,120,580}, //COMM_SPEED_1200_L,SMOD not set in PCON
+    {0xe8,0,60,340}, //COMM_SPEED_2400_L,SMOD not set in PCON
+    {0xf4,0,30,220}, //COMM_SPEED_4800_L,SMOD not set in PCON
+    {0xfa,0,15,160}, //COMM_SPEED_9600_L,SMOD not set in PCON
+    {0xfc,0,14,140}, //COMM_SPEED_14400_L,SMOD not set in PCON
+    {0xfd,0,10,130}, //COMM_SPEED_19200_L,SMOD not set in PCON
+    {0xfe,0,5,120}, //COMM_SPEED_28800_L,SMOD not set in PCON
+    {0xff,0,3,110}, //COMM_SPEED_57600_L,SMOD not set in PCON
 
-    {0x40,1,500,2100}, //COMM_SPEED_300_H 0x40,SMOD set in PCON
-    {0xd0,1,125,600}, //COMM_SPEED_1200_H 0xd0,SMOD set in PCON
-    {0xe8,1,63,350}, //COMM_SPEED_2400_H 0xe8,SMOD set in PCON
-    {0xf4,1,31,225}, //COMM_SPEED_4800_H 0xf4,SMOD set in PCON
-    {0xfa,1,16,163}, //COMM_SPEED_9600_H 0xfa,SMOD set in PCON
-    {0xfc,1,10,142}, //COMM_SPEED_14400_H 0xfc,SMOD set in PCON
-    {0xfd,1,8,131}, //COMM_SPEED_19200_H 0xfd,SMOD set in PCON
-    {0xfe,1,5,121}, //COMM_SPEED_28800_H 0xfe,SMOD set in PCON
-    {0xff,1,3,110} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
+    {0x00,0,0,0}, //COMM_SPEED_300_H,SMOD set in PCON
+    {0xa0,1,120,580}, //COMM_SPEED_1200_H,SMOD set in PCON
+    {0xd0,1,60,340}, //COMM_SPEED_2400_H,SMOD set in PCON
+    {0xe8,1,30,220}, //COMM_SPEED_4800_H,SMOD set in PCON
+    {0xf4,1,15,160}, //COMM_SPEED_9600_H,SMOD set in PCON
+    {0xf8,1,14,140}, //COMM_SPEED_14400_H,SMOD set in PCON
+    {0xfa,1,10,130}, //COMM_SPEED_19200_H,SMOD set in PCON
+    {0xfc,1,5,120}, //COMM_SPEED_28800_H,SMOD set in PCON
+    {0xfe,1,3,110}, //COMM_SPEED_57600_H,SMOD set in PCON
+    {0xff,1,2,105} //COMM_SPEED_115200_H,SMOD set in PCON
 };
 
 #else
@@ -303,12 +292,6 @@ unsigned char get_host_address(void)
 void set_host_address(unsigned char _host_address)
 {
   host_address = _host_address;
-}
-
-// Provide access to the message structure
-struct message_struct* get_message_buffer(void)
-{
-  return &message_buffer;
 }
 
 // Return the comm error

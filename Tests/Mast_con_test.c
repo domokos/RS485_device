@@ -9,7 +9,6 @@
 
 #define MASTER_HOST_ID 1
 
-struct message_struct *MSG_buffer;
 
 void main(void)
 {

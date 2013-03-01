@@ -8,10 +8,10 @@
 #include "Furnace_temp_device.h"
 
 
-void main()
+void main_test()
 {
 
- while(1)
+ while(TRUE)
    {
 
 
