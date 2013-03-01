@@ -4,6 +4,8 @@
 
 
 // comment this to build without nice floating point at the end
+#if 0
+
 #define NICE_OUTPUT
 
 #include "Onewire.h"
@@ -62,11 +64,11 @@ void onewire_example(void)
 		onewire_reset(pinmask);
 		onewire_write_byte(CMD_SKIP_ROM, pinmask);
 		onewire_write_byte(CMD_CONVERT_T, pinmask);
-		STRONG_PULLUP_PIN = 0;  // turn on strong pullup transistor
+		//STRONG_PULLUP_PIN = 0;  // turn on strong pullup transistor
 		for (dly=0; dly<1563; dly++) {
 			delay_480us();
 		}
-		STRONG_PULLUP_PIN = 1;  // turn off strong pullup
+		//STRONG_PULLUP_PIN = 1;  // turn off strong pullup
 		onewire_reset(pinmask);
 		// Temperature measurement is complete, now read it
 		onewire_write_byte(CMD_SKIP_ROM, pinmask);
@@ -110,3 +112,4 @@ void onewire_example(void)
 }
 
 
+#endif

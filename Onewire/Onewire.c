@@ -1,21 +1,6 @@
 #include "Onewire.h"
 
-
-void operate_onewire(void)
-{
-
-}
-
-issue_temperature_convert(unsigned char pinmask, unsigned char timer_id)
-{
-    if
-}
-
-read_DS18S20(unsigned char pinmask, unsigned char timer_id)
-{
-
-}
-
+unsigned char ow_buf[9];
 
 void onewire_write_byte(unsigned char b, unsigned char pinmask)
 {

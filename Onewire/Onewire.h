@@ -11,12 +11,30 @@
 #include "Base.h"
 
 /*
- * Public module functions
+ * Onewire commands
  */
 
-// Must be called periodically to do onewire housekeeing and keep
-// temp sensor's udated
-void operate_onewire(void);
+#define CMD_READ_ROM            0x33
+#define CMD_SKIP_ROM            0xCC
+#define CMD_CONVERT_T           0x44
+#define CMD_READ_SCRATCHPAD     0xBE
+#define CMD_WRITE_SCRATCHPAD    0x4E
+
+/*
+ * Onewire specific timing constatnts
+ */
+
+#define DS18S20_CONV_TIME 750
+
+/*
+ * Onewire buffer
+ */
+
+extern unsigned char ow_buf[9];
+
+/*
+ * Public module functions
+ */
 
 // Do a 1-wire reset cycle
 // return 1 if presense pulse detected, 0 if no device(s) present
