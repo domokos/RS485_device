@@ -1,6 +1,21 @@
 #include "Onewire.h"
 
-#define ONEWIRE_PIN _P1_7
+
+void operate_onewire(void)
+{
+
+}
+
+issue_temperature_convert(unsigned char pinmask, unsigned char timer_id)
+{
+    if
+}
+
+read_DS18S20(unsigned char pinmask, unsigned char timer_id)
+{
+
+}
+
 
 void onewire_write_byte(unsigned char b, unsigned char pinmask)
 {
@@ -242,27 +257,3 @@ delay_480us_loop:
 #else
 #error "No or incorrect crystal speed defined."
 #endif
-
-unsigned char asmtest(unsigned char b)
-{
-
-	return (P1 & b) == 0;
-}
-
-
-void onewire_test(void)
-{
-	unsigned char pinmask, b=0;
-	unsigned int bitwrite_param=0;
-	pinmask = 0x04;
-
-	while (TRUE) {
-	onewire_reset(pinmask);
-
-	bitwrite_param = (unsigned int)pinmask << 8 | 0x01;
-	onewire_write_bit(bitwrite_param);
-	onewire_read_bit(pinmask);
-	onewire_write_byte(0x55, pinmask);
-	}
-}
-

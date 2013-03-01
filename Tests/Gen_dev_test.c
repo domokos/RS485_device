@@ -15,7 +15,7 @@ __code const char register_identification[][REG_IDENTIFICATION_LEN] = {
    {REG_TYPE_TEMP, REG_RO, 9, 0, 0},
    {REG_TYPE_SW, REG_RW, 1, 0, 0},
    {REG_TYPE_TEMP, REG_RO, 9, 0, 0},
-   {'A', 'l', 'm', 'a', 'k'}
+   {REG_TYPE_SW, REG_RW, 1, 0, 0}
 };
 
 
@@ -45,6 +45,8 @@ void data_communication_test(void)
         reset_timeout(RESPONSE_TIMEOUT);
       }
 
+      operate_onewire();
+
       if (get_device_message() && !process_generic_messages())
         {
           switch (message_buffer.content[OPCODE])
@@ -55,9 +57,22 @@ void data_communication_test(void)
               response_opcode = COMMAND_SUCCESS;
               break;
             case READ_REGISTER:
-              p = 0x01 << message_buffer.content[PARAMETER_START]-1;
-              message_buffer.content[PARAMETER_START] = (P1 & p);
-              message_buffer.index=PARAMETER_START;
+              // Switch register number
+              switch(message_buffer.content[PARAMETER_START])
+              {
+              case 1:
+
+                break;
+              case 2:
+                break;
+              case 3:
+                break;
+              case 4:
+                break;
+              default:
+                response_opcode = COMMAND_FAIL;
+                break;
+              }
               response_opcode = COMMAND_SUCCESS;
               break;
             default:

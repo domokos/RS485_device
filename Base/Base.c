@@ -10,7 +10,8 @@
 // Global variables
 bool timer_initialized = FALSE;
 static volatile unsigned int  time_counter;
-static unsigned int msg_timeout_start, response_timeout_start, delay_timeout_start;
+
+static unsigned int timer_start_times[6];
 
 /*
  * Internal utility functions
@@ -101,15 +102,7 @@ void reset_timeout(unsigned char type)
   // Initialize timer if it is not initialized
   if(!timer_initialized) init_timer();
 
-  if (type == MSG_TIMEOUT)
-    {
-      msg_timeout_start = time_counter;
-    } else if (type == RESPONSE_TIMEOUT) {
-      response_timeout_start = time_counter;
-    // DELAY_TIMEOUT
-    } else {
-      delay_timeout_start = time_counter;
-    }
+  timer_start_times[type] = time_counter;
 }
 
 // Return if there was a timeout
@@ -119,15 +112,7 @@ unsigned char timeout_occured(unsigned char type, unsigned int timeout_limit)
   unsigned int ticks_difference, timeout_start;
 
   // Set the start of the timeout based on timeout type
-  if (type == MSG_TIMEOUT)
-    {
-      timeout_start = msg_timeout_start;
-    } else if (type == RESPONSE_TIMEOUT) {
-      timeout_start = response_timeout_start;
-    // DELAY_TIMEOUT
-    } else {
-      timeout_start = delay_timeout_start;
-    }
+  timeout_start = timer_start_times[type];
 
  // If there is no owerflow in the interrupt ticks
  // (equality as regarded as no timeout - just started)

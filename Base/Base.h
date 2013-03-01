@@ -28,6 +28,9 @@ typedef __bit bool;
 #define MSG_TIMEOUT 0
 #define RESPONSE_TIMEOUT 1
 #define DELAY_TIMEOUT 2
+#define TEMP1_TIMEOUT 3
+#define TEMP2_TIMEOUT 4
+#define TEMP3_TIMEOUT 5
 
 /*
  * Internal utility functions

@@ -14,6 +14,10 @@
  * Public module functions
  */
 
+// Must be called periodically to do onewire housekeeing and keep
+// temp sensor's udated
+void operate_onewire(void);
+
 // Do a 1-wire reset cycle
 // return 1 if presense pulse detected, 0 if no device(s) present
 char onewire_reset(unsigned char pinmask);
@@ -32,8 +36,6 @@ void delay_60us(void);
 
 // Wait for 480us - used for 1wire timing
 void delay_480us(void);
-
-void onewire_test(void);
 
 /*
  * Internal utility functions

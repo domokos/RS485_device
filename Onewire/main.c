@@ -8,8 +8,6 @@
 
 #include "Onewire.h"
 
-#define STRONG_PULLUP_PIN	P1_6
-
 #define CMD_READ_ROM		0x33
 #define CMD_SKIP_ROM		0xCC
 #define CMD_CONVERT_T		0x44
