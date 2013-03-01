@@ -28,6 +28,8 @@ ISR(TIMER0,0)
 #elif defined CRYSTAL_SPEED_HI
   TL0  = 0xcc;   // Restart from 0xf8cc (1 ms)
   TH0  = 0xf8;
+#else
+#error "No or incorrect crystal speed defined."
 #endif
   TR0  = 1;
 }
@@ -41,6 +43,8 @@ static void init_timer(void)
 #elif defined CRYSTAL_SPEED_HI
   TL0  = 0xcc;    // Start from 0xf866
   TH0  = 0xf8;
+#else
+#error "No or incorrect crystal speed defined."
 #endif
   TMOD = (TMOD&0xF0)|0x01;    // Set Timer 0 16-bit mode
   TR0  = 1;       // Start Timer 0

@@ -1,12 +1,12 @@
 /*
- * Device.c
+ * Furnace_temp_device.c
  *
  *  Created on: Oct 22, 2012
  *      Author: dmolnar
  */
 
+#include "Furnace_temp_device.h"
 
-int a=0;
 
 void main()
 {
@@ -14,6 +14,6 @@ void main()
  while(1)
    {
 
-     a++;
+
    }
 }

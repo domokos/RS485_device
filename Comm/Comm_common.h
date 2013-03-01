@@ -122,15 +122,17 @@ struct comm_speed_struct
 #define COMM_SPEED_9600_L 4
 #define COMM_SPEED_14400_L 5
 #define COMM_SPEED_28800_L 6
-#define COMM_SPEED_300_H 7
-#define COMM_SPEED_1200_H 8
-#define COMM_SPEED_2400_H 9
-#define COMM_SPEED_4800_H 10
-#define COMM_SPEED_9600_H 11
-#define COMM_SPEED_14400_H 12
-#define COMM_SPEED_19200_H 13
-#define COMM_SPEED_28800_H 14
-#define COMM_SPEED_57600_H 15
+#define COMM_SPEED_57600_L 7
+#define COMM_SPEED_300_H 8
+#define COMM_SPEED_1200_H 9
+#define COMM_SPEED_2400_H 10
+#define COMM_SPEED_4800_H 11
+#define COMM_SPEED_9600_H 12
+#define COMM_SPEED_14400_H 13
+#define COMM_SPEED_19200_H 14
+#define COMM_SPEED_28800_H 15
+#define COMM_SPEED_57600_H 16
+#define COMM_SPEED_115200_H 17
 
 
 extern const struct comm_speed_struct comm_speeds[];

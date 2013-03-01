@@ -25,8 +25,9 @@ static unsigned char comm_error;
 
 static struct message_struct message_buffer;
 
+#ifdef CRYSTAL_SPEED_LO
 /*
- * Timeout values milliseconds
+ * Timeout values milliseconds for CRYSTAL_SPEED_LO - 11.0592MHz
  *
 Baud    BIt time        Byte time       Messaging               Response timeout
                                         timeout (15 bytes)      4xmsg timeout + 100 ms
@@ -50,6 +51,30 @@ __code const struct comm_speed_struct comm_speeds[] = {
     {0xfd,0,16,163}, //COMM_SPEED_9600_L 0xfd,SMOD not set in PCON
     {0xfe,0,10,142}, //COMM_SPEED_14400_L 0xfe,SMOD not set in PCON
     {0xff,0,5,121}, //COMM_SPEED_28800_L 0xff,SMOD not set in PCON
+    {0,0,0,0}, //COMM_SPEED_57600_L Not available with this crystal speed
+
+    {0x40,1,500,2100}, //COMM_SPEED_300_H 0x40,SMOD set in PCON
+    {0xd0,1,125,600}, //COMM_SPEED_1200_H 0xd0,SMOD set in PCON
+    {0xe8,1,63,350}, //COMM_SPEED_2400_H 0xe8,SMOD set in PCON
+    {0xf4,1,31,225}, //COMM_SPEED_4800_H 0xf4,SMOD set in PCON
+    {0xfa,1,16,163}, //COMM_SPEED_9600_H 0xfa,SMOD set in PCON
+    {0xfc,1,10,142}, //COMM_SPEED_14400_H 0xfc,SMOD set in PCON
+    {0xfd,1,8,131}, //COMM_SPEED_19200_H 0xfd,SMOD set in PCON
+    {0xfe,1,5,121}, //COMM_SPEED_28800_H 0xfe,SMOD set in PCON
+    {0xff,1,3,110}, //COMM_SPEED_57600_H 0xff,SMOD set in PCON
+    {0,0,0,0}// COMM_SPEED_115200_H Not available with this crystal speed
+};
+
+#elif defined CRYSTAL_SPEED_HI
+
+__code const struct comm_speed_struct comm_speeds[] = {
+    {0xa0,0,500,2100}, //COMM_SPEED_300_L 0x40,SMOD not set in PCON
+    {0xe8,0,125,600}, //COMM_SPEED_1200_L 0xe8,SMOD not set in PCON
+    {0xf4,0,63,350}, //COMM_SPEED_2400_L 0xf4,SMOD not set in PCON
+    {0xfa,0,31,225}, //COMM_SPEED_4800_L 0xfa,SMOD not set in PCON
+    {0xfd,0,16,163}, //COMM_SPEED_9600_L 0xfd,SMOD not set in PCON
+    {0xfe,0,10,142}, //COMM_SPEED_14400_L 0xfe,SMOD not set in PCON
+    {0xff,0,5,121}, //COMM_SPEED_28800_L 0xff,SMOD not set in PCON
 
     {0x40,1,500,2100}, //COMM_SPEED_300_H 0x40,SMOD set in PCON
     {0xd0,1,125,600}, //COMM_SPEED_1200_H 0xd0,SMOD set in PCON
@@ -61,6 +86,11 @@ __code const struct comm_speed_struct comm_speeds[] = {
     {0xfe,1,5,121}, //COMM_SPEED_28800_H 0xfe,SMOD set in PCON
     {0xff,1,3,110} //COMM_SPEED_57600_H 0xff,SMOD set in PCON
 };
+
+#else
+#error "No or incorrect crystal speed defined."
+#endif
+
 
 /*
  * Internal utility functions
