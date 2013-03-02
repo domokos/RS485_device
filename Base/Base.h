@@ -28,9 +28,7 @@ typedef __bit bool;
 #define MSG_TIMEOUT 0
 #define RESPONSE_TIMEOUT 1
 #define DELAY_TIMEOUT 2
-#define TEMP1_TIMEOUT 3
-#define TEMP2_TIMEOUT 4
-#define TEMP3_TIMEOUT 5
+#define TEMP_CONV_TIMER 3
 
 /*
  * Internal utility functions
@@ -55,6 +53,9 @@ void delay_msec(unsigned int msec);
 
 // start and reset the messaging timeout counter
 void reset_timeout(unsigned char type);
+
+// Get the time elapsed since reset
+unsigned int get_time_elapsed(unsigned char type);
 
 // Return if there was a timeout
 // The calling parameter holds the timeout limit in miliseconds

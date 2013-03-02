@@ -11,7 +11,7 @@
 bool timer_initialized = FALSE;
 static volatile unsigned int  time_counter;
 
-static unsigned int timer_start_times[6];
+static unsigned int timer_start_times[4];
 
 /*
  * Internal utility functions
@@ -105,24 +105,28 @@ void reset_timeout(unsigned char type)
   timer_start_times[type] = time_counter;
 }
 
-// Return if there was a timeout
-// The calling parameter holds the timeout limit in miliseconds
-unsigned char timeout_occured(unsigned char type, unsigned int timeout_limit)
+// Get the time elapsed since reset
+unsigned int get_time_elapsed(unsigned char type)
 {
   unsigned int ticks_difference, timeout_start;
 
   // Set the start of the timeout based on timeout type
   timeout_start = timer_start_times[type];
 
- // If there is no owerflow in the interrupt ticks
- // (equality as regarded as no timeout - just started)
- if (time_counter >= timeout_start)
-   {
-     ticks_difference = time_counter - timeout_start;
- // There was an overflow - no multiple overflow is expected - timer must firs be reset and then queried regularily
-   } else {
-     ticks_difference = ((unsigned int)((unsigned int) 0xffff - timeout_start)) + time_counter;
-   }
+  // If there is no owerflow in the interrupt ticks
+  // (equality as regarded as no timeout - just started)
+  if (time_counter >= timeout_start)
+    {
+      return time_counter - timeout_start;
+  // There was an overflow - no multiple overflow is expected - timer must firs be reset and then queried regularily
+    } else {
+      return ((unsigned int)((unsigned int) 0xffff - timeout_start)) + time_counter;
+    }
+}
 
- return ticks_difference >= timeout_limit;
+// Return if there was a timeout
+// The calling parameter holds the timeout limit in miliseconds
+unsigned char timeout_occured(unsigned char type, unsigned int timeout_limit)
+{
+ return get_time_elapsed(type) >= timeout_limit;
 }
