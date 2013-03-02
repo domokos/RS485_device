@@ -3,10 +3,12 @@
 // http://www.pjrc.com/tech/8051/board5/temperature.html
 
 
+#define NICE_OUTPUT
+
 // comment this to build without nice floating point at the end
 #if 0
 
-#define NICE_OUTPUT
+
 
 #include "Onewire.h"
 
