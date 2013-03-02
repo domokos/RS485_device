@@ -155,6 +155,7 @@ onewire_read_bit_wait:
 	inc     dptr
 read_zero:
 	lcall	_delay_60us
+/*
 #ifdef  CRYSTAL_SPEED_HI
 	mov	r2, #40
 #elif defined CRYSTAL_SPEED_LO
@@ -164,6 +165,7 @@ read_zero:
 #endif
 onewire_read_cycle_wait:
 	djnz	r2, onewire_read_cycle_wait
+*/
 	__endasm;
 
 #ifndef SDCC

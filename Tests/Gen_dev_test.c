@@ -122,9 +122,14 @@ void operate_onewire(void)
  * To send a PING:
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,07,01,01,36,05,37,cf}
  *
- * To identify a Register 4 (expected response as per the above identification data):
+ * To identify Register 4 (expected response as per the above identification data):
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,08,01,01,36,02,04,2c,d8}
  *
+ * To identify Register 1 (expected response as per the above identification data):
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,08,01,01,36,02,01,99,32}
+ *
+ * To Read Register 1
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,08,01,01,36,01,01,8f,66}
  */
 void operate_device(void)
 {
@@ -178,13 +183,17 @@ void operate_device(void)
 
 void device_specific_init(void)
 {
-  // Reset conversion acitivities
-  conv_1_active = conv_2_active = conv_3_active = FALSE;
-
-  // Reset conversion timers
+  // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP1_TIMEOUT);
+  delay_msec(DS18S20_CONV_TIME/3);
+  conv_1_active = TRUE;
+
   reset_timeout(TEMP2_TIMEOUT);
+  delay_msec(DS18S20_CONV_TIME/3);
+  conv_2_active = TRUE;
+
   reset_timeout(TEMP3_TIMEOUT);
+  conv_3_active = TRUE;
 
   // Set initial resolutions to 12 bit
   set_temp_resolution(TEMP_RESOLUTION_12BIT, TEMP1_PINMASK);
