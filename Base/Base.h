@@ -59,6 +59,6 @@ unsigned int get_time_elapsed(unsigned char type);
 
 // Return if there was a timeout
 // The calling parameter holds the timeout limit in miliseconds
-unsigned char timeout_occured(unsigned char type, unsigned int timeout_limit);
+bool timeout_occured(unsigned char type, unsigned int timeout_limit);
 
 #endif /* BASE_H_ */

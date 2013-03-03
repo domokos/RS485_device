@@ -108,7 +108,7 @@ void reset_timeout(unsigned char type)
 // Get the time elapsed since reset
 unsigned int get_time_elapsed(unsigned char type)
 {
-  unsigned int ticks_difference, timeout_start;
+  unsigned int timeout_start;
 
   // Set the start of the timeout based on timeout type
   timeout_start = timer_start_times[type];
@@ -126,7 +126,7 @@ unsigned int get_time_elapsed(unsigned char type)
 
 // Return if there was a timeout
 // The calling parameter holds the timeout limit in miliseconds
-unsigned char timeout_occured(unsigned char type, unsigned int timeout_limit)
+bool timeout_occured(unsigned char type, unsigned int timeout_limit)
 {
  return get_time_elapsed(type) >= timeout_limit;
 }

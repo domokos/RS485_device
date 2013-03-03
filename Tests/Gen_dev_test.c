@@ -69,7 +69,7 @@ void read_DS18xxx(unsigned char pinmask)
       {
         ow_buf[i] = onewire_read_byte(pinmask);
       }
-     if (ow_buf[8] == onewire_crc_check(ow_buf, 9) && ow_buf[7] == 0x10)
+     if (ow_buf[8] == onewire_crc_check(ow_buf, 8) && ow_buf[7] == 0x10)
        temperatures[id] = ow_buf[0] | (ow_buf[1] << 8);
 
      // If result needs scaling up then scale it up

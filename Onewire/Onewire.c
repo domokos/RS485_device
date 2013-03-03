@@ -137,9 +137,9 @@ unsigned char onewire_read_bit(unsigned char pinmask)
 	cpl     a
 	anl     _P1, a          // P1 &= ~pinmask - pull bus pin low
 #ifdef  CRYSTAL_SPEED_HI
-	mov		r2, #14
+	mov		r2, #2
 #elif defined CRYSTAL_SPEED_LO
-	mov     r2, #28
+	mov     r2, #1
 #else
 #error "No or incorrect crystal speed defined."
 #endif
