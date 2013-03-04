@@ -100,6 +100,8 @@ extern struct message_struct message_buffer;
 #define SET_COMM_SPEED 6
 // Host pings master - master does not forward the message to the bus, responds with a MASTER_ECHO
 #define PING_MASTER 7
+// Return the number of CRC error messages seen
+#define GET_DEVICE_CRC_ERROR_COUNTER 8
 
 
 /*
@@ -198,7 +200,7 @@ static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_positi
 
 
 // Handle timeout events
-static unsigned char evaluate_timeout();
+static void evaluate_timeout();
 
 /*
  * Public utility functions

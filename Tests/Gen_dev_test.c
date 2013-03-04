@@ -203,7 +203,8 @@ void operate_device(void)
                     else temp = temp & TEMP_ZERO_SIGN;
                   message_buffer.content[PARAMETER_START] = temp & 0x00ff;
                   message_buffer.content[PARAMETER_START+1] = (temp >> 8) & 0x00ff;
-                  message_buffer.index = PARAMETER_START+1;
+                  message_buffer.content[PARAMETER_START+2] = (temperatures[p-1] & TEMP_TIMEOUT_MASK) >> 13;
+                  message_buffer.index = PARAMETER_START+2;
 
                   if ((temp & TEMP_TIMEOUT_MASK) < TEMP_TIMEOUT_MASK  && (temp & TEMP_TIMEOUT_MASK) != 0) response_opcode = COMMAND_FAIL;
                     else response_opcode = COMMAND_SUCCESS;

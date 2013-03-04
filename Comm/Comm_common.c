@@ -225,16 +225,14 @@ static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_positi
 }
 
 // Handle timeout events
-static unsigned char evaluate_timeout()
+void evaluate_timeout()
 {
   if ( timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout))
     {
       comm_state = WAITING_FOR_TRAIN;
       comm_error = MESSAGING_TIMEOUT;
       message_buffer.index = 0;
-      return 1;
     }
-  return 0;
 }
 
 
@@ -423,7 +421,7 @@ bool get_message(void)
       message_buffer.index++;
 
       // At the end of the message
-      if(message_buffer.index >= message_buffer.content[0])
+      if(message_buffer.index == message_buffer.content[0])
         {
          message_buffer.index -= 3;
         // Check the CRC of the message
@@ -438,10 +436,6 @@ bool get_message(void)
         }
         comm_state = WAITING_FOR_TRAIN;
         message_received = TRUE;
-       } else if (message_buffer.index > MAX_MESSAGE_LENGTH) {
-           // Message is too long: set error condition
-          comm_error = MESSAGE_TOO_LONG;
-          comm_state = WAITING_FOR_TRAIN;
        }
       break;
   }

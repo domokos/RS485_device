@@ -67,21 +67,9 @@ bool get_device_message(void)
 {
   if (get_message())
     {
-    // If this slave is the addressee of the message then check CRC
-    if(get_host_address() == message_buffer.content[SLAVE_ADDRESS])
-      {
-       // If there is a CRC error then respond with a CRC error message and
-       // do not return it to the caller
-       if (get_comm_error() == COMM_CRC_ERROR)
-         {
-           message_buffer.index = PARAMETER_START-1;
-         send_response(CRC_ERROR);
-         return FALSE;
-         } else {
-         // CRC was OK return the message
-         return TRUE;
-       }
-      }
+    // If there is a CRC error then ignore the message
+     if (get_comm_error() == COMM_CRC_ERROR) return FALSE;
+       else return get_host_address() == message_buffer.content[SLAVE_ADDRESS];
     }
  return FALSE;
 }
