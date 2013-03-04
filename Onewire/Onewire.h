@@ -24,7 +24,7 @@
  * Onewire specific timing constatnts
  */
 
-#define DS18S20_CONV_TIME 750
+#define DS18x20_CONV_TIME 750 // Conversion time for 12 bits precision
 
 /*
  * Onewire buffer
@@ -47,7 +47,7 @@ void onewire_write_byte(unsigned char b, unsigned char pinmask);
 unsigned char onewire_read_byte(unsigned char pinmask);
 
 // Check the crc of the onewire bus message
-unsigned char onewire_crc_check(unsigned char *p, unsigned char num);
+unsigned char calculate_onewire_crc(unsigned char *p, unsigned char num);
 
 // Wait for 60us - used for 1wire timing
 void delay_60us(void);

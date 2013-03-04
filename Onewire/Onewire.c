@@ -46,7 +46,7 @@ __code unsigned char onewire_crc_table[] = {
 };
 
 
-unsigned char onewire_crc_check(unsigned char *p, unsigned char num)
+unsigned char calculate_onewire_crc(unsigned char *p, unsigned char num)
 {
 	unsigned char crc=0;
 
