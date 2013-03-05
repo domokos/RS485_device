@@ -438,6 +438,9 @@ bool get_message(void)
             // CRC is wrong: set error condition
             CRC_error_count++;
             comm_error = COMM_CRC_ERROR;
+            comm_state = WAITING_FOR_TRAIN;
+            message_buffer.index = 0;
+            continue;
           }
           comm_state = WAITING_FOR_TRAIN;
           message_received = TRUE;
@@ -446,7 +449,7 @@ bool get_message(void)
     }
   }
   flush_serial_receive_buffer();
-  return TRUE;
+  return message_received;
 }
 
 // Return the # of CRC errors seen

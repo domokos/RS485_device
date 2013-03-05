@@ -36,29 +36,14 @@ static void set_master_bus_comm_direction(unsigned char direction)
   MASTER_BUS_COMM_DIRECTION_PIN = direction;
 }
 
-// Returns void* to the caller if no message is received
-// returns a pointer to the message if a message is received
+
+// Gets and returns message if this master is addressed
 static bool get_master_message()
 {
   if (get_message())
-    {
-    // If the master is the addressee of the message then check CRC
-    if(get_host_address() == message_buffer.content[MASTER_ADDRESS])
-      {
-       // If there is a CRC error then respond with a CRC error message and
-       // do not return it to the caller
-       if (get_comm_error() == COMM_CRC_ERROR)
-         {
-           message_buffer.index = PARAMETER_START-1;
-           send_message(CRC_ERROR);
-           return FALSE;
-         } else {
-           // CRC was OK return the message
-           return TRUE;
-         }
-      }
-    }
- return FALSE;
+    return get_host_address() == message_buffer.content[MASTER_ADDRESS];
+
+  return FALSE;
 }
 
 
