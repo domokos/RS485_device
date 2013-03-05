@@ -61,8 +61,7 @@ void send_response(unsigned char opcode)
   set_device_comm_direction(DEVICE_LISTENS);
 }
 
-// Returns void* to the caller if no message is received
-// returns a pointer to the message if a message is received
+// Returns if a message is received
 bool get_device_message(void)
 {
   if (get_message())
