@@ -183,8 +183,11 @@ static unsigned char flip_bits(unsigned char byte);
 // Reset serial communication
 static void reset_serial(void);
 
+// Flush the serial receiver buffer
+static void flush_serial_receive_buffer(void);
+
 // Send a character to the UART
-void UART_putc(unsigned char c);
+static void UART_putc(unsigned char c);
 
 // Read a character from the UART buffer
 static unsigned char UART_getc(void);
@@ -197,10 +200,6 @@ static char is_UART_send_complete (void);
 
 //Calculate the 16-Bit checksum of the message
 static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
-
-
-// Handle timeout events
-static void evaluate_timeout();
 
 /*
  * Public utility functions

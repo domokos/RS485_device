@@ -148,8 +148,20 @@ static void reset_serial(void)
   REN = 1;
 }
 
+// Flush the serial receiver buffer
+static void flush_serial_receive_buffer(void)
+{
+  ES = 0;
+  REN = 0;
+
+  rcv_counter = rcv_position = 0;
+
+  REN = 1;
+  ES = 1;
+}
+
 // Send a character to the UART
-void UART_putc(unsigned char c)
+static void UART_putc(unsigned char c)
 {
   // Wait for room in buffer
   while (send_counter >= XBUFLEN);
@@ -223,18 +235,6 @@ static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_positi
    } // Loop until num=0
   return crc; // Return updated CRC
 }
-
-// Handle timeout events
-void evaluate_timeout()
-{
-  if ( timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout))
-    {
-      comm_state = WAITING_FOR_TRAIN;
-      comm_error = MESSAGING_TIMEOUT;
-      message_buffer.index = 0;
-    }
-}
-
 
 /*
  * Public functions
@@ -344,100 +344,109 @@ void send_message(unsigned char opcode)
 bool get_message(void)
 {
   unsigned char ch_received = 0;
-  bool process_char = FALSE;
   bool message_received = FALSE;
 
-  if(UART_is_char_available())
+  if(!UART_is_char_available()) return FALSE;
+
+  comm_error = NO_ERROR;
+
+  while(!message_received && comm_error == NO_ERROR)
     {
-      ch_received = UART_getc();
-      process_char = TRUE;
-      // Reset message timeout counter as a character is received
-      reset_timeout(MSG_TIMEOUT);
-    } else {
-      if (comm_state != WAITING_FOR_TRAIN) evaluate_timeout();
-      return FALSE;
-    }
-
-  switch (comm_state) {
-    case WAITING_FOR_TRAIN:
-      if (ch_received == TRAIN_CHR)
-        {
-          // Switch the state to wait for the address fileld of the frame
-          // reset the next state by setting train_length to zero
-          train_length = 0;
-          comm_state = RECEIVING_TRAIN;
-          comm_error = NO_ERROR;
-        } else {
-          // Communication error: frame out of sync set the error_condition and
-          // do not change communication state: keep waiting for a train character.
-          comm_error = NO_TRAIN_RECEIVED;
-        }
-      break;
-
-    // Optimizing for smaller code size for the microcontroller -
-    // Hence the two similar states are handled together
-    case RECEIVING_TRAIN:
-    case IN_SYNC:
-      if (ch_received == TRAIN_CHR)
-        {
-          // Received the expected character increase the
-          // train length seen so far and change state if
-          // enough train is seen
-          if (train_length < TRAIN_LENGTH_RCV)
-            {
-              train_length++;
-            }else {
-              comm_state = IN_SYNC;
-            }
-        } else {
-          if (comm_state ==  RECEIVING_TRAIN)
-            {
-              // Not a train character is received, not yet synced
-              // Go back to Waiting for train state
-              comm_state = WAITING_FOR_TRAIN;
-              comm_error = NO_TRAIN_RECEIVED;
-            } else {
-              // Got a non-train character when synced -
-              // this is the message length check it and if OK, start receiving
-              if(ch_received > MAX_MESSAGE_LENGTH)
-                {
-                  // Set error, start waiting for next train, ignore the rest of the message
-                  // and clear the message buffer
-                  comm_error = MESSAGE_TOO_LONG;
-                  comm_state = WAITING_FOR_TRAIN;
-                } else {
-                  // Clear message buffer and start recieving
-                  comm_state = RECEIVING_MESSAGE;
-                  message_buffer.content[0] = ch_received;
-                  message_buffer.index = 1;
-                }
-            }
-        }
-      break;
-
-    case RECEIVING_MESSAGE:
-      // Receive the next message character
-      message_buffer.content[message_buffer.index] = ch_received;
-      message_buffer.index++;
-
-      // At the end of the message
-      if(message_buffer.index == message_buffer.content[0])
-        {
-         message_buffer.index -= 3;
-        // Check the CRC of the message
-        if (calculate_CRC16(message_buffer.content, message_buffer.index+CRC1) != (unsigned int)((message_buffer.content[message_buffer.index+CRC1] << 8) | (message_buffer.content[message_buffer.index+CRC2])))
-        {
-          // CRC is wrong: set error condition
-          CRC_error_count++;
-          comm_error = COMM_CRC_ERROR;
-        }
+    if(UART_is_char_available())
+      {
+        ch_received = UART_getc();
+        // Reset message timeout counter as a character is received
+        reset_timeout(MSG_TIMEOUT);
+      } else if (timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout)) {
         comm_state = WAITING_FOR_TRAIN;
-        message_received = TRUE;
-       }
-      break;
-  }
+        comm_error = MESSAGING_TIMEOUT;
+        message_buffer.index = 0;
+        continue;
+      } else continue;
 
-  return message_received;
+    switch (comm_state) {
+      case WAITING_FOR_TRAIN:
+        if (ch_received == TRAIN_CHR)
+          {
+            // Switch the state to wait for the address fileld of the frame
+            // reset the next state by setting train_length to zero
+            train_length = 0;
+            comm_state = RECEIVING_TRAIN;
+          } else {
+            // Communication error: frame out of sync set the error_condition and
+            // do not change communication state: keep waiting for a train character.
+            comm_error = NO_TRAIN_RECEIVED;
+            continue;
+          }
+        break;
+
+      // Optimizing for smaller code size for the microcontroller -
+      // Hence the two similar states are handled together
+      case RECEIVING_TRAIN:
+      case IN_SYNC:
+        if (ch_received == TRAIN_CHR)
+          {
+            // Received the expected character increase the
+            // train length seen so far and change state if
+            // enough train is seen
+            if (train_length < TRAIN_LENGTH_RCV)
+              {
+                train_length++;
+              }else {
+                comm_state = IN_SYNC;
+              }
+          } else {
+            if (comm_state ==  RECEIVING_TRAIN)
+              {
+                // Not a train character is received, not yet synced
+                // Go back to Waiting for train state
+                comm_state = WAITING_FOR_TRAIN;
+                comm_error = NO_TRAIN_RECEIVED;
+                continue;
+              } else {
+                // Got a non-train character when synced -
+                // this is the message length check it and if OK, start receiving
+                if(ch_received > MAX_MESSAGE_LENGTH)
+                  {
+                    // Set error, start waiting for next train, ignore the rest of the message
+                    // and clear the message buffer
+                    comm_error = MESSAGE_TOO_LONG;
+                    comm_state = WAITING_FOR_TRAIN;
+                    continue;
+                  } else {
+                    // Clear message buffer and start recieving
+                    comm_state = RECEIVING_MESSAGE;
+                    message_buffer.content[0] = ch_received;
+                    message_buffer.index = 1;
+                  }
+              }
+          }
+        break;
+
+      case RECEIVING_MESSAGE:
+        // Receive the next message character
+        message_buffer.content[message_buffer.index] = ch_received;
+        message_buffer.index++;
+
+        // At the end of the message
+        if(message_buffer.index == message_buffer.content[0])
+          {
+           message_buffer.index -= 3;
+          // Check the CRC of the message
+          if (calculate_CRC16(message_buffer.content, message_buffer.index+CRC1) != (unsigned int)((message_buffer.content[message_buffer.index+CRC1] << 8) | (message_buffer.content[message_buffer.index+CRC2])))
+          {
+            // CRC is wrong: set error condition
+            CRC_error_count++;
+            comm_error = COMM_CRC_ERROR;
+          }
+          comm_state = WAITING_FOR_TRAIN;
+          message_received = TRUE;
+         }
+        break;
+    }
+  }
+  flush_serial_receive_buffer();
+  return TRUE;
 }
 
 // Return the # of CRC errors seen
