@@ -184,7 +184,7 @@ static unsigned char flip_bits(unsigned char byte);
 static void reset_serial(void);
 
 // Send a character to the UART
-static void UART_putc(unsigned char c);
+void UART_putc(unsigned char c);
 
 // Read a character from the UART buffer
 static unsigned char UART_getc(void);

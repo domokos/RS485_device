@@ -65,11 +65,21 @@ void send_response(unsigned char opcode)
 // returns a pointer to the message if a message is received
 bool get_device_message(void)
 {
+  unsigned char i;
   if (get_message())
     {
     // If there is a CRC error then ignore the message
-     if (get_comm_error() == COMM_CRC_ERROR) return FALSE;
-       else return get_host_address() == message_buffer.content[SLAVE_ADDRESS];
+     if (get_comm_error() == COMM_CRC_ERROR) {
+         P1_7=1;
+         UART_putc(TRAIN_CHR);
+         UART_putc(0xaa);
+         for(i=0;i<=message_buffer.index+CRC2;i++)
+         UART_putc(message_buffer.content[i]);
+         UART_putc(0xaa);
+         UART_putc(TRAIN_CHR);
+         return FALSE;
+     }
+       else {P1_7 =0; return get_host_address() == message_buffer.content[SLAVE_ADDRESS]; }
     }
  return FALSE;
 }

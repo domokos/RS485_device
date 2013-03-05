@@ -19,7 +19,7 @@ static unsigned char comm_speed;
 // Global variables facilitating messaging communication
 
 static unsigned char comm_state;
-static unsigned char CRC_burst_error_count;
+static unsigned char CRC_error_count;
 static unsigned char train_length;
 static unsigned char comm_error;
 
@@ -149,7 +149,7 @@ static void reset_serial(void)
 }
 
 // Send a character to the UART
-static void UART_putc(unsigned char c)
+void UART_putc(unsigned char c)
 {
   // Wait for room in buffer
   while (send_counter >= XBUFLEN);
@@ -272,7 +272,7 @@ void reset_comm(void)
   // Clear receiving queue
   train_length = 0;
   comm_error = NO_ERROR;
-  CRC_burst_error_count = 0;
+  CRC_error_count = 0;
 
   // Set the initial state
   comm_state = WAITING_FOR_TRAIN;
@@ -425,13 +425,10 @@ bool get_message(void)
         {
          message_buffer.index -= 3;
         // Check the CRC of the message
-        if (calculate_CRC16(message_buffer.content, message_buffer.index+CRC1) == (unsigned int)((message_buffer.content[message_buffer.index+CRC1] << 8) | (message_buffer.content[message_buffer.index+CRC2])))
+        if (calculate_CRC16(message_buffer.content, message_buffer.index+CRC1) != (unsigned int)((message_buffer.content[message_buffer.index+CRC1] << 8) | (message_buffer.content[message_buffer.index+CRC2])))
         {
-          // CRC is OK.
-          CRC_burst_error_count = 0;
-        } else {
           // CRC is wrong: set error condition
-          CRC_burst_error_count++;
+          CRC_error_count++;
           comm_error = COMM_CRC_ERROR;
         }
         comm_state = WAITING_FOR_TRAIN;
@@ -446,7 +443,7 @@ bool get_message(void)
 // Return the # of CRC errors seen
 unsigned char get_CRC_burst_error_count(void)
 {
-  return CRC_burst_error_count;
+  return CRC_error_count;
 }
 
 // Return the state of the communication
