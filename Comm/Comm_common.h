@@ -23,8 +23,9 @@
 
 // Communication parameters
 #define MAX_MESSAGE_LENGTH 15
-#define TRAIN_LENGTH_RCV 8
-#define TRAIN_LENGTH_SND 15
+#define TRAIN_LENGTH_RCV 2
+#define TRAIN_LENGTH_SND 8
+#define FALSE_TRAINS_TOLERATED 2
 
 // Messaging states
 #define WAITING_FOR_TRAIN 0
@@ -193,10 +194,10 @@ static void UART_putc(unsigned char c);
 static unsigned char UART_getc(void);
 
 // Are there any characters in the UART buffer available for reading?
-static unsigned char UART_is_char_available(void);
+static bool UART_is_char_available(void);
 
 // Is UART character transmission complete?
-static char is_UART_send_complete (void);
+//static bool is_UART_send_complete (void);
 
 //Calculate the 16-Bit checksum of the message
 static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
@@ -236,10 +237,7 @@ void send_message(unsigned char opcode);
 bool get_message(void);
 
 // Return the # of CRC errors seen
-unsigned char get_CRC_burst_error_count(void);
-
-// Return the state of the communication
-unsigned char get_comm_state(void);
+unsigned char get_CRC_error_count(void);
 
 // Return the actual communication speed
 unsigned char get_comm_speed(void);

@@ -18,9 +18,7 @@ static unsigned char comm_speed;
 
 // Global variables facilitating messaging communication
 
-static unsigned char comm_state;
 static unsigned char CRC_error_count;
-static unsigned char train_length;
 static unsigned char comm_error;
 
 struct message_struct message_buffer;
@@ -90,8 +88,15 @@ ISR(SERIAL,0)
 {
   if (RI) {
    RI = 0;
-   // Don't overwrite chars already in buffer
-   if (rcv_counter < RBUFLEN) rcv_buffer [(unsigned char)(rcv_position+rcv_counter++) % RBUFLEN] = SBUF;
+   // Overwrite chars already in buffer in a circular manner
+   if (rcv_counter < RBUFLEN)
+     {
+       rcv_buffer [(unsigned char)(rcv_position+rcv_counter++) % RBUFLEN] = SBUF;
+     } else {
+       rcv_buffer [(unsigned char)(rcv_counter+rcv_position++) % RBUFLEN] = SBUF;
+       if (rcv_position >= RBUFLEN)
+          rcv_position = 0;
+     }
   }
   if (TI) {
    TI = 0;
@@ -191,9 +196,9 @@ static unsigned char UART_getc(void)
 }
 
 // Are there any caharcters in the UART buffer available for reading?
-static unsigned char UART_is_char_available(void)
+static bool UART_is_char_available(void)
 {
-   return rcv_counter;
+   return rcv_counter > 0;
 }
 
 /*
@@ -270,12 +275,8 @@ void reset_comm(void)
   message_buffer.index = 0;
 
   // Clear receiving queue
-  train_length = 0;
   comm_error = NO_ERROR;
   CRC_error_count = 0;
-
-  // Set the initial state
-  comm_state = WAITING_FOR_TRAIN;
 
   reset_serial();
 }
@@ -343,11 +344,15 @@ void send_message(unsigned char opcode)
 // Periodically listen for/get a message on the serial line
 bool get_message(void)
 {
-  unsigned char ch_received = 0;
+  unsigned char ch_received=0;
+  unsigned char comm_state = WAITING_FOR_TRAIN;
+  char train_length=0;
+
   bool message_received = FALSE;
 
   if(!UART_is_char_available()) return FALSE;
 
+  reset_timeout(MSG_TIMEOUT);
   comm_error = NO_ERROR;
 
   while(!message_received && comm_error == NO_ERROR)
@@ -358,7 +363,6 @@ bool get_message(void)
         // Reset message timeout counter as a character is received
         reset_timeout(MSG_TIMEOUT);
       } else if (timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout)) {
-        comm_state = WAITING_FOR_TRAIN;
         comm_error = MESSAGING_TIMEOUT;
         message_buffer.index = 0;
         continue;
@@ -373,9 +377,12 @@ bool get_message(void)
             train_length = 0;
             comm_state = RECEIVING_TRAIN;
           } else {
-            // Communication error: frame out of sync set the error_condition and
-            // do not change communication state: keep waiting for a train character.
-            comm_error = NO_TRAIN_RECEIVED;
+            // Tolerate the define nr of false trains
+            // set error and return otherwise
+            if (--train_length < -FALSE_TRAINS_TOLERATED)
+              {
+                comm_error = NO_TRAIN_RECEIVED;
+              }
             continue;
           }
         break;
@@ -400,7 +407,6 @@ bool get_message(void)
               {
                 // Not a train character is received, not yet synced
                 // Go back to Waiting for train state
-                comm_state = WAITING_FOR_TRAIN;
                 comm_error = NO_TRAIN_RECEIVED;
                 continue;
               } else {
@@ -411,7 +417,6 @@ bool get_message(void)
                     // Set error, start waiting for next train, ignore the rest of the message
                     // and clear the message buffer
                     comm_error = MESSAGE_TOO_LONG;
-                    comm_state = WAITING_FOR_TRAIN;
                     continue;
                   } else {
                     // Clear message buffer and start recieving
@@ -438,30 +443,23 @@ bool get_message(void)
             // CRC is wrong: set error condition
             CRC_error_count++;
             comm_error = COMM_CRC_ERROR;
-            comm_state = WAITING_FOR_TRAIN;
             message_buffer.index = 0;
             continue;
           }
-          comm_state = WAITING_FOR_TRAIN;
           message_received = TRUE;
          }
         break;
     }
   }
-  flush_serial_receive_buffer();
+  if (message_received) flush_serial_receive_buffer();
   return message_received;
+
 }
 
 // Return the # of CRC errors seen
-unsigned char get_CRC_burst_error_count(void)
+unsigned char get_CRC_error_count(void)
 {
   return CRC_error_count;
-}
-
-// Return the state of the communication
-unsigned char get_comm_state(void)
-{
-  return comm_state;
 }
 
 // Return the actual communication speed

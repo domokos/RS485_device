@@ -50,7 +50,7 @@ bool process_generic_messages()
     response_opcode = COMMAND_SUCCESS;
     break;
   case GET_DEVICE_CRC_ERROR_COUNTER:
-    message_buffer.content[PARAMETER_START] = get_CRC_burst_error_count();
+    message_buffer.content[PARAMETER_START] = get_CRC_error_count();
     message_buffer.index = PARAMETER_START;
     response_opcode = COMMAND_SUCCESS;
     break;
