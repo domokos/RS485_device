@@ -148,6 +148,9 @@ static void reset_serial(void)
   rcv_counter = send_counter = rcv_position = send_position = 0;
   UART_busy = 0;
 
+  // set serial interrupt priority to high
+  PS = 1;
+
   // Enable Serial interrupt and start listening on the bus
   ES = 1;
   REN = 1;
@@ -347,7 +350,6 @@ bool get_message(void)
   unsigned char ch_received=0;
   unsigned char comm_state = WAITING_FOR_TRAIN;
   char train_length=0;
-
   bool message_received = FALSE;
 
   if(!UART_is_char_available()) return FALSE;
@@ -374,16 +376,13 @@ bool get_message(void)
           {
             // Switch the state to wait for the address fileld of the frame
             // reset the next state by setting train_length to zero
-            train_length = 0;
+            train_length = 1;
             comm_state = RECEIVING_TRAIN;
           } else {
             // Tolerate the define nr of false trains
             // set error and return otherwise
             if (--train_length < -FALSE_TRAINS_TOLERATED)
-              {
                 comm_error = NO_TRAIN_RECEIVED;
-              }
-            continue;
           }
         break;
 
@@ -408,7 +407,6 @@ bool get_message(void)
                 // Not a train character is received, not yet synced
                 // Go back to Waiting for train state
                 comm_error = NO_TRAIN_RECEIVED;
-                continue;
               } else {
                 // Got a non-train character when synced -
                 // this is the message length check it and if OK, start receiving
@@ -417,7 +415,6 @@ bool get_message(void)
                     // Set error, start waiting for next train, ignore the rest of the message
                     // and clear the message buffer
                     comm_error = MESSAGE_TOO_LONG;
-                    continue;
                   } else {
                     // Clear message buffer and start recieving
                     comm_state = RECEIVING_MESSAGE;
@@ -444,16 +441,16 @@ bool get_message(void)
             CRC_error_count++;
             comm_error = COMM_CRC_ERROR;
             message_buffer.index = 0;
-            continue;
+          } else {
+            message_received = TRUE;
           }
-          message_received = TRUE;
          }
         break;
     }
   }
-  if (message_received) flush_serial_receive_buffer();
-  return message_received;
 
+  flush_serial_receive_buffer();
+  return message_received;
 }
 
 // Return the # of CRC errors seen

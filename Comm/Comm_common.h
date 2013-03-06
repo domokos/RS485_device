@@ -23,7 +23,7 @@
 
 // Communication parameters
 #define MAX_MESSAGE_LENGTH 15
-#define TRAIN_LENGTH_RCV 2
+#define TRAIN_LENGTH_RCV 3
 #define TRAIN_LENGTH_SND 8
 #define FALSE_TRAINS_TOLERATED 2
 

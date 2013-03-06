@@ -172,16 +172,8 @@ void operate_device(void)
   timeout = get_messaging_timeout();
   reset_timeout(RESPONSE_TIMEOUT);
 
-  for(;;)
+  while(TRUE)
     {
-/*
-      if (nr_calls++ >= 490)
-      {
-        nr_calls = 0;
-        timeout_occured(RESPONSE_TIMEOUT, timeout);
-        reset_timeout(RESPONSE_TIMEOUT);
-      }
-*/
       operate_onewire();
 
       if (get_device_message() && !process_generic_messages())
