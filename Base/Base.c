@@ -116,7 +116,7 @@ unsigned int get_time_elapsed(unsigned char type)
   ET0  = 1;
 
   // If there is no owerflow in the interrupt ticks
-  // (equality as regarded as no timeout - just started)
+  // (equality is regarded as no timeout - just started)
   if (counter >= timer_start_times[type])
     {
       return counter - timer_start_times[type];
