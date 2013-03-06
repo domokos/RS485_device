@@ -35,7 +35,7 @@
 
 // Messaging error conditions
 #define NO_ERROR 0 // No error
-#define NO_TRAIN_RECEIVED 1 // Expected train sequence, got something else => Ignoring communication
+#define NO_TRAIN_RECEIVED 1 // Expected train sequence, got something else
 #define MESSAGE_TOO_LONG 2 // Receive buffer length exceeded
 #define MESSAGING_TIMEOUT 3 // Timeout occured - expected but no communication is seen on the bus
 #define COMM_CRC_ERROR 4 // Frame with CRC error received
