@@ -305,7 +305,6 @@ reset_comm(void)
   message_buffer.index = 0;
 
   // Clear receiving queue
-  comm_error = NO_ERROR;
   CRC_error_count = 0;
 
   reset_serial();

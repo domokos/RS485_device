@@ -108,19 +108,21 @@ void reset_timeout(unsigned char type)
 // Get the time elapsed since reset
 unsigned int get_time_elapsed(unsigned char type)
 {
-  unsigned int timeout_start;
+  unsigned int counter;
 
-  // Set the start of the timeout based on timeout type
-  timeout_start = timer_start_times[type];
+  // Get the time counter value
+  ET0  = 0;
+  counter = time_counter;
+  ET0  = 1;
 
   // If there is no owerflow in the interrupt ticks
   // (equality as regarded as no timeout - just started)
-  if (time_counter >= timeout_start)
+  if (counter >= timer_start_times[type])
     {
-      return time_counter - timeout_start;
+      return counter - timer_start_times[type];
   // There was an overflow - no multiple overflow is expected - timer must firs be reset and then queried regularily
     } else {
-      return ((unsigned int)((unsigned int) 0xffff - timeout_start)) + time_counter;
+      return ((unsigned int)((unsigned int) 0xffff - timer_start_times[type])) + counter;
     }
 }
 
