@@ -44,21 +44,18 @@ unsigned char next_sensor;
 bool
 set_temp_resolution(unsigned char pinmask, unsigned char resolution)
 {
-  bool success;
-
   if (onewire_reset(pinmask))
     {
       onewire_write_byte(CMD_WRITE_SCRATCHPAD, pinmask);
       onewire_write_byte(0, pinmask);
       onewire_write_byte(0, pinmask);
       onewire_write_byte(resolution, pinmask);
-      success = TRUE;
+      return TRUE;
     }
   else
     {
-      success = FALSE;
+      return FALSE;
     }
-  return success;
 }
 
 void
@@ -117,7 +114,6 @@ bool
 issue_convert(unsigned char pinmask)
 {
   unsigned char id;
-  bool conv_initiated;
 
   id = get_id(pinmask);
 
@@ -125,7 +121,7 @@ issue_convert(unsigned char pinmask)
     {
       onewire_write_byte(CMD_SKIP_ROM, pinmask);
       onewire_write_byte(CMD_CONVERT_T, pinmask);
-      conv_initiated = TRUE;
+      return TRUE;
     }
   else
     {
@@ -133,9 +129,8 @@ issue_convert(unsigned char pinmask)
           && (temperatures[id] & TEMP_TIMEOUT_MASK) != 0)
         temperatures[id] = (temperatures[id] & TEMP_MASK)
             | ((temperatures[id] & TEMP_TIMEOUT_MASK) + TEMP_TIMEOUT_INCREMENT);
-      conv_initiated = FALSE;
+      return FALSE;
     }
-  return conv_initiated;
 }
 
 // Keep conversions going on for each sensor attached

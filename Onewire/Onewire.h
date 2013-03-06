@@ -36,9 +36,9 @@ extern unsigned char ow_buf[9];
  * Public module functions
  */
 
-// Do a 1-wire reset cycle
-// return 1 if presense pulse detected, 0 if no device(s) present
-char onewire_reset(unsigned char pinmask);
+// Do a 1-wire reset cycle and
+// return if presense pulse detected
+bool onewire_reset(unsigned char pinmask);
 
 // Write a byte to the onewire bus
 void onewire_write_byte(unsigned char b, unsigned char pinmask);

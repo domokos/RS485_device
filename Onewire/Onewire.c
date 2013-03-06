@@ -63,7 +63,7 @@ unsigned char calculate_onewire_crc(unsigned char *p, unsigned char num)
 
 // Do a 1-wire reset cycle
 // return true if presense pulse detected, 0 if no device(s) present
-char onewire_reset(unsigned char pinmask)
+bool onewire_reset(unsigned char pinmask)
 {
 #ifdef SDCC
         pinmask;
@@ -83,15 +83,15 @@ char onewire_reset(unsigned char pinmask)
 	mov     a, r7           // read the presence pulse
 	anl	a, _P1
 	pop	ie		// restore interrupt status
-	mov     dpl, #0
+	clr     c
 	jnz     no_presence_pulse
-	inc     dptr
+	setb    c
 no_presence_pulse:
-	sjmp	_delay_480us	// wait the rest of init cycle - ugly but fast?
+	lcall	_delay_480us	// wait the rest of init cycle
 	__endasm;
 
 #ifndef SDCC
-	return 0;
+	return FALSE;
 #endif
 }
 
