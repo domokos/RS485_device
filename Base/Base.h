@@ -30,6 +30,9 @@ typedef __bit bool;
 #define DELAY_TIMEOUT 2
 #define TEMP_CONV_TIMER 3
 
+// Watchdog pin
+#define WATCHDOG_PIN P1_1
+
 /*
  * Internal utility functions
  */

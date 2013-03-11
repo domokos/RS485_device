@@ -21,7 +21,13 @@ static unsigned int timer_start_times[4];
 // The timer ISR - set up to occur every 1 ms for a 11.0592 MHz Crystal
 ISR(TIMER0,0)
 {
+  // Increase timer
   time_counter++;
+
+  // Keep watchdog happy
+  WATCHDOG_PIN = !WATCHDOG_PIN;
+
+  // Restart the timer
   TR0  = 0;
 #ifdef  CRYSTAL_SPEED_LO
   TL0  = 0x66;   // Restart from 0xfc66 (1 ms)
