@@ -29,11 +29,15 @@ ISR(TIMER0,0)
 
   // Restart the timer
   TR0  = 0;
+
+// use 17 machine cycles less to compensate for time
+// spent executing the ISR itself
+
 #ifdef  CRYSTAL_SPEED_LO
-  TL0  = 0x66;   // Restart from 0xfc66 (1 ms)
+  TL0  = 0x55;   // Restart from 0xfc66 (1 ms) - decimal 17 = 0xfc55
   TH0  = 0xfc;
 #elif defined CRYSTAL_SPEED_HI
-  TL0  = 0xcc;   // Restart from 0xf8cc (1 ms)
+  TL0  = 0xbb;   // Restart from 0xf8cc (1 ms) - decimal 17 = 0xf8bb
   TH0  = 0xf8;
 #else
 #error "No or incorrect crystal speed defined."

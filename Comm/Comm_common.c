@@ -159,9 +159,6 @@ reset_serial(void)
   rcv_counter = send_counter = rcv_position = send_position = 0;
   UART_busy = 0;
 
-  // set serial interrupt priority to high
-  PS = 1;
-
   // Enable Serial interrupt and start listening on the bus
   ES = 1;
   REN = 1;
