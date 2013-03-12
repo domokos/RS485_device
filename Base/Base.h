@@ -31,7 +31,7 @@ typedef __bit bool;
 #define TEMP_CONV_TIMER 3
 
 // Watchdog pin
-#define WATCHDOG_PIN P1_1
+#define WATCHDOG_PIN P3_5
 
 /*
  * Internal utility functions
