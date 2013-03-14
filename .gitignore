@@ -3,6 +3,8 @@
 /.project
 /.settings
 *.ser
+*~
+*.backup
 /Master_controller_test
 /Generic_device_test
 /Generic_Device_Test
