@@ -16,8 +16,8 @@
 #define FALSE 0
 
 // Speed of the crystal
-#define CRYSTAL_SPEED_LO // 11.0592MHz
-// #define CRYSTAL_SPEED_HI // 22.1184MHz
+//#define CRYSTAL_SPEED_LO // 11.0592MHz
+#define CRYSTAL_SPEED_HI // 22.1184MHz
 
 typedef __bit bool;
 
@@ -40,13 +40,13 @@ typedef __bit bool;
 // The timer ISR routine prototype to be included in the main file
 ISR(TIMER0,0);
 
-// Initiaize the timer
-static void init_timer(void);
-
-
 /*
  * Public functions
  */
+
+// Initiaize the timer
+void init_timer(void);
+
 
 // Wait for seconds
 void delay_sec(unsigned int sec);

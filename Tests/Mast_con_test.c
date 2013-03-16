@@ -13,6 +13,8 @@
 void main(void)
 {
   EA = 1;
+  init_timer();
+
   init_master(MASTER_HOST_ID, COMM_SPEED_4800_H);
   operate_master();
 }

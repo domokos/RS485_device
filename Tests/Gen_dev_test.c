@@ -272,8 +272,9 @@ device_specific_init(void)
 void
 main(void)
 {
-// Enable interrupts
+// Enable interrupts and initialize timer
   EA = 1;
+  init_timer();
 
 // Set 4800 baud @ 11.0592 MHz Crystal
   init_device_comm(HOST_ID, COMM_SPEED_4800_H);

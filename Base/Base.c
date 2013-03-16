@@ -34,10 +34,10 @@ ISR(TIMER0,0)
 // spent executing the ISR itself
 
 #ifdef  CRYSTAL_SPEED_LO
-  TL0  = 0x55;   // Restart from 0xfc66 (1 ms) - decimal 17 = 0xfc55
+  TL0  = 0x50;   // Restart from 0xfc66 (1 ms) - decimal 1c = 0xfc50
   TH0  = 0xfc;
 #elif defined CRYSTAL_SPEED_HI
-  TL0  = 0xbb;   // Restart from 0xf8cc (1 ms) - decimal 17 = 0xf8bb
+  TL0  = 0xb6;   // Restart from 0xf8cc (1 ms) - decimal 1c = 0xf8b6
   TH0  = 0xf8;
 #else
 #error "No or incorrect crystal speed defined."
@@ -45,14 +45,20 @@ ISR(TIMER0,0)
   TR0  = 1;
 }
 
+
+/*
+ * Public functions
+ */
+
 // Initiaize the timer
-static void init_timer(void)
+void init_timer(void)
 {
+  TR0  = 0;
 #ifdef  CRYSTAL_SPEED_LO
-  TL0  = 0x66;    // Start from 0xfc66
+  TL0  = 0x50;    // Start from 0xfc50
   TH0  = 0xfc;
 #elif defined CRYSTAL_SPEED_HI
-  TL0  = 0xcc;    // Start from 0xf866
+  TL0  = 0xb6;    // Start from 0xf8b6
   TH0  = 0xf8;
 #else
 #error "No or incorrect crystal speed defined."
@@ -62,11 +68,6 @@ static void init_timer(void)
   ET0  = 1;      // Enable Timer0 interrupt
   timer_initialized = TRUE;
 }
-
-
-/*
- * Public functions
- */
 
 
 // Wait for seconds
