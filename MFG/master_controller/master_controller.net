@@ -4,7 +4,7 @@ unnamed_net33	C7-2 CR1-2 U3-4
 unnamed_net32	C5-2 CR1-1 U3-5 
 unnamed_net31	Q3-1 R6-1 U3-1 
 unnamed_net30	Q1-2 U3-11 
-unnamed_net29	C6-1 U3-19 
+unnamed_net29	C6-1 U3-9 
 unnamed_net28	R2-2 C8-2 U4-2 
 unnamed_net27	Q3-2 R5-1 U4-3 
 unnamed_net26	C6-2 U4-1 
@@ -13,7 +13,7 @@ unnamed_net24	TVS1-2 TVS3-1 CONN3-2 R11-2 U8-7
 unnamed_net23	R8-2 U8-1 
 unnamed_net22	R10-1 U8-4 U7-4 
 unnamed_net21	R7-2 U7-2 
-GNDBus	U6-2 CONN4-1 TVS3-2 TVS2-2 U8-5 U7-5 U5-5 
+GNDBus	U6-2 CONN4-1 TVS2-2 TVS3-2 U8-5 U7-5 U5-5 
 VBus	R9-2 CONN4-2 U8-8 R10-2 U7-6 U5-6 
 unnamed_net20	R9-1 U8-3 U8-2 U5-4 
 unnamed_net19	Q1-1 U5-2 
