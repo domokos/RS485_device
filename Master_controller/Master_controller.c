@@ -7,11 +7,14 @@
 
 #include "Master_controller.h"
 
-int main(void)
+#define MASTER_HOST_ID 1
+
+
+void main(void)
 {
-  int a=1;
-  while(1)
-    {
-      a--;
-    }
+  EA = 1;
+  init_timer();
+
+  init_master(MASTER_HOST_ID, COMM_SPEED_4800_H);
+  operate_master();
 }
