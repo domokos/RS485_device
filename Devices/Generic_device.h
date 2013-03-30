@@ -23,12 +23,15 @@ bool process_generic_messages();
  *  1 byte - type specific value1
  *  1 byte - type specific value2
  */
-extern __code const char register_identification[][REG_IDENTIFICATION_LEN];
+extern __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN];
+extern __code const unsigned char nr_of_registers;
 
 // Register types
-#define REG_TYPE_TEMP 0
-#define REG_TYPE_SW 1
-#define REG_TYPE_SW_EXTENDER 2
+#define REG_TYPE_TEMP 0 // Temperature store register
+#define REG_TYPE_SW 1  // Switch register
+#define REG_TYPE_INPUT 2 // Input register
+#define REG_TYPE_DATA 3 // Data register
+#define REG_TYPE_PWM 4  // PWM switch control register
 
 // Register read-wtite types
 #define REG_RO 0
@@ -40,8 +43,19 @@ extern __code const char register_identification[][REG_IDENTIFICATION_LEN];
 // TEMP specific values:
 // value1: 1 if measured temperature needs to be scled up to 12 bit
 //         resolution, 0 otherwise
+#define SCALE_POSITION 3
+#define SCALE_TEMP 1
+#define DONT_SCALE_TEMP 0
+
 //
 // value2: 1 if resolution is programmable 0 otherwise
 //
+#define RESOLUTION_POSITION 4
+#define FIXED_RESOLUTION 0
+#define PROG_RESOLUTION 1
+
+
+// General register identification values
+#define DONT_CARE 255
 
 #endif /* GENERIC_DEVICE_H_ */

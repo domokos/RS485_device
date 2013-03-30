@@ -11,32 +11,40 @@
 
 #define TEMP1_PINMASK 0x01 // P1_0
 #define TEMP2_PINMASK 0x02 // P1_1
-#define TEMP3_PINMASK 0x04 // P1_2
+
 // The masks used to manipulate temp timeout values
-#define TEMP_TIMEOUT_MASK 0xE000
-#define TEMP_TIMEOUT_INCREMENT 0x2000
-#define TEMP_MASK 0x0FFF
-#define TEMP_SIGN_MASK 0x1000
-#define TEMP_ONE_SIGN 0xF000
-#define TEMP_ZERO_SIGN 0x0FFF
+#define ONEWIRE_TEMP_FAIL 0xaf0f
 
 #define TEMP_RESOLUTION_12BIT 0x7F
 
-__code const char register_identification[][REG_IDENTIFICATION_LEN] =
-  {
-    { REG_TYPE_TEMP, REG_RW, 2, 0, 1 }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-        { REG_TYPE_TEMP, REG_RW, 2, 0, 1 }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-        { REG_TYPE_TEMP, REG_RW, 2, 0, 1 }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-        { REG_TYPE_SW, REG_RW, 1, 0, 0 } };
+// This device has 10 registers
+__code const unsigned char nr_of_registers = 10;
 
-bool wait_conv, temp1_conv_initiated, temp2_conv_initiated,
-    temp3_conv_initiated;
+// Describe the registers of this device
+__code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
+  {
+      // Furnace temp sensor
+        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
+      // Return temp sensor
+        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
+
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+  };
+
+bool wait_conv, temp1_conv_initiated, temp2_conv_initiated;
 
 // Buffer to store Temperatures and temp reading timeout
 // temperatures are initialized @ 0C. At each unsuccesful reset attempt
 // the unused upper 3 bits are increased. After reaching -1000 the reset attempt rate is decreased
 // and is done at every 5th cyce (~4 seconds) then reaching -10 000 reset attemts are made every 10th cycle (~8 seconds)
-int temperatures[3];
+int temperatures[2];
 unsigned char next_sensor;
 
 bool
@@ -65,7 +73,7 @@ scale_DS18B20_result(unsigned char id)
   temperatures[id] -= ow_buf[6];
 }
 
-// Calculate Which pin is referenced in the pinmask
+// Calculate which pin is referenced by the pinmask
 unsigned char
 get_id(unsigned char pinmask)
 {
@@ -98,12 +106,17 @@ read_DS18xxx(unsigned char pinmask)
         {
           ow_buf[i] = onewire_read_byte(pinmask);
         }
+
       if (ow_buf[8] == calculate_onewire_crc(ow_buf, 8) && ow_buf[7] == 0x10)
+        {
         temperatures[id] = ow_buf[0] | (ow_buf[1] << 8);
 
-      // If result needs scaling up then scale it up
-      if (register_identification[id][3])
-        scale_DS18B20_result(id);
+        // If result needs scaling up then scale it up
+        if (register_identification[id][SCALE_POSITION] == SCALE_TEMP)
+          scale_DS18B20_result(id);
+        } else {
+         temperatures[id] = ONEWIRE_TEMP_FAIL;
+        }
     }
 }
 
@@ -123,15 +136,12 @@ issue_convert(unsigned char pinmask)
     }
   else
     {
-      if ((temperatures[id] & TEMP_TIMEOUT_MASK) < TEMP_TIMEOUT_MASK
-          && (temperatures[id] & TEMP_TIMEOUT_MASK) != 0)
-        temperatures[id] = (temperatures[id] & TEMP_MASK)
-            | ((temperatures[id] & TEMP_TIMEOUT_MASK) + TEMP_TIMEOUT_INCREMENT);
+      temperatures[id] = ONEWIRE_TEMP_FAIL;
       return FALSE;
     }
 }
 
-// Keep conversions going on for each sensor attached
+// Keep conversions going on for each sensor
 void
 operate_onewire(void)
 {
@@ -150,13 +160,6 @@ operate_onewire(void)
         if (temp2_conv_initiated)
           read_DS18xxx(TEMP2_PINMASK);
         temp2_conv_initiated = issue_convert(TEMP2_PINMASK);
-        next_sensor = 3;
-        break;
-
-      case 3:
-        if (temp3_conv_initiated)
-          read_DS18xxx(TEMP3_PINMASK);
-        temp3_conv_initiated = issue_convert(TEMP3_PINMASK);
         next_sensor = 1;
         break;
         }
@@ -165,7 +168,7 @@ operate_onewire(void)
     }
   else
     {
-      wait_conv = !timeout_occured(TEMP_CONV_TIMER, DS18x20_CONV_TIME / 3);
+      wait_conv = !timeout_occured(TEMP_CONV_TIMER, DS18x20_CONV_TIME / 2);
     }
 }
 
@@ -186,11 +189,7 @@ void
 operate_device(void)
 {
 
-  unsigned int nr_calls = 0, temp;
-  unsigned char timeout, response_opcode, p;
-
-  timeout = get_messaging_timeout();
-  reset_timeout(RESPONSE_TIMEOUT);
+  unsigned char response_opcode = RESPONSE_UNDEFINED, p;
 
   while (TRUE)
     {
@@ -210,26 +209,13 @@ operate_device(void)
             break;
           case READ_REGISTER:
             // Switch register number
-            if ((p = message_buffer.content[PARAMETER_START] < 4))
+            if ((p = message_buffer.content[PARAMETER_START] < 3))
               {
-                temp = temperatures[p - 1];
+                message_buffer.content[PARAMETER_START] = temperatures[p - 1] & 0x00ff;
+                message_buffer.content[PARAMETER_START + 1] = (temperatures[p - 1] >> 8) & 0x00ff;
+                message_buffer.index = PARAMETER_START + 1;
 
-                if (temp & TEMP_SIGN_MASK)
-                  temp = temp | TEMP_ONE_SIGN;
-                else
-                  temp = temp & TEMP_ZERO_SIGN;
-                message_buffer.content[PARAMETER_START] = temp & 0x00ff;
-                message_buffer.content[PARAMETER_START + 1] = (temp >> 8)
-                    & 0x00ff;
-                message_buffer.content[PARAMETER_START + 2] = (temperatures[p
-                    - 1] & TEMP_TIMEOUT_MASK) >> 13;
-                message_buffer.index = PARAMETER_START + 2;
-
-                if ((temp & TEMP_TIMEOUT_MASK) < TEMP_TIMEOUT_MASK
-                    && (temp & TEMP_TIMEOUT_MASK) != 0)
-                  response_opcode = COMMAND_FAIL;
-                else
-                  response_opcode = COMMAND_SUCCESS;
+                response_opcode = COMMAND_SUCCESS;
               }
             else
               {
@@ -248,19 +234,16 @@ operate_device(void)
 void
 device_specific_init(void)
 {
-  int i;
-// Initialize to zero
-  for (i = 0; i < 3; i++)
-    temperatures[i] = 0;
+  temperatures[0] = 0;
+  temperatures[1] = 0;
 
 // Set initial resolutions to 12 bit
   set_temp_resolution(TEMP_RESOLUTION_12BIT, TEMP1_PINMASK);
-  set_temp_resolution(TEMP_RESOLUTION_12BIT, TEMP1_PINMASK);
-  set_temp_resolution(TEMP_RESOLUTION_12BIT, TEMP1_PINMASK);
+  set_temp_resolution(TEMP_RESOLUTION_12BIT, TEMP2_PINMASK);
 
   wait_conv = FALSE;
 
-  temp1_conv_initiated = temp2_conv_initiated = temp3_conv_initiated = FALSE;
+  temp1_conv_initiated = temp2_conv_initiated = FALSE;
   next_sensor = 1;
 
 // Reset conversion timers and distribute conversion across the 3 sensors

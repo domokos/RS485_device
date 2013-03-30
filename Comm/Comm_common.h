@@ -93,16 +93,14 @@ extern struct message_struct message_buffer;
 #define IDENTTIFY_REGISTER 2
 // Reset the device to its basic state
 #define RESET_DEVICE 3
-// Perform tests
-#define COMM_TEST_REVERSE_MESSAGE 4
 // PING - host expects a DEVICE_ECHO from the device and the same payload
-#define PING_DEVICE 5
+#define PING_DEVICE 4
 // Set communication speed
-#define SET_COMM_SPEED 6
+#define SET_COMM_SPEED 5
 // Host pings master - master does not forward the message to the bus, responds with a MASTER_ECHO
-#define PING_MASTER 7
+#define PING_MASTER 6
 // Return the number of CRC error messages seen
-#define GET_DEVICE_CRC_ERROR_COUNTER 8
+#define GET_DEVICE_CRC_ERROR_COUNTER 7
 
 
 /*
@@ -170,6 +168,8 @@ extern const struct comm_speed_struct comm_speeds[];
 #define TIMEOUT 4
 // Master responsd with echo to host
 #define MASTER_ECHO 5
+// Undefined response - should never occur - indicates coding issue
+#define RESPONSE_UNDEFINED 6
 
 /*
  * Internal utility functions
