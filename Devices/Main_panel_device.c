@@ -1,15 +1,13 @@
 /*
- * Comm_test.c
+ * Furnace_temp_device.c
  *
  *  Created on: Oct 22, 2012
  *      Author: dmolnar
  */
 
-#include "Slave_comm.h"
-#include "Onewire.h"
+#include "Main_panel_device.h"
 #include "Generic_device.h"
 
-#define HOST_ID 1
 
 #define TEMP1_PINMASK 0x01 // P1_0
 #define TEMP2_PINMASK 0x02 // P1_1
