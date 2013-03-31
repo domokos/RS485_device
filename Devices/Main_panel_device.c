@@ -243,22 +243,22 @@ void write_extender_switches(void)
 }
 
 // Return the value of the extender register referenced
+// 0 is the first and 7 is the last in an 8 SW register
 get_extender_switch_value(unsigned char reg_nr)
 {
   unsigned char mask;
 
-  reg_nr--;
   mask = 0x01 << (reg_nr % 8);
 
   return (extender_sw_outputs[reg_nr/8] & mask) > 0;
 }
 
 // Set the extender switch value
+// 0 is the first and 7 is the last in an 8 SW register
 void set_extender_switch_value(unsigned char reg_nr, unsigned char value)
 {
   unsigned char mask;
 
-  reg_nr--;
   mask = 0x01 << (reg_nr % 8);
 
   if (value)
@@ -302,6 +302,9 @@ operate_device(void)
             // Registers below 3 are read only temp registers and we have 8 SW registers
             if (p > 2 && p < 11)
               {
+                // Map register number to extender switch number (3 maps to 0; 10 maps to 7)
+                p -= 3;
+
                 set_extender_switch_value(p, message_buffer.content[PARAMETER_START+1]);
                 response_opcode = COMMAND_SUCCESS;
               } else {
@@ -322,6 +325,9 @@ operate_device(void)
               }
             else if ( p< 11)
               {
+                // Map register number to extender switch number (3 maps to 0; 10 maps to 7)
+                p -= 3;
+
                 message_buffer.content[PARAMETER_START] = get_extender_switch_value(p);
                 message_buffer.index = PARAMETER_START;
                 response_opcode = COMMAND_SUCCESS;
