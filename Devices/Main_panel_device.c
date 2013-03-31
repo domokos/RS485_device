@@ -8,17 +8,19 @@
 #include "Main_panel_device.h"
 #include "Generic_device.h"
 
+// The id of this host on thebus
+#define HOST_ID 2
 
-#define TEMP1_PINMASK 0x01 // P1_0
-#define TEMP2_PINMASK 0x02 // P1_1
 
-// The masks used to manipulate temp timeout values
-#define ONEWIRE_TEMP_FAIL 0xaf0f
-
-#define TEMP_RESOLUTION_12BIT 0x7F
-
+/*
+ * Define registers of this device
+ */
 // This device has 10 registers
 __code const unsigned char nr_of_registers = 10;
+
+
+#define NR_OF_TEMP_SENSORS 2
+#define NR_OF_SW_EXTENDERS 1
 
 // Describe the registers of this device
 __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
@@ -28,6 +30,7 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // Return temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
 
+      //
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
@@ -38,14 +41,40 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
   };
 
+/*
+ * Onewire specific declarations and defines
+ */
+#define TEMP1_PINMASK 0x01 // P1_0
+#define TEMP2_PINMASK 0x02 // P1_1
+
 bool wait_conv, temp1_conv_initiated, temp2_conv_initiated;
 
 // Buffer to store Temperatures and temp reading timeout
-// temperatures are initialized @ 0C. At each unsuccesful reset attempt
-// the unused upper 3 bits are increased. After reaching -1000 the reset attempt rate is decreased
-// and is done at every 5th cyce (~4 seconds) then reaching -10 000 reset attemts are made every 10th cycle (~8 seconds)
-int temperatures[2];
+// temperatures are initialized @ 0C. At each unsuccesful reset or read attempt
+// the value ONEWIRE_TEMP_FAIL is stored. This value is never the result of a succesful conversion
+int temperatures[NR_OF_TEMP_SENSORS];
+
+// Sensors are read in a circular manner. On e cycle completes in time equal to the conversion
+// time. This variable holds the id of the sensor to be addressed next during the cycle.
 unsigned char next_sensor;
+
+
+/*
+ * Externder switch specific declarations and defines.
+ * For extender swich 74HC595, 8-bit parallell or serial out shift registers are used.
+ * Extender switches need to be cascaded, meaning that the Q7S pin of registers need to be fed
+ * into the DS of the next register, all other control lines should be connected.
+ */
+
+#define DS_PIN P1_2
+#define SHCP_PIN P1_3
+#define NMR_PIN P1_4
+#define STCP_PIN P1_5
+#define NOE_PIN P1_6
+
+// This value holds the state of extender switches
+unsigned char extender_sw_outputs[NR_OF_SW_EXTENDERS];
+
 
 bool
 set_temp_resolution(unsigned char pinmask, unsigned char resolution)
@@ -172,6 +201,58 @@ operate_onewire(void)
     }
 }
 
+// Reset the extender switches
+void reset_extender_switches(void)
+{
+  NOE_PIN = 0;
+  DS_PIN = 0;
+  SHCP_PIN = 0;
+  NMR_PIN = 0;
+
+  STCP_PIN = 0;
+  STCP_PIN = 1;
+  STCP_PIN = 0;
+
+  NMR_PIN = 1;
+  NOE_PIN = 1;
+}
+
+// Set the output to the values passed
+void write_extender_switches(void)
+{
+  unsigned char i,j,k;
+
+  j = NR_OF_SW_EXTENDERS;
+
+  // Loop through all the extender switch values
+  while(j--)
+    {
+      i = extender_sw_outputs[j];
+      k = 0x80;
+      while(k)
+        {
+          DS_PIN = (i & k) > 0;
+          SHCP_PIN = 1;
+          SHCP_PIN = 0;
+
+          k >>= 1;
+        }
+    }
+  STCP_PIN = 1;
+  STCP_PIN = 0;
+}
+
+// Return the value of the extender register referenced
+get_extender_switch_value(unsigned char reg_nr)
+{
+  unsigned char i;
+
+  reg_nr--;
+  i = 0x01 << (reg_nr % 8);
+
+  return (extender_sw_outputs[reg_nr/8] & i) > 0;
+}
+
 /*
  * To send a PING:
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,07,01,01,36,05,37,cf}
@@ -208,8 +289,10 @@ operate_device(void)
             response_opcode = COMMAND_SUCCESS;
             break;
           case READ_REGISTER:
-            // Switch register number
-            if ((p = message_buffer.content[PARAMETER_START] < 3))
+            // p holds register to read
+            p = message_buffer.content[PARAMETER_START];
+            // Branch based on register number
+            if (p < 3)
               {
                 message_buffer.content[PARAMETER_START] = temperatures[p - 1] & 0x00ff;
                 message_buffer.content[PARAMETER_START + 1] = (temperatures[p - 1] >> 8) & 0x00ff;
@@ -219,7 +302,9 @@ operate_device(void)
               }
             else
               {
-                response_opcode = COMMAND_FAIL;
+                message_buffer.content[PARAMETER_START] = get_extender_switch_value(p);
+                message_buffer.index = PARAMETER_START;
+                response_opcode = COMMAND_SUCCESS;
               }
             break;
           default:
@@ -234,8 +319,10 @@ operate_device(void)
 void
 device_specific_init(void)
 {
-  temperatures[0] = 0;
-  temperatures[1] = 0;
+  unsigned char i;
+
+  i = NR_OF_TEMP_SENSORS;
+  while (i--) temperatures[i-1] = 0;
 
 // Set initial resolutions to 12 bit
   set_temp_resolution(TEMP_RESOLUTION_12BIT, TEMP1_PINMASK);
@@ -248,6 +335,12 @@ device_specific_init(void)
 
 // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);
+
+// Reset the outputs of the extenders
+  i = NR_OF_SW_EXTENDERS;
+  while(i--) extender_sw_outputs[i] = 0;
+
+  reset_extender_switches();
 }
 
 void

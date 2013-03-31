@@ -10,6 +10,10 @@
 
 #include "Slave_comm.h"
 
-#define HOST_ID 2
+// The masks used to manipulate temp timeout values
+#define ONEWIRE_TEMP_FAIL 0xaf0f
+
+#define TEMP_RESOLUTION_12BIT 0x7F
+
 
 #endif /* FURNACE_TEMP_DEVICE_H */
