@@ -245,12 +245,28 @@ void write_extender_switches(void)
 // Return the value of the extender register referenced
 get_extender_switch_value(unsigned char reg_nr)
 {
-  unsigned char i;
+  unsigned char mask;
 
   reg_nr--;
-  i = 0x01 << (reg_nr % 8);
+  mask = 0x01 << (reg_nr % 8);
 
-  return (extender_sw_outputs[reg_nr/8] & i) > 0;
+  return (extender_sw_outputs[reg_nr/8] & mask) > 0;
+}
+
+// Set the extender switch value
+void set_extender_switch_value(unsigned char reg_nr, unsigned char value)
+{
+  unsigned char mask;
+
+  reg_nr--;
+  mask = 0x01 << (reg_nr % 8);
+
+  if (value)
+      extender_sw_outputs[reg_nr/8] |= mask;
+    else
+      extender_sw_outputs[reg_nr/8] &= ~mask;
+
+  write_extender_switches();
 }
 
 /*
@@ -281,12 +297,16 @@ operate_device(void)
           switch (message_buffer.content[OPCODE])
             {
           case SET_REGISTER:
-            p = 0x01 << message_buffer.content[PARAMETER_START] - 1;
-            if (message_buffer.content[PARAMETER_START + 1])
-              P1 |= p;
-            else
-              P1 &= ~p;
-            response_opcode = COMMAND_SUCCESS;
+            // p holds register to write
+            p = message_buffer.content[PARAMETER_START];
+            // Registers below 3 are read only temp registers and we have 8 SW registers
+            if (p > 2 && p < 11)
+              {
+                set_extender_switch_value(p, message_buffer.content[PARAMETER_START+1]);
+                response_opcode = COMMAND_SUCCESS;
+              } else {
+                response_opcode = COMMAND_FAIL;
+              }
             break;
           case READ_REGISTER:
             // p holds register to read
@@ -300,11 +320,13 @@ operate_device(void)
 
                 response_opcode = COMMAND_SUCCESS;
               }
-            else
+            else if ( p< 11)
               {
                 message_buffer.content[PARAMETER_START] = get_extender_switch_value(p);
                 message_buffer.index = PARAMETER_START;
                 response_opcode = COMMAND_SUCCESS;
+              } else {
+                response_opcode = COMMAND_FAIL;
               }
             break;
           default:
