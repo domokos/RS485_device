@@ -11,7 +11,7 @@
 bool timer_initialized = FALSE;
 static volatile unsigned int  time_counter;
 
-static unsigned int timer_start_times[4];
+static unsigned int timer_start_times[5];
 
 /*
  * Internal utility functions

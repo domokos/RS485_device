@@ -29,6 +29,7 @@ typedef __bit bool;
 #define RESPONSE_TIMEOUT 1
 #define DELAY_TIMEOUT 2
 #define TEMP_CONV_TIMER 3
+#define PWM1_TIMER 4
 
 // Watchdog pin
 #define WATCHDOG_PIN P3_5
