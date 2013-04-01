@@ -8,8 +8,8 @@
 #include "Main_panel_device.h"
 #include "Generic_device.h"
 
-// The id of this host on thebus
-#define HOST_ID 2
+// The id of this host on the bus
+#define HOST_ID 1
 
 /*
  * Define registers of this device
@@ -28,9 +28,9 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // Return temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
 
-      //
-        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // 2-pin PWM output on extender pins 0 and 1
+        { REG_TYPE_PWM2, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // Single pin extender outputs
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
@@ -365,17 +365,26 @@ operate_PWM()
  *
  * To Read Register 1
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,08,01,01,36,01,01,8f,66}
+ *
+ * To Write Register 3 (PWM), with low pin 2-2 sec
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,0b,01,01,35,00,03,02,02,00,b4,91}
+ *
  */
 void
 operate_device(void)
 {
 
+  // Create messaging variables
   unsigned char response_opcode = RESPONSE_UNDEFINED, p;
 
+  // The main loop of the device
   while (TRUE)
     {
+      // Operate main device functions
       operate_onewire();
+      operate_PWM();
 
+      // Take care of messaging
       if (get_device_message() && !process_generic_messages())
         {
           switch (message_buffer.content[OPCODE])
@@ -383,11 +392,26 @@ operate_device(void)
           case SET_REGISTER:
             // p holds register to write
             p = message_buffer.content[PARAMETER_START];
-            // Registers below 3 are read only temp registers and we have 8 SW registers
-            if (p > 2 && p < 11)
+            // Registers below 3 are read only temp registers and we have 1 PWM and 6 SW registers
+            // Register 3 is a 2-extender pin PWM register
+            if (p == 3)
               {
-                // Map register number to extender switch number (3 maps to 0; 10 maps to 7)
-                p -= 3;
+                // Setup new pwm parameters
+                new_pwm_on_time = message_buffer.content[PARAMETER_START + 1];
+                new_pwm_off_time = message_buffer.content[PARAMETER_START + 2];
+                new_is_pwm_low = (message_buffer.content[PARAMETER_START + 3]
+                    == 0);
+
+                // Set load flag for operate_PWM
+                load_new_pwm_values = TRUE;
+
+                response_opcode = COMMAND_SUCCESS;
+              }
+            // Registers 4 to 9 are SW registers
+            else if (p > 3 && p < 10)
+              {
+                // Map register number to extender switch number (4 maps to 2; 9 maps to 7)
+                p -= 2;
 
                 set_extender_switch_value(p,
                     message_buffer.content[PARAMETER_START + 1]);
@@ -412,10 +436,18 @@ operate_device(void)
 
                 response_opcode = COMMAND_SUCCESS;
               }
-            else if (p < 11)
+            else if (p == 3)
               {
-                // Map register number to extender switch number (3 maps to 0; 10 maps to 7)
-                p -= 3;
+                message_buffer.content[PARAMETER_START + 1] = new_pwm_on_time;
+                message_buffer.content[PARAMETER_START + 2] = new_pwm_off_time;
+                message_buffer.content[PARAMETER_START + 3] = new_is_pwm_low;
+
+                response_opcode = COMMAND_SUCCESS;
+              }
+            else if (p > 3 && p < 10)
+              {
+                // Map register number to extender switch number (4 maps to 2; 9 maps to 7)
+                p -= 2;
 
                 message_buffer.content[PARAMETER_START] =
                     get_extender_switch_value(p);

@@ -31,7 +31,7 @@ extern __code const unsigned char nr_of_registers;
 #define REG_TYPE_SW 1  // Switch register
 #define REG_TYPE_INPUT 2 // Input register
 #define REG_TYPE_DATA 3 // Data register
-#define REG_TYPE_PWM 4  // PWM switch control register
+#define REG_TYPE_PWM2 4  // 2 pin PWM switch control register
 
 // Register read-wtite types
 #define REG_RO 0
