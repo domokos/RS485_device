@@ -61,7 +61,7 @@ __code const unsigned char register_rom_map[][8] =
       // First byte is zero, only one device on bus
         { 0x00, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 } };
 
-bool conv_complete, bus1_conv_initiated, bus2_conv_initiated;
+bool conv_complete, bus0_conv_initiated, bus1_conv_initiated;
 
 // Buffer to store Temperatures and temp reading timeout
 // temperatures are initialized @ 0C. At each unsuccesful reset or read attempt
@@ -216,18 +216,18 @@ operate_onewire_temp_measurement(void)
     {
       switch (bus_to_address)
         {
+      case 0:
+        if (bus0_conv_initiated)
+          read_DS18xxx(0);
+        bus0_conv_initiated = issue_convert_on_bus(0);
+        bus_to_address = 1;
+        break;
+
       case 1:
         if (bus1_conv_initiated)
           read_DS18xxx(1);
         bus1_conv_initiated = issue_convert_on_bus(1);
-        bus_to_address = 2;
-        break;
-
-      case 2:
-        if (bus2_conv_initiated)
-          read_DS18xxx(2);
-        bus2_conv_initiated = issue_convert_on_bus(2);
-        bus_to_address = 1;
+        bus_to_address = 0;
         break;
         }
 
@@ -252,7 +252,7 @@ operate_onewire_temp_measurement(void)
 void
 reset_extender_switches(void)
 {
-  NOE_PIN = 0;
+  NOE_PIN = 1;
   DS_PIN = 0;
   SHCP_PIN = 0;
   NMR_PIN = 0;
@@ -262,7 +262,7 @@ reset_extender_switches(void)
   STCP_PIN = 0;
 
   NMR_PIN = 1;
-  NOE_PIN = 1;
+  NOE_PIN = 0;
 }
 
 // Set the output to the values passed
@@ -272,6 +272,10 @@ write_extender_switches(void)
   unsigned char i, j, mask;
 
   j = NR_OF_SW_EXTENDERS;
+
+  // Reset the shift registers
+  NMR_PIN = 0;
+  NMR_PIN = 1;
 
   // Loop through all the extender switch values
   while (j--)
@@ -293,7 +297,8 @@ write_extender_switches(void)
 
 // Return the value of the extender register referenced
 // 0 is the first and 7 is the last in an 8 SW register
-get_extender_switch_value(unsigned char reg_nr)
+__bit
+get_extender_switch_buffer(unsigned char reg_nr)
 {
   unsigned char mask;
 
@@ -302,10 +307,10 @@ get_extender_switch_value(unsigned char reg_nr)
   return (extender_sw_outputs[reg_nr / 8] & mask) > 0;
 }
 
-// Set the extender switch value
+// Set the extender buffer value
 // 0 is the first and 7 is the last in an 8 SW register
 void
-set_extender_switch_value(unsigned char reg_nr, unsigned char value)
+set_extender_switch_buffer(unsigned char reg_nr, __bit value)
 {
   unsigned char mask;
 
@@ -315,45 +320,94 @@ set_extender_switch_value(unsigned char reg_nr, unsigned char value)
     extender_sw_outputs[reg_nr / 8] |= mask;
   else
     extender_sw_outputs[reg_nr / 8] &= ~mask;
-
-  write_extender_switches();
 }
 
-// Set the new PWM vaues and determine PWM state based on it
-void
+// Set the new PWM vaues and return if state change logic needs to be reversed
+bool
 set_new_pwm_values(void)
 {
-  // Load the new PWM values
-  pwm_on_time = new_pwm_on_time;
-  pwm_off_time = new_pwm_off_time;
-  is_pwm_low = new_is_pwm_low;
-  load_new_pwm_values = FALSE;
 
-  // Set if PWM is active for code readibility
-  pwm_active = pwm_on_time > 0;
+  bool reverse_state_change_logic, set_values;
+
+  reverse_state_change_logic = FALSE;
+  set_values = TRUE;
+
+  // If PWM is actie and the new values imply a low-hi change in either direction
+  // then do load new values according to current state
+  if (pwm_active && is_pwm_low != new_is_pwm_low)
+    {
+      // If there is a ramp up then do it in ON state only and start with an ON state
+      if (is_pwm_low)
+        {
+          if (pwm_state == PWM_STATE_ON)
+            reverse_state_change_logic = TRUE;
+          else
+            set_values = FALSE;
+        }
+      // If there is a ramp down then do it in OFF state only and start with an OFF state
+      else
+        {
+          if (pwm_state == PWM_STATE_OFF)
+            reverse_state_change_logic = TRUE;
+          else
+            set_values = FALSE;
+        }
+    }
+
+  // If PWM was active and now it is switched OFF then do it in OFF state only and
+  // then switch off all PWM pins as well
+  if (pwm_active && new_pwm_on_time == 0)
+    if (pwm_state == PWM_STATE_ON)
+      {
+        set_values = FALSE;
+        reverse_state_change_logic = FALSE;
+      }
+    else
+      {
+        is_pwm_low = new_is_pwm_low = TRUE;
+        reverse_state_change_logic = TRUE;
+      }
+
+  if (set_values)
+    {
+      // Load the new PWM values
+      pwm_on_time = new_pwm_on_time;
+      pwm_off_time = new_pwm_off_time;
+      is_pwm_low = new_is_pwm_low;
+
+      load_new_pwm_values = FALSE;
+
+      // Set if PWM is active for code readibility
+      pwm_active = pwm_on_time > 0;
+    }
+  return reverse_state_change_logic;
 }
 
 // Activate the PWM output values on the extender outputs and reset PWM timer
 void
-activate_pwm_output(__bit _pwm_state)
+activate_pwm_state(__bit _pwm_state)
 {
   pwm_state = _pwm_state;
   if (is_pwm_low)
     {
-      set_extender_switch_value(PWM_HI_PIN_ID, 0);
-      set_extender_switch_value(PWM_LO_PIN_ID, _pwm_state);
+      set_extender_switch_buffer(PWM_LO_PIN_ID, _pwm_state);
+      set_extender_switch_buffer(PWM_HI_PIN_ID, 0);
+
+      write_extender_switches();
     }
   else
     {
-      set_extender_switch_value(PWM_LO_PIN_ID, 1);
-      set_extender_switch_value(PWM_HI_PIN_ID, _pwm_state);
+      set_extender_switch_buffer(PWM_LO_PIN_ID, 1);
+      set_extender_switch_buffer(PWM_HI_PIN_ID, _pwm_state);
+
+      write_extender_switches();
     }
   reset_timeout(PWM1_TIMER);
 }
 
 // Must be called periodically to take care of PWM outputs
 void
-operate_PWM()
+operate_PWM(void)
 {
   // If the PWM is operational
   if (pwm_active)
@@ -362,20 +416,32 @@ operate_PWM()
         {
           // Times are given in 10th seconds so we need to multiply by 100
           if (timeout_occured(PWM1_TIMER, pwm_on_time * 100))
-            activate_pwm_output(PWM_STATE_OFF);
+            {
+              if (load_new_pwm_values)
+                {
+                  if (set_new_pwm_values())
+                    activate_pwm_state(PWM_STATE_ON);
+                  else
+                    activate_pwm_state(PWM_STATE_OFF);
+                }
+              else
+                activate_pwm_state(PWM_STATE_OFF);
+            }
         }
       else // If State is off
         {
           // Times are given in 10th seconds so we need to multiply by 100
           if (timeout_occured(PWM1_TIMER, pwm_off_time * 100))
             {
-              // Check if new values need to be set and set them if needed
               if (load_new_pwm_values)
-                set_new_pwm_values();
-
-              // If PWM is active based on effective timing values then change state
-              if (pwm_active)
-                activate_pwm_output(PWM_STATE_ON);
+                {
+                  if (set_new_pwm_values())
+                    activate_pwm_state(PWM_STATE_OFF);
+                  else
+                    activate_pwm_state(PWM_STATE_ON);
+                }
+              else
+                activate_pwm_state(PWM_STATE_ON);
             }
         }
     }
@@ -384,9 +450,10 @@ operate_PWM()
     {
       set_new_pwm_values();
 
-      // If the new values set the state to active then start the PWM
+      // If the new values set the state to active then start the PWM starting with the
+      // Off state to ensure smooth ramp up
       if (pwm_active)
-        activate_pwm_output(PWM_STATE_ON);
+        activate_pwm_state(PWM_STATE_OFF);
     }
 }
 
@@ -450,8 +517,10 @@ operate_device(void)
                 // Map register number to extender switch number (4 maps to 2; 9 maps to 7)
                 p -= 2;
 
-                set_extender_switch_value(p,
-                    message_buffer.content[PARAMETER_START + 1]);
+                set_extender_switch_buffer(p,
+                    message_buffer.content[PARAMETER_START + 1] == 1);
+                write_extender_switches();
+
                 response_opcode = COMMAND_SUCCESS;
               }
             else
@@ -487,7 +556,7 @@ operate_device(void)
                 p -= 2;
 
                 message_buffer.content[PARAMETER_START] =
-                    get_extender_switch_value(p);
+                    get_extender_switch_buffer(p);
                 message_buffer.index = PARAMETER_START;
                 response_opcode = COMMAND_SUCCESS;
               }
@@ -521,8 +590,8 @@ device_specific_init(void)
   // We need to start a new conversion so it is complete on init
   conv_complete = TRUE;
 
-  bus1_conv_initiated = bus2_conv_initiated = FALSE;
-  bus_to_address = 1;
+  bus0_conv_initiated = bus1_conv_initiated = FALSE;
+  bus_to_address = 0;
 
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);
@@ -536,7 +605,7 @@ device_specific_init(void)
 
   // Reset PWM
   pwm_on_time = pwm_off_time = new_pwm_on_time = new_pwm_off_time = 0;
-  is_pwm_low = TRUE;
+  is_pwm_low = new_is_pwm_low = TRUE;
   load_new_pwm_values = FALSE;
   pwm_state = PWM_STATE_OFF;
   pwm_active = FALSE;

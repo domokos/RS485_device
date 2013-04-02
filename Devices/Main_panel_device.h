@@ -16,4 +16,25 @@
 #define TEMP_RESOLUTION_12BIT 0x7F
 
 
+bool set_temp_resolution(unsigned char register_id, unsigned char resolution);
+void scale_DS18B20_result(unsigned char register_id);
+void send_onewire_rom_commands(unsigned char register_id);
+void read_DS18xxx(unsigned char register_id);
+bool issue_convert_on_bus(unsigned char register_id);
+void operate_onewire_temp_measurement(void);
+
+
+void reset_extender_switches(void);
+void write_extender_switches(void);
+__bit get_extender_switch_buffer(unsigned char reg_nr);
+void set_extender_switch_buffer(unsigned char reg_nr, __bit value);
+bool set_new_pwm_values(void);
+void activate_pwm_state(__bit _pwm_state);
+void operate_PWM(void);
+
+
+void operate_device(void);
+void device_specific_init(void);
+void main(void);
+
 #endif /* FURNACE_TEMP_DEVICE_H */
