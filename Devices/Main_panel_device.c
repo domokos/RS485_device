@@ -18,6 +18,7 @@
 __code const unsigned char nr_of_registers = 10;
 
 #define NR_OF_TEMP_SENSORS 2
+#define NR_OF_OW_BUSES 2
 #define NR_OF_SW_EXTENDERS 1
 
 // Describe the registers of this device
@@ -43,14 +44,24 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // Basement floor valve
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
       // Basement radiator valve
-        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE }, };
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE } };
 
 /*
  * Onewire specific declarations and defines
  */
-#define TEMP1_PINMASK 0x01 // P1_0
-#define TEMP2_PINMASK 0x02 // P1_1
-bool wait_conv, temp1_conv_initiated, temp2_conv_initiated;
+// Map registers to onewire buses Register1 is on P1_0, Register2 is on P1_1
+__code const unsigned char register_pinmask_map[2] =
+  { 0x01, 0x02 };
+
+// Store 64 bit rom values of registers/devices
+__code const unsigned char register_rom_map[][8] =
+  {
+  // First byte is zero, only one device on bus
+        { 0x00, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 },
+      // First byte is zero, only one device on bus
+        { 0x00, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 } };
+
+bool conv_complete, bus1_conv_initiated, bus2_conv_initiated;
 
 // Buffer to store Temperatures and temp reading timeout
 // temperatures are initialized @ 0C. At each unsuccesful reset or read attempt
@@ -59,7 +70,7 @@ int temperatures[NR_OF_TEMP_SENSORS];
 
 // Sensors are read in a circular manner. On e cycle completes in time equal to the conversion
 // time. This variable holds the id of the sensor to be addressed next during the cycle.
-unsigned char next_sensor;
+unsigned char bus_to_address;
 
 /*
  * Externder switch specific declarations and defines.
@@ -85,13 +96,24 @@ unsigned char extender_sw_outputs[NR_OF_SW_EXTENDERS];
 #define PWM_LO_PIN_ID 0
 #define PWM_HI_PIN_ID 1
 
+// Variable holding PWM times
 unsigned char pwm_on_time, pwm_off_time, new_pwm_on_time, new_pwm_off_time;
+
+// Variables holding PWM state and modification related flags
 bool is_pwm_low, new_is_pwm_low, load_new_pwm_values, pwm_active;
 __bit pwm_state;
 
+/*
+ * Functions of the device
+ *
+ * ONEWIRE devices specific section
+ */
+
 bool
-set_temp_resolution(unsigned char pinmask, unsigned char resolution)
+set_temp_resolution(unsigned char register_id, unsigned char resolution)
 {
+  unsigned char pinmask = register_pinmask_map[register_id];
+
   if (onewire_reset(pinmask))
     {
       onewire_write_byte(CMD_SKIP_ROM, pinmask);
@@ -108,41 +130,46 @@ set_temp_resolution(unsigned char pinmask, unsigned char resolution)
 }
 
 void
-scale_DS18B20_result(unsigned char id)
+scale_DS18B20_result(unsigned char register_id)
 {
-  temperatures[id] *= 8;
-  temperatures[id] &= 0xFFF0;
-  temperatures[id] += 12;
-  temperatures[id] -= ow_buf[6];
-}
-
-// Calculate which pin is referenced by the pinmask
-unsigned char
-get_id(unsigned char pinmask)
-{
-  unsigned char i, id = 0;
-
-  i = pinmask;
-  i >>= 1;
-  while (i)
-    {
-      i >>= 1;
-      id++;
-    }
-  return id;
+  temperatures[register_id] *= 8;
+  temperatures[register_id] &= 0xFFF0;
+  temperatures[register_id] += 12;
+  temperatures[register_id] -= ow_buf[6];
 }
 
 void
-read_DS18xxx(unsigned char pinmask)
+send_onewire_rom_commands(unsigned char register_id)
 {
-  unsigned char i, id;
+  unsigned char i, pinmask = register_pinmask_map[register_id];
 
-  id = get_id(pinmask);
+  // If no ROM is specified for this device (there is only one device on this bus)
+  // issue a "SKIP ROM" otherwise issue a "MATCH ROM" followed by the ROM code
+  if (register_rom_map[register_id][0] == 0)
+    onewire_write_byte(CMD_SKIP_ROM, pinmask);
+  else
+    {
+      i = 0;
+      // Issue "MATCH ROM"
+      onewire_write_byte(CMD_MATCH_ROM, pinmask);
+
+      // Write the 64 bit ROM code
+      do
+        onewire_write_byte(register_rom_map[register_id][i], pinmask);
+      while (i++ < 7);
+    }
+}
+
+// Read a DS18xx sensor
+void
+read_DS18xxx(unsigned char register_id)
+{
+  unsigned char i, pinmask = register_pinmask_map[register_id];
 
   // Reset and read the temperature
   if (onewire_reset(pinmask))
     {
-      onewire_write_byte(CMD_SKIP_ROM, pinmask);
+      send_onewire_rom_commands(register_id);
       onewire_write_byte(CMD_READ_SCRATCHPAD, pinmask);
 
       for (i = 0; i < 9; i++)
@@ -152,26 +179,25 @@ read_DS18xxx(unsigned char pinmask)
 
       if (ow_buf[8] == calculate_onewire_crc(ow_buf, 8) && ow_buf[7] == 0x10)
         {
-          temperatures[id] = ow_buf[0] | (ow_buf[1] << 8);
+          temperatures[register_id] = ow_buf[0] | (ow_buf[1] << 8);
 
           // If result needs scaling up then scale it up
-          if (register_identification[id][SCALE_POSITION] == SCALE_TEMP)
-            scale_DS18B20_result(id);
+          if (register_identification[register_id][SCALE_POSITION] == SCALE_TEMP)
+            scale_DS18B20_result(register_id);
         }
       else
         {
-          temperatures[id] = ONEWIRE_TEMP_FAIL;
+          temperatures[register_id] = ONEWIRE_TEMP_FAIL;
         }
     }
 }
 
-// Return if conversion initiated succesfully
+// Return if conversion command is sent succesfully
+// It takes a reference to a specific device but issues convert on the entire bus
 bool
-issue_convert(unsigned char pinmask)
+issue_convert_on_bus(unsigned char register_id)
 {
-  unsigned char id;
-
-  id = get_id(pinmask);
+  unsigned char pinmask = register_pinmask_map[register_id];
 
   if (onewire_reset(pinmask))
     {
@@ -179,43 +205,48 @@ issue_convert(unsigned char pinmask)
       onewire_write_byte(CMD_CONVERT_T, pinmask);
       return TRUE;
     }
-  else
-    {
-      temperatures[id] = ONEWIRE_TEMP_FAIL;
-      return FALSE;
-    }
+  return FALSE;
 }
 
-// Keep conversions going on for each sensor
+// Keep conversions going on for each sensor on each onewire bus
 void
-operate_onewire(void)
+operate_onewire_temp_measurement(void)
 {
-  if (!wait_conv)
+  if (conv_complete)
     {
-      switch (next_sensor)
+      switch (bus_to_address)
         {
       case 1:
-        if (temp1_conv_initiated)
-          read_DS18xxx(TEMP1_PINMASK);
-        temp1_conv_initiated = issue_convert(TEMP1_PINMASK);
-        next_sensor = 2;
+        if (bus1_conv_initiated)
+          read_DS18xxx(1);
+        bus1_conv_initiated = issue_convert_on_bus(1);
+        bus_to_address = 2;
         break;
 
       case 2:
-        if (temp2_conv_initiated)
-          read_DS18xxx(TEMP2_PINMASK);
-        temp2_conv_initiated = issue_convert(TEMP2_PINMASK);
-        next_sensor = 1;
+        if (bus2_conv_initiated)
+          read_DS18xxx(2);
+        bus2_conv_initiated = issue_convert_on_bus(2);
+        bus_to_address = 1;
         break;
         }
+
+      // Reset the conversion timer and set the complete flag so we
+      // can wait for conversion time expiry on the next bus
       reset_timeout(TEMP_CONV_TIMER);
-      wait_conv = TRUE;
+      conv_complete = FALSE;
     }
   else
     {
-      wait_conv = !timeout_occured(TEMP_CONV_TIMER, DS18x20_CONV_TIME / 2);
+      conv_complete = timeout_occured(TEMP_CONV_TIMER,
+          DS18x20_CONV_TIME / NR_OF_OW_BUSES);
     }
 }
+
+/*
+ * EXTENDER Switches specific function section
+ *
+ */
 
 // Reset the extender switches
 void
@@ -387,7 +418,7 @@ operate_device(void)
   while (TRUE)
     {
       // Operate main device functions
-      operate_onewire();
+      operate_onewire_temp_measurement();
       operate_PWM();
 
       // Take care of messaging
@@ -484,13 +515,14 @@ device_specific_init(void)
     temperatures[i - 1] = 0;
 
   // Set initial resolutions to 12 bit
-  set_temp_resolution(TEMP_RESOLUTION_12BIT, TEMP1_PINMASK);
-  set_temp_resolution(TEMP_RESOLUTION_12BIT, TEMP2_PINMASK);
+  set_temp_resolution(0, TEMP_RESOLUTION_12BIT);
+  set_temp_resolution(1, TEMP_RESOLUTION_12BIT);
 
-  wait_conv = FALSE;
+  // We need to start a new conversion so it is complete on init
+  conv_complete = TRUE;
 
-  temp1_conv_initiated = temp2_conv_initiated = FALSE;
-  next_sensor = 1;
+  bus1_conv_initiated = bus2_conv_initiated = FALSE;
+  bus_to_address = 1;
 
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);

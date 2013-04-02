@@ -16,6 +16,7 @@
 
 #define CMD_READ_ROM            0x33
 #define CMD_SKIP_ROM            0xCC
+#define CMD_MATCH_ROM           0x55
 #define CMD_CONVERT_T           0x44
 #define CMD_READ_SCRATCHPAD     0xBE
 #define CMD_WRITE_SCRATCHPAD    0x4E
