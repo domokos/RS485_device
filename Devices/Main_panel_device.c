@@ -28,14 +28,21 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // Return temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
 
-      // 2-pin PWM output on extender pins 0 and 1
-        { REG_TYPE_PWM2, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // 2-pin PWM output on extender pins 0 and 1 - gas valves
+        { REG_TYPE_PWM2, REG_RW, 3, DONT_CARE, DONT_CARE },
       // Single pin extender outputs
+
+      // Radiator pump
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // Floor pump
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // Hidraulic Shifter pump
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // HW pump
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // Basement floor valve
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // Basement radiator valve
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE }, };
 
 /*
@@ -87,6 +94,7 @@ set_temp_resolution(unsigned char pinmask, unsigned char resolution)
 {
   if (onewire_reset(pinmask))
     {
+      onewire_write_byte(CMD_SKIP_ROM, pinmask);
       onewire_write_byte(CMD_WRITE_SCRATCHPAD, pinmask);
       onewire_write_byte(0, pinmask);
       onewire_write_byte(0, pinmask);
@@ -230,7 +238,7 @@ reset_extender_switches(void)
 void
 write_extender_switches(void)
 {
-  unsigned char i, j, k;
+  unsigned char i, j, mask;
 
   j = NR_OF_SW_EXTENDERS;
 
@@ -238,14 +246,14 @@ write_extender_switches(void)
   while (j--)
     {
       i = extender_sw_outputs[j];
-      k = 0x80;
-      while (k)
+      mask = 0x80;
+      while (mask)
         {
-          DS_PIN = (i & k) > 0;
+          DS_PIN = (i & mask) > 0;
           SHCP_PIN = 1;
           SHCP_PIN = 0;
 
-          k >>= 1;
+          mask >>= 1;
         }
     }
   STCP_PIN = 1;
@@ -290,7 +298,7 @@ set_new_pwm_values(void)
   is_pwm_low = new_is_pwm_low;
   load_new_pwm_values = FALSE;
 
-  // Extract if PWM is active for code readibility
+  // Set if PWM is active for code readibility
   pwm_active = pwm_on_time > 0;
 }
 
@@ -319,18 +327,16 @@ operate_PWM()
   // If the PWM is operational
   if (pwm_active)
     {
-      if (pwm_state == PWM_STATE_ON)
+      if (pwm_state == PWM_STATE_ON) // If State is on
         {
-          // Times are given in seconds so we need to multiply by 1000
-          if (timeout_occured(PWM1_TIMER, pwm_on_time * 1000))
+          // Times are given in 10th seconds so we need to multiply by 100
+          if (timeout_occured(PWM1_TIMER, pwm_on_time * 100))
             activate_pwm_output(PWM_STATE_OFF);
         }
-
-      // State is currently off
-      else
+      else // If State is off
         {
-          // Times are given in seconds so we need to multiply by 1000
-          if (timeout_occured(PWM1_TIMER, pwm_off_time * 1000))
+          // Times are given in 10th seconds so we need to multiply by 100
+          if (timeout_occured(PWM1_TIMER, pwm_off_time * 100))
             {
               // Check if new values need to be set and set them if needed
               if (load_new_pwm_values)
@@ -342,7 +348,7 @@ operate_PWM()
             }
         }
     }
-  // In not active see if new PWM values need to be loaded
+  // In PWM is not active then see if new PWM values need to be loaded
   else if (load_new_pwm_values)
     {
       set_new_pwm_values();
@@ -367,7 +373,7 @@ operate_PWM()
  * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,08,01,01,36,01,01,8f,66}
  *
  * To Write Register 3 (PWM), with low pin 2-2 sec
- * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,0b,01,01,35,00,03,02,02,00,b4,91}
+ * {ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,ff,0b,01,01,35,00,03,14,14,00,04,d8}
  *
  */
 void

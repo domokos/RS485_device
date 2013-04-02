@@ -31,6 +31,13 @@ extern __code const unsigned char nr_of_registers;
 #define REG_TYPE_SW 1  // Switch register
 #define REG_TYPE_INPUT 2 // Input register
 #define REG_TYPE_DATA 3 // Data register
+/*
+ * Takes 3 parameters
+ * 1st byte: On time in 10th seconds
+ * 2nd byte: Off time in 10th seconds
+ * 3rd byte: 1 - HI pin is PWM, while low pin is on
+ *           0 - LO pin is PWM, while high pin is off
+ */
 #define REG_TYPE_PWM2 4  // 2 pin PWM switch control register
 
 // Register read-wtite types
