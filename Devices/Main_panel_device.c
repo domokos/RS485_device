@@ -332,21 +332,32 @@ void
 set_new_pwm_values(void)
 {
 
-  // Load the new PWM values
-  pwm_on_time = new_pwm_on_time;
-  pwm_off_time = new_pwm_off_time;
-  is_pwm_low = new_is_pwm_low;
+  bool set_values = TRUE;
 
+  if (new_pwm_on_time == 0 && new_pwm_off_time == 1)
+    {
+      requested_PWM_state = PWM_OFF;
+      set_values = FALSE;
+    }
+  else if (new_pwm_on_time == 1 && new_pwm_off_time == 0)
+    {
+      requested_PWM_state = PWM_ON;
+      set_values = FALSE;
+    }
+
+  if (set_values)
+    {
+      // Load the new PWM values
+      pwm_on_time = new_pwm_on_time;
+      pwm_off_time = new_pwm_off_time;
+      is_pwm_low = new_is_pwm_low;
+
+      if (is_pwm_low)
+        requested_PWM_state = PWM_REQ_LO;
+      else
+        requested_PWM_state = PWM_REQ_HI;
+    }
   load_new_pwm_values = FALSE;
-
-  if (pwm_on_time == 0 && pwm_off_time == 1)
-    requested_PWM_state = PWM_OFF;
-  else if (pwm_on_time == 0 && pwm_off_time == 1)
-    requested_PWM_state = PWM_ON;
-  else if (is_pwm_low)
-    requested_PWM_state = PWM_REQ_LO;
-  else
-    requested_PWM_state = PWM_REQ_HI;
 }
 
 // Activate the PWM output values on the extender outputs and reset PWM timer
@@ -427,12 +438,12 @@ operate_PWM(void)
     }
   else
     {
-      if (pwm_state == PWM_LO_OFF || (pwm_state == PWM_MID && is_pwm_low))
+      if (pwm_state == PWM_LO_OFF || (pwm_state == PWM_MID && !is_pwm_low))
         wait_time = pwm_off_time;
       else
         wait_time = pwm_on_time;
 
-      if (timeout_occured(PWM1_TIMER, wait_time * 10))
+      if (timeout_occured(PWM1_TIMER, wait_time * 100))
         {
           if (!load_new_pwm_values)
             {
@@ -629,7 +640,6 @@ main(void)
 // Set 4800 baud
   init_device_comm(HOST_ID, COMM_SPEED_4800_H);
 
-// onewire_test();
   device_specific_init();
 
   operate_device();
