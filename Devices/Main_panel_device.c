@@ -93,13 +93,11 @@ unsigned char extender_sw_outputs[NR_OF_SW_EXTENDERS];
  */
 #define PWM_OFF 0
 #define PWM_LO_OFF 1
-#define PWM_HI_OFF 2
-#define PWM_LO_ON 3
-#define PWM_HI_ON 4
-#define PWM_ON 5
-#define PWM_REQ_HI 6
-#define PWM_REQ_LO 7
-#define STAY_IN_CURRENT 8
+#define PWM_MID 2
+#define PWM_HI_ON 3
+#define PWM_ON 4
+#define PWM_REQ_HI 5
+#define PWM_REQ_LO 6
 #define PWM_LO_PIN_ID 0
 #define PWM_HI_PIN_ID 1
 
@@ -363,8 +361,7 @@ activate_pwm_state(unsigned char next_pwm_state)
     set_extender_switch_buffer(PWM_LO_PIN_ID, 0);
     set_extender_switch_buffer(PWM_HI_PIN_ID, 0);
     break;
-  case PWM_HI_OFF:
-  case PWM_LO_ON:
+  case PWM_MID:
     set_extender_switch_buffer(PWM_LO_PIN_ID, 1);
     set_extender_switch_buffer(PWM_HI_PIN_ID, 0);
     break;
@@ -381,118 +378,91 @@ activate_pwm_state(unsigned char next_pwm_state)
 unsigned char
 evaluate_state_change_rule1(void)
 {
-  if (requested_PWM_state == PWM_REQ_LO || requested_PWM_state == PWM_ON)
-    return PWM_LO_ON;
-  else if (requested_PWM_state == PWM_REQ_HI)
-    return PWM_HI_OFF;
-  else
-    // If requested state is PWM OFF
+  if (requested_PWM_state == PWM_OFF)
     return PWM_OFF;
+  else
+    return PWM_MID;
 }
 
 unsigned char
 evaluate_state_change_rule2(void)
 {
-  if (requested_PWM_state == PWM_REQ_LO)
+  if (requested_PWM_state == PWM_OFF)
+    return PWM_OFF;
+  else if (requested_PWM_state == PWM_REQ_LO)
     return PWM_LO_OFF;
   else if (requested_PWM_state == PWM_REQ_HI)
     return PWM_HI_ON;
-  else if (requested_PWM_state == PWM_ON)
-    return PWM_ON;
   else
-    // If requested state is PWM_OFF
-    return PWM_OFF;
+    // If requested state is PWM_ON
+    return PWM_ON;
 }
 
 unsigned char
 evaluate_state_change_rule3(void)
 {
-  if (requested_PWM_state == PWM_REQ_LO || requested_PWM_state == PWM_OFF)
-    return PWM_LO_ON;
-  else if (requested_PWM_state == PWM_REQ_HI)
-    return PWM_HI_OFF;
-  else
-    // If requested state is PWM_ON
+  if (requested_PWM_state == PWM_ON)
     return PWM_ON;
+  else
+    return PWM_MID;
 }
 
 // Must be called periodically to take care of PWM outputs
 void
 operate_PWM(void)
 {
-  unsigned char next_state;
-  next_state = STAY_IN_CURRENT;
+  unsigned char next_state, wait_time;
+  next_state = pwm_state;
 
-  switch (pwm_state)
+  if (pwm_state == PWM_OFF || pwm_state == PWM_ON)
     {
-  case PWM_OFF:
-    if (load_new_pwm_values)
-      {
-        set_new_pwm_values();
-        next_state = evaluate_state_change_rule1();
-        if (next_state == PWM_OFF)
-          next_state = STAY_IN_CURRENT;
-      }
-    break;
+      if (load_new_pwm_values)
+        {
+          set_new_pwm_values();
+          if (pwm_state == PWM_OFF)
+            next_state = evaluate_state_change_rule1();
+          else
+            next_state = evaluate_state_change_rule3();
+        }
+    }
+  else
+    {
+      if (pwm_state == PWM_LO_OFF || (pwm_state == PWM_MID && is_pwm_low))
+        wait_time = pwm_off_time;
+      else
+        wait_time = pwm_on_time;
 
-  case PWM_LO_OFF:
-  case PWM_HI_OFF:
-    if (timeout_occured(PWM1_TIMER, pwm_off_time * 10))
-      {
-        if (!load_new_pwm_values)
-          {
-            if (requested_PWM_state == PWM_OFF)
-              next_state = PWM_OFF;
-            else if (pwm_state == PWM_LO_OFF)
-              next_state = PWM_LO_ON;
-            else
-              next_state = PWM_HI_ON;
-          }
-        else
-          {
-            set_new_pwm_values();
-            if (pwm_state == PWM_LO_OFF)
-              next_state = evaluate_state_change_rule1();
-            else
-              next_state = evaluate_state_change_rule2();
-          }
-      }
-    break;
-  case PWM_LO_ON:
-  case PWM_HI_ON:
-    if (timeout_occured(PWM1_TIMER, pwm_on_time * 10))
-      {
-        if (!load_new_pwm_values)
-          {
-            if (requested_PWM_state == PWM_ON)
-              next_state = PWM_ON;
-            else if (pwm_state == PWM_LO_ON)
-              next_state = PWM_LO_OFF;
-            else
-              next_state = PWM_HI_OFF;
-          }
-        else
-          {
-            set_new_pwm_values();
-            if (pwm_state == PWM_LO_ON)
-              next_state = evaluate_state_change_rule2();
-            else
-              next_state = evaluate_state_change_rule3();
-          }
-      }
-    break;
-  case PWM_ON:
-    if (load_new_pwm_values)
-      {
-        set_new_pwm_values();
-        next_state = evaluate_state_change_rule3();
-        if (next_state == PWM_ON)
-          next_state = STAY_IN_CURRENT;
-      }
-    break;
+      if (timeout_occured(PWM1_TIMER, wait_time * 10))
+        {
+          if (!load_new_pwm_values)
+            {
+              if (requested_PWM_state == PWM_OFF)
+                next_state = PWM_OFF;
+              else if (requested_PWM_state == PWM_ON)
+                next_state = PWM_ON;
+              else if (pwm_state == PWM_MID && is_pwm_low)
+                next_state = PWM_LO_OFF;
+              else if (pwm_state == PWM_MID)
+                next_state = PWM_HI_ON;
+              else
+                // if (pwm_state == PWM_HI_ON || pwm_state == PWM_LO_OFF)
+                next_state = PWM_MID;
+            }
+          else
+            {
+              set_new_pwm_values();
+              if (pwm_state == PWM_LO_OFF)
+                next_state = evaluate_state_change_rule1();
+              else if (pwm_state == PWM_MID)
+                next_state = evaluate_state_change_rule2();
+              else
+                // if (pwm_state == PWM_HI_ON)
+                next_state = evaluate_state_change_rule3();
+            }
+        }
     }
 
-  if (next_state != STAY_IN_CURRENT)
+  if (next_state != pwm_state)
     activate_pwm_state(next_state);
 }
 /*
