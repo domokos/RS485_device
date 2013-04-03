@@ -28,8 +28,11 @@ void reset_extender_switches(void);
 void write_extender_switches(void);
 __bit get_extender_switch_buffer(unsigned char reg_nr);
 void set_extender_switch_buffer(unsigned char reg_nr, __bit value);
-bool set_new_pwm_values(void);
-void activate_pwm_state(__bit _pwm_state);
+void set_new_pwm_values(void);
+void activate_pwm_state(unsigned char next_pwm_state);
+unsigned char evaluate_state_change_rule1(void);
+unsigned char evaluate_state_change_rule2(void);
+unsigned char evaluate_state_change_rule3(void);
 void operate_PWM(void);
 
 
