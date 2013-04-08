@@ -21,6 +21,13 @@
 #define CMD_READ_SCRATCHPAD     0xBE
 #define CMD_WRITE_SCRATCHPAD    0x4E
 
+
+// The masks used to manipulate temp timeout values
+#define ONEWIRE_TEMP_FAIL 0xaf0f
+
+#define TEMP_RESOLUTION_12BIT 0x7F
+
+
 /*
  * Onewire specific timing constatnts
  */

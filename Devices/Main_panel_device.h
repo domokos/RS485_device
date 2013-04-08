@@ -10,12 +10,6 @@
 
 #include "Slave_comm.h"
 
-// The masks used to manipulate temp timeout values
-#define ONEWIRE_TEMP_FAIL 0xaf0f
-
-#define TEMP_RESOLUTION_12BIT 0x7F
-
-
 bool set_temp_resolution(unsigned char register_id, unsigned char resolution);
 void scale_DS18B20_result(unsigned char register_id);
 void send_onewire_rom_commands(unsigned char register_id);
