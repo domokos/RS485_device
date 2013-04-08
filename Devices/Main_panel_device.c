@@ -91,6 +91,7 @@ unsigned char extender_sw_outputs[NR_OF_SW_EXTENDERS];
 /*
  * PWM specific defines and variables
  */
+// States and requested states
 #define PWM_OFF 0
 #define PWM_LO_OFF 1
 #define PWM_MID 2
@@ -98,8 +99,15 @@ unsigned char extender_sw_outputs[NR_OF_SW_EXTENDERS];
 #define PWM_ON 4
 #define PWM_REQ_HI 5
 #define PWM_REQ_LO 6
+
+// P1 pins of PWM
 #define PWM_LO_PIN_ID 0
 #define PWM_HI_PIN_ID 1
+
+// Times for on/off when ramp from off to up or down
+// 4 secs
+#define PWM_RAMP_ON_TIME 40
+#define PWM_RAMP_OFF_TIME 40
 
 // Variables holding PWM times and state
 unsigned char pwm_on_time, pwm_off_time, new_pwm_on_time, new_pwm_off_time,
@@ -357,6 +365,11 @@ set_new_pwm_values(void)
       else
         requested_PWM_state = PWM_REQ_HI;
     }
+  else
+    {
+      pwm_on_time = PWM_RAMP_ON_TIME;
+      pwm_off_time = PWM_RAMP_OFF_TIME;
+    }
   load_new_pwm_values = FALSE;
 }
 
@@ -405,7 +418,7 @@ evaluate_state_change_rule2(void)
   else if (requested_PWM_state == PWM_REQ_HI)
     return PWM_HI_ON;
   else
-    // If requested state is PWM_ON
+// If requested state is PWM_ON
     return PWM_ON;
 }
 
@@ -627,7 +640,6 @@ device_specific_init(void)
   is_pwm_low = new_is_pwm_low = TRUE;
   load_new_pwm_values = FALSE;
   pwm_state = requested_PWM_state = PWM_OFF;
-
 }
 
 void
