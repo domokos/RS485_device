@@ -51,15 +51,15 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
  */
 // Map registers to onewire buses Register1 is on P1_0, Register2 is on P1_1
 __code const unsigned char register_pinmask_map[2] =
-  { 0x01, 0x02 };
+  { 0x01, 0x01 };
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
   {
-  // First byte is zero, only one device on bus
-        { 0x00, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 },
-      // First byte is zero, only one device on bus
-        { 0x00, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 } };
+  // If the first byte is zero, then there is only one device on bus
+        { 0x28, 0xe8, 0x33, 0x50, 0x01, 0x00, 0x00, 0x2f },
+      // If the first byte is zero, then there is only one device on bus
+        { 0x28, 0x5f, 0xfb, 0x4f, 0x01, 0x00, 0x00, 0x13 } };
 
 bool conv_complete, bus0_conv_initiated, bus1_conv_initiated;
 
