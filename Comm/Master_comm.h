@@ -5,11 +5,12 @@
  *      Author: dmolnar
  */
 
-#include "Base.h"
-#include "Comm_common.h"
 
 #ifndef MASTER_COMM_H_
 #define MASTER_COMM_H_
+
+#include "Base.h"
+#include "Comm_common.h"
 
 
 // Master communication states
@@ -25,6 +26,9 @@
 // Master communication state machine states
 #define SM_MASTER_LISTENS_TO_HOST 0
 #define SM_MASTER_LISTENS_ON_BUS 1
+
+// Master reset comm direction pin timer - start with 10 seconds
+#define MASER_UNSEEN_COMM_TIMEOUT 10000
 
 /*
  * Internal Utility function prototypes

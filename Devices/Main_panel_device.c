@@ -5,8 +5,8 @@
  *      Author: dmolnar
  */
 
-#include "Main_panel_device.h"
 #include "Generic_device.h"
+#include "Main_panel_device.h"
 
 // The id of this host on the bus
 #define HOST_ID 1

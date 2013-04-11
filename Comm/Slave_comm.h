@@ -5,8 +5,8 @@
  *      Author: dmolnar
  */
 
-#ifndef COMM_H_
-#define COMM_H_
+#ifndef SLAVE_COMM_H_
+#define SLAVE_COMM_H_
 
 #include "Base.h"
 #include "Comm_common.h"
@@ -57,4 +57,4 @@ bool get_device_message(void);
 // Set the direction of communication
 static void set_comm_direction(unsigned char direction);
 
-#endif /* COMM_H_ */
+#endif /* SLAVE_COMM_H_ */
