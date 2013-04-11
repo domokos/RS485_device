@@ -143,7 +143,7 @@ operate_master(void)
               // Make sure the direction pin is not stuck for some reason
               // will ruin an incoming message so let's hope it will not occur whithin
               // the timeout indicated
-              if (timeout_occured(UNSEEN_COMM_TIMER, MASER_UNSEEN_COMM_TIMEOUT))
+              if (timeout_occured(UNSEEN_COMM_TIMER, MASTER_UNSEEN_COMM_TIMEOUT))
                 {
                   set_master_comm_state(MASTER_TALKS_TO_BUS);
                   set_master_comm_state(MASTER_TALKS_TO_HOST);
