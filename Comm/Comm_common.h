@@ -11,8 +11,7 @@
 #define COMM_COMMON_H_
 
 // Serial buffer sizes
-#define XBUFLEN 4
-#define RBUFLEN 8
+#define UART_XBUFLEN 4
 
 // Messaging frame structure elements
 #define TRAIN_CHR 0xff
@@ -23,26 +22,20 @@
 
 // Communication parameters
 #define MAX_MESSAGE_LENGTH 15
-#define TRAIN_LENGTH_RCV 3
-#define TRAIN_LENGTH_SND 8
-#define FALSE_TRAINS_TOLERATED 2
+#define TRAIN_LENGTH_RCV 2
+#define TRAIN_LENGTH_SND 4
 
 // Messaging states
 #define WAITING_FOR_TRAIN 0
 #define RECEIVING_TRAIN 1
-#define IN_SYNC 2
-#define RECEIVING_MESSAGE 3
+#define RECEIVING_MESSAGE 2
+#define MESSAGE_AWAITS_PROCESSING 3
 
 // Messaging error conditions
 #define NO_ERROR 0 // No error
-#define NO_TRAIN_RECEIVED 1 // Expected train sequence, got something else
-#define MESSAGE_TOO_LONG 2 // Receive buffer length exceeded
-#define MESSAGING_TIMEOUT 3 // Timeout occured - expected but no communication is seen on the bus
-#define COMM_CRC_ERROR 4 // Frame with CRC error received
-
-// Messaging timeout types
-#define MSG_TIMEOUT 0
-#define RSP_TIMEOUT 1
+#define BROKEN_MESSAGE 1 // Incorrect message is received
+#define COMM_CRC_ERROR 2 // Frame with CRC error received
+#define MESSAGING_TIMEOUT 3 // Timeout occured
 
 // Broadcast address
 #define BUS_BROADCAST_ADDRESS 255
@@ -54,7 +47,7 @@ struct message_struct
   unsigned char   content[MAX_MESSAGE_LENGTH];
 };
 
-// The message buffer is publicly visible - no RAM for pointers :(
+// The message buffer is publicly visible
 extern struct message_struct message_buffer;
 
 /**********************************************************************************
@@ -187,20 +180,11 @@ static unsigned char flip_bits(unsigned char byte);
 // Reset serial communication
 static void reset_serial(void);
 
-// Flush the serial receiver buffer
-static void flush_serial_receive_buffer(void);
-
 // Send a character to the UART
 static void UART_putc(unsigned char c);
 
-// Read a character from the UART buffer
-static unsigned char UART_getc(void);
-
 // Is UART character transmission complete?
 //static bool is_UART_send_complete (void);
-
-// Are there any characters in the UART buffer available for reading?
-static bool UART_is_char_available(void);
 
 //Calculate the 16-Bit checksum of the message
 static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);
@@ -224,9 +208,6 @@ unsigned char get_host_address(void);
 // Set the host address
 void set_host_address(unsigned char _host_address);
 
-// Provide access to the message structure
-struct message_struct* get_message_buffer(void);
-
 // Get the error state of the comm module
 unsigned char get_comm_error(void);
 
@@ -236,7 +217,7 @@ void send_message_seq(unsigned char opcode, unsigned char seq);
 // Send a message on the serial line using the SEQ just received
 void send_message(unsigned char opcode);
 
-// Periodically listen for/get a message on the serial line
+// Periodically check if a message is received on the serial line
 bool get_message(void);
 
 // Return the # of CRC errors seen

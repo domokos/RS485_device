@@ -8,17 +8,17 @@
 #include "Comm_common.h"
 
 // Global variables facilitating serial communication
-static unsigned char rcv_buffer[RBUFLEN], send_buffer[XBUFLEN];
-static volatile unsigned char rcv_counter, send_counter, rcv_position,
-    send_position;
-static volatile __bit UART_busy;
+static unsigned char send_buffer[UART_XBUFLEN];
+static volatile unsigned char send_counter, send_position;
+static volatile bool UART_busy;
+static bool msg_timeout_active;
 static unsigned char host_address;
 static unsigned char comm_speed;
 
 // Global variables facilitating messaging communication
 
 static unsigned char CRC_error_count;
-static unsigned char comm_error;
+static volatile unsigned char comm_error, comm_state, train_char_seen;
 
 struct message_struct message_buffer;
 
@@ -86,19 +86,49 @@ __code const struct comm_speed_struct comm_speeds[] =
 // The serial ISR for communication
 ISR(SERIAL,0)
   {
+    unsigned char chr_received;
     if (RI)
       {
+        chr_received = SBUF;
         RI = 0;
-        // Overwrite chars already in buffer in a circular manner
-        rcv_buffer [(unsigned char)(rcv_position+rcv_counter) % RBUFLEN] = SBUF;
-        if (rcv_counter < RBUFLEN)
+        switch(comm_state)
           {
-            rcv_counter++;
-          }
-        else
-          {
-            rcv_position++;
-            if (rcv_position >= RBUFLEN) rcv_position = 0;
+            case WAITING_FOR_TRAIN:
+            if(chr_received == TRAIN_CHR)
+              {
+                comm_state = RECEIVING_TRAIN;
+                train_char_seen = 1;
+              }
+            break;
+
+            case RECEIVING_TRAIN:
+            comm_error = NO_ERROR;
+            if(chr_received == TRAIN_CHR)
+              {
+                train_char_seen++;
+              }
+            else if(chr_received != TRAIN_CHR && chr_received <= MAX_MESSAGE_LENGTH && train_char_seen >= TRAIN_LENGTH_RCV)
+              {
+                comm_state = RECEIVING_MESSAGE;
+                message_buffer.content[0] = chr_received;
+                message_buffer.index = 1;
+              }
+            else
+              {
+                comm_error = BROKEN_MESSAGE;
+                comm_state = WAITING_FOR_TRAIN;
+              }
+            break;
+
+            case RECEIVING_MESSAGE:
+            message_buffer.content[message_buffer.index++] = chr_received;
+            if (message_buffer.index == message_buffer.content[0])
+              {
+                comm_state = MESSAGE_AWAITS_PROCESSING;
+              }
+            break;
+            case MESSAGE_AWAITS_PROCESSING:
+            break;
           }
       }
     if (TI)
@@ -109,7 +139,7 @@ ISR(SERIAL,0)
           {
             send_counter--;
             SBUF = send_buffer [send_position++];
-            if (send_position >= XBUFLEN) send_position = 0;
+            if (send_position >= UART_XBUFLEN) send_position = 0;
           }
       }
   }
@@ -117,19 +147,19 @@ ISR(SERIAL,0)
 static unsigned char
 reverse_bits(unsigned char byte)
 {
-  unsigned char r = byte; // r will be reversed bits of v; first get LSB of v
-  unsigned char s = 7; // extra shift needed at end
+  unsigned char reversed = byte; // r will be reversed bits of v; first get LSB of v
+  unsigned char shift = 7; // extra shift needed at end
 
   for (byte >>= 1; byte; byte >>= 1)
     {
-      r <<= 1;
-      r |= byte & 1;
-      s--;
+      reversed <<= 1;
+      reversed |= byte & 1;
+      shift--;
     }
 
   // shift when byte's highest bits are zero
-  r <<= s;
-  return r;
+  reversed <<= shift;
+  return reversed;
 }
 
 // Reset serial communication
@@ -156,25 +186,13 @@ reset_serial(void)
   SM2 = 0;
 
   // Clear serial communication buffers
-  rcv_counter = send_counter = rcv_position = send_position = 0;
-  UART_busy = 0;
+  send_counter = send_position = 0;
+  UART_busy = FALSE;
+  train_char_seen = 0;
 
   // Enable Serial interrupt and start listening on the bus
   ES = 1;
   REN = 1;
-}
-
-// Flush the serial receiver buffer
-static void
-flush_serial_receive_buffer(void)
-{
-  ES = 0;
-  REN = 0;
-
-  rcv_counter = rcv_position = 0;
-
-  REN = 1;
-  ES = 1;
 }
 
 // Send a character to the UART
@@ -182,13 +200,13 @@ static void
 UART_putc(unsigned char c)
 {
   // Wait for room in buffer
-  while (send_counter >= XBUFLEN)
+  while (send_counter >= UART_XBUFLEN)
     ;
   ES = 0;
   if (UART_busy)
     {
-      send_buffer[(unsigned char) (send_position + send_counter++) % XBUFLEN] =
-          c;
+      send_buffer[(unsigned char) (send_position + send_counter++)
+          % UART_XBUFLEN] = c;
     }
   else
     {
@@ -196,23 +214,6 @@ UART_putc(unsigned char c)
       UART_busy = 1;
     }
   ES = 1;
-}
-
-// Read a character from the UART buffer
-static unsigned char
-UART_getc(void)
-{
-  unsigned char c;
-  // Wait for a character
-  while (!rcv_counter)
-    ;
-  ES = 0;
-  rcv_counter--;
-  c = rcv_buffer[rcv_position++];
-  if (rcv_position >= RBUFLEN)
-    rcv_position = 0;
-  ES = 1;
-  return c;
 }
 
 /*
@@ -223,14 +224,6 @@ UART_getc(void)
  return !UART_busy;
  }
  */
-
-// Are there any caharcters in the UART buffer available for reading?
-static bool
-UART_is_char_available(void)
-{
-  return rcv_counter > 0;
-}
-
 
 // CRC-CCITT (0xFFFF) calculator
 static unsigned int
@@ -301,6 +294,10 @@ reset_comm(void)
 {
   // Clear message buffer
   message_buffer.index = 0;
+
+  // Reset communication state
+  comm_state = WAITING_FOR_TRAIN;
+  msg_timeout_active = FALSE;
 
   // Clear receiving queue
   CRC_error_count = 0;
@@ -374,152 +371,54 @@ send_message(unsigned char opcode)
     ;
 }
 
-// Periodically listen for/get a message on the serial line
+// Periodically check if a message is received on the serial line
 bool
 get_message(void)
 {
-  unsigned char ch_received;
-  unsigned char comm_state;
-  char train_length;
-  bool message_received, abandon_receiving;
 
-  if (!UART_is_char_available())
-    return FALSE;
-
-  reset_timeout(MSG_TIMEOUT);
-  comm_error = NO_ERROR;
-  comm_state = WAITING_FOR_TRAIN;
-  ch_received = 0;
-  train_length = 0;
-  message_received = FALSE;
-  abandon_receiving = FALSE;
-
-  while (!message_received && !abandon_receiving)
+  // If there is no timeout running and reception in progress start watching timeout
+  if (!msg_timeout_active)
     {
-      if (UART_is_char_available())
+      if (comm_state != MESSAGE_AWAITS_PROCESSING
+          && comm_state != WAITING_FOR_TRAIN)
         {
-          ch_received = UART_getc();
-          // Reset message timeout counter as a character is received
+          msg_timeout_active = TRUE;
           reset_timeout(MSG_TIMEOUT);
         }
-      else if (timeout_occured(MSG_TIMEOUT,
-          comm_speeds[comm_speed].msg_timeout))
-        {
-          comm_error = MESSAGING_TIMEOUT;
-          message_buffer.index = 0;
-          abandon_receiving = TRUE;
-          continue;
-        }
-      else
-        continue;
-
-      switch (comm_state)
-        {
-      case WAITING_FOR_TRAIN:
-        if (ch_received == TRAIN_CHR)
-          {
-            // Switch the state to wait for the address fileld of the frame
-            // reset the next state by setting train_length to zero
-            train_length = 1;
-            comm_state = RECEIVING_TRAIN;
-            comm_error = NO_ERROR;
-          }
-        else
-          {
-            // Tolerate the defined nr of false trains
-            // set error and return otherwise
-            if (--train_length >= -FALSE_TRAINS_TOLERATED)
-              {
-                flush_serial_receive_buffer();
-                comm_error = NO_TRAIN_RECEIVED;
-              }
-            else
-              abandon_receiving = TRUE;
-          }
-        break;
-
-        // Optimizing for smaller code size for the microcontroller -
-        // Hence the two similar states are handled together
-      case RECEIVING_TRAIN:
-      case IN_SYNC:
-        if (ch_received == TRAIN_CHR)
-          {
-            // Received the expected character increase the
-            // train length seen so far and change state if
-            // enough train is seen
-            if (train_length < TRAIN_LENGTH_RCV)
-              {
-                train_length++;
-              }
-            else
-              {
-                comm_state = IN_SYNC;
-              }
-          }
-        else
-          {
-            if (comm_state == RECEIVING_TRAIN)
-              {
-                // Not a train character is received, not yet synced
-                // Go back to Waiting for train state
-                comm_error = NO_TRAIN_RECEIVED;
-                comm_state = WAITING_FOR_TRAIN;
-              }
-            else
-              {
-                // Got a non-train character when synced -
-                // this is the message length check it and if OK, start receiving
-                if (ch_received > MAX_MESSAGE_LENGTH)
-                  {
-                    // Set error, start waiting for next train, ignore the rest of the message
-                    // and clear the message buffer
-                    comm_error = MESSAGE_TOO_LONG;
-                    abandon_receiving = TRUE;
-                  }
-                else
-                  {
-                    // Clear message buffer and start recieving
-                    comm_state = RECEIVING_MESSAGE;
-                    message_buffer.content[0] = ch_received;
-                    message_buffer.index = 1;
-                  }
-              }
-          }
-        break;
-
-      case RECEIVING_MESSAGE:
-        // Receive the next message character
-        message_buffer.content[message_buffer.index] = ch_received;
-        message_buffer.index++;
-
-        // At the end of the message
-        if (message_buffer.index == message_buffer.content[0])
-          {
-            message_buffer.index -= 3;
-            // Check the CRC of the message
-            if (calculate_CRC16(message_buffer.content,
-                message_buffer.index + CRC1)
-                != (unsigned int) ((message_buffer.content[message_buffer.index
-                    + CRC1] << 8)
-                    | (message_buffer.content[message_buffer.index + CRC2])))
-              {
-                // CRC is wrong: set error condition
-                CRC_error_count++;
-                comm_error = COMM_CRC_ERROR;
-                message_buffer.index = 0;
-                abandon_receiving = TRUE;
-              }
-            else
-              {
-                message_received = TRUE;
-              }
-          }
-        break;
-        }
+    }
+  // Reset the UART if there was a timeout
+  else if (timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout))
+    {
+      // Safe to write as we are in timeout - nothing happens on the serial line
+      comm_error = MESSAGING_TIMEOUT;
+      message_buffer.index = 0;
+      comm_state = WAITING_FOR_TRAIN;
+      msg_timeout_active = FALSE;
+      return FALSE;
     }
 
-  flush_serial_receive_buffer();
-  return message_received;
+  // Return FALSE unless in
+  if (comm_state != MESSAGE_AWAITS_PROCESSING)
+    return FALSE;
+
+  // OK, we have a structurrally correct message in the buffer
+  message_buffer.index -= 3;
+
+  // Check the CRC of the message
+  if (calculate_CRC16(message_buffer.content, message_buffer.index + CRC1)
+      != (unsigned int) ((message_buffer.content[message_buffer.index + CRC1]
+          << 8) | (message_buffer.content[message_buffer.index + CRC2])))
+    {
+      // CRC is wrong: set error condition
+      CRC_error_count++;
+      comm_error = COMM_CRC_ERROR;
+      message_buffer.index = 0;
+      return FALSE;
+    }
+  else
+    {
+      return TRUE;
+    }
 }
 
 // Return the # of CRC errors seen
