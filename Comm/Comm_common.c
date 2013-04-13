@@ -29,50 +29,50 @@ struct message_struct message_buffer;
 #ifdef CRYSTAL_SPEED_LO
 __code const struct comm_speed_struct comm_speeds[] =
   {
-    { 0xe8, 0, 120, 580 }, //COMM_SPEED_1200_L,SMOD not set in PCON
-        { 0xf4, 0, 60, 340 }, //COMM_SPEED_2400_L,SMOD not set in PCON
-        { 0xfa, 0, 30, 220 }, //COMM_SPEED_4800_L,SMOD not set in PCON
-        { 0xfd, 0, 15, 160 }, //COMM_SPEED_9600_L,SMOD not set in PCON
-        { 0xfe, 0, 14, 140 }, //COMM_SPEED_14400_L,SMOD not set in PCON
-        { 0x00, 0, 0, 0 }, //COMM_SPEED_19200_L,SMOD not set in PCON
-        { 0xff, 0, 5, 120 }, //COMM_SPEED_28800_L,SMOD not set in PCON
-        { 0x00, 0, 0, 0 }, //COMM_SPEED_57600_L,SMOD not set in PCON
+      { 0xe8, 0, 120, 580}, //COMM_SPEED_1200_L,SMOD not set in PCON
+      { 0xf4, 0, 60, 340}, //COMM_SPEED_2400_L,SMOD not set in PCON
+      { 0xfa, 0, 30, 220}, //COMM_SPEED_4800_L,SMOD not set in PCON
+      { 0xfd, 0, 15, 160}, //COMM_SPEED_9600_L,SMOD not set in PCON
+      { 0xfe, 0, 14, 140}, //COMM_SPEED_14400_L,SMOD not set in PCON
+      { 0x00, 0, 0, 0}, //COMM_SPEED_19200_L,SMOD not set in PCON
+      { 0xff, 0, 5, 120}, //COMM_SPEED_28800_L,SMOD not set in PCON
+      { 0x00, 0, 0, 0}, //COMM_SPEED_57600_L,SMOD not set in PCON
 
-        { 0x40, 0, 0, 0 }, //COMM_SPEED_300_H,SMOD set in PCON
-        { 0xd0, 0, 0, 0 }, //COMM_SPEED_1200_H,SMOD set in PCON
-        { 0xe8, 1, 60, 340 }, //COMM_SPEED_2400_H,SMOD set in PCON
-        { 0xf4, 1, 30, 220 }, //COMM_SPEED_4800_H,SMOD set in PCON
-        { 0xfa, 1, 15, 160 }, //COMM_SPEED_9600_H,SMOD set in PCON
-        { 0xfc, 1, 14, 140 }, //COMM_SPEED_14400_H,SMOD set in PCON
-        { 0xfd, 1, 10, 130 }, //COMM_SPEED_19200_H,SMOD set in PCON
-        { 0xfe, 1, 5, 120 }, //COMM_SPEED_28800_H,SMOD set in PCON
-        { 0xff, 1, 3, 110 }, //COMM_SPEED_57600_H,SMOD set in PCON
-        { 0x00, 0, 0, 0 } //COMM_SPEED_115200_H,SMOD set in PCON
+      { 0x40, 0, 0, 0}, //COMM_SPEED_300_H,SMOD set in PCON
+      { 0xd0, 0, 0, 0}, //COMM_SPEED_1200_H,SMOD set in PCON
+      { 0xe8, 1, 60, 340}, //COMM_SPEED_2400_H,SMOD set in PCON
+      { 0xf4, 1, 30, 220}, //COMM_SPEED_4800_H,SMOD set in PCON
+      { 0xfa, 1, 15, 160}, //COMM_SPEED_9600_H,SMOD set in PCON
+      { 0xfc, 1, 14, 140}, //COMM_SPEED_14400_H,SMOD set in PCON
+      { 0xfd, 1, 10, 130}, //COMM_SPEED_19200_H,SMOD set in PCON
+      { 0xfe, 1, 5, 120}, //COMM_SPEED_28800_H,SMOD set in PCON
+      { 0xff, 1, 3, 110}, //COMM_SPEED_57600_H,SMOD set in PCON
+      { 0x00, 0, 0, 0} //COMM_SPEED_115200_H,SMOD set in PCON
   };
 
 #elif defined CRYSTAL_SPEED_HI
 
 __code const struct comm_speed_struct comm_speeds[] =
   {
-      { 0xd0,0,120,580}, //COMM_SPEED_1200_L,SMOD not set in PCON
-      { 0xe8,0,60,340}, //COMM_SPEED_2400_L,SMOD not set in PCON
-      { 0xf4,0,30,220}, //COMM_SPEED_4800_L,SMOD not set in PCON
-      { 0xfa,0,15,160}, //COMM_SPEED_9600_L,SMOD not set in PCON
-      { 0xfc,0,14,140}, //COMM_SPEED_14400_L,SMOD not set in PCON
-      { 0xfd,0,10,130}, //COMM_SPEED_19200_L,SMOD not set in PCON
-      { 0xfe,0,5,120}, //COMM_SPEED_28800_L,SMOD not set in PCON
-      { 0xff,0,3,110}, //COMM_SPEED_57600_L,SMOD not set in PCON
+    { 0xd0, 0, 120, 580 }, //COMM_SPEED_1200_L,SMOD not set in PCON
+        { 0xe8, 0, 60, 340 }, //COMM_SPEED_2400_L,SMOD not set in PCON
+        { 0xf4, 0, 30, 220 }, //COMM_SPEED_4800_L,SMOD not set in PCON
+        { 0xfa, 0, 15, 160 }, //COMM_SPEED_9600_L,SMOD not set in PCON
+        { 0xfc, 0, 14, 140 }, //COMM_SPEED_14400_L,SMOD not set in PCON
+        { 0xfd, 0, 10, 130 }, //COMM_SPEED_19200_L,SMOD not set in PCON
+        { 0xfe, 0, 5, 120 }, //COMM_SPEED_28800_L,SMOD not set in PCON
+        { 0xff, 0, 3, 110 }, //COMM_SPEED_57600_L,SMOD not set in PCON
 
-      { 0x00,0,0,0}, //COMM_SPEED_300_H,SMOD set in PCON
-      { 0xa0,1,120,580}, //COMM_SPEED_1200_H,SMOD set in PCON
-      { 0xd0,1,60,340}, //COMM_SPEED_2400_H,SMOD set in PCON
-      { 0xe8,1,30,220}, //COMM_SPEED_4800_H,SMOD set in PCON
-      { 0xf4,1,15,160}, //COMM_SPEED_9600_H,SMOD set in PCON
-      { 0xf8,1,14,140}, //COMM_SPEED_14400_H,SMOD set in PCON
-      { 0xfa,1,10,130}, //COMM_SPEED_19200_H,SMOD set in PCON
-      { 0xfc,1,5,120}, //COMM_SPEED_28800_H,SMOD set in PCON
-      { 0xfe,1,3,110}, //COMM_SPEED_57600_H,SMOD set in PCON
-      { 0xff,1,2,105} //COMM_SPEED_115200_H,SMOD set in PCON
+        { 0x00, 0, 0, 0 }, //COMM_SPEED_300_H,SMOD set in PCON
+        { 0xa0, 1, 120, 580 }, //COMM_SPEED_1200_H,SMOD set in PCON
+        { 0xd0, 1, 60, 340 }, //COMM_SPEED_2400_H,SMOD set in PCON
+        { 0xe8, 1, 30, 220 }, //COMM_SPEED_4800_H,SMOD set in PCON
+        { 0xf4, 1, 15, 160 }, //COMM_SPEED_9600_H,SMOD set in PCON
+        { 0xf8, 1, 14, 140 }, //COMM_SPEED_14400_H,SMOD set in PCON
+        { 0xfa, 1, 10, 130 }, //COMM_SPEED_19200_H,SMOD set in PCON
+        { 0xfc, 1, 5, 120 }, //COMM_SPEED_28800_H,SMOD set in PCON
+        { 0xfe, 1, 3, 110 }, //COMM_SPEED_57600_H,SMOD set in PCON
+        { 0xff, 1, 2, 105 } //COMM_SPEED_115200_H,SMOD set in PCON
   };
 
 #else
@@ -215,13 +215,6 @@ UART_getc(void)
   return c;
 }
 
-// Are there any caharcters in the UART buffer available for reading?
-static bool
-UART_is_char_available(void)
-{
-  return rcv_counter > 0;
-}
-
 /*
  Not used as of now
  // Is UART buffer transmission complete?
@@ -230,6 +223,14 @@ UART_is_char_available(void)
  return !UART_busy;
  }
  */
+
+// Are there any caharcters in the UART buffer available for reading?
+static bool
+UART_is_char_available(void)
+{
+  return rcv_counter > 0;
+}
+
 
 // CRC-CCITT (0xFFFF) calculator
 static unsigned int

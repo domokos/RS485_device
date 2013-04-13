@@ -50,8 +50,8 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
  * Onewire specific declarations and defines
  */
 // Map registers to onewire buses Register1 is on P1_0, Register2 is on P1_1
-__code const unsigned char register_pinmask_map[2] =
-  { 0x01, 0x01 };
+__code const unsigned char register_pinmask_map[3] =
+  { 0x01, 0x01, 0x02 };
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
@@ -59,7 +59,9 @@ __code const unsigned char register_rom_map[][8] =
   // If the first byte is zero, then there is only one device on bus
         { 0x28, 0xe8, 0x33, 0x50, 0x01, 0x00, 0x00, 0x2f },
       // If the first byte is zero, then there is only one device on bus
-        { 0x28, 0x5f, 0xfb, 0x4f, 0x01, 0x00, 0x00, 0x13 } };
+        { 0x28, 0x5f, 0xfb, 0x4f, 0x01, 0x00, 0x00, 0x13 },
+      // A test bus, nothing on it now
+        { 0x00, 0x5f, 0xfb, 0x4f, 0x01, 0x00, 0x00, 0x13 } };
 
 bool conv_complete, bus0_conv_initiated, bus1_conv_initiated;
 
@@ -183,12 +185,11 @@ read_DS18xxx(unsigned char register_id)
   if (onewire_reset(pinmask))
     {
       send_onewire_rom_commands(register_id);
+
       onewire_write_byte(CMD_READ_SCRATCHPAD, pinmask);
 
       for (i = 0; i < 9; i++)
-        {
-          ow_buf[i] = onewire_read_byte(pinmask);
-        }
+        ow_buf[i] = onewire_read_byte(pinmask);
 
       if (ow_buf[8] == calculate_onewire_crc(ow_buf, 8) && ow_buf[7] == 0x10)
         {
@@ -230,16 +231,23 @@ operate_onewire_temp_measurement(void)
       switch (bus_to_address)
         {
       case 0:
+        // Evaluate side effect: Only read until read is succesful
         if (bus0_conv_initiated)
-          read_DS18xxx(0);
+          {
+            read_DS18xxx(0);
+            read_DS18xxx(1);
+          }
         bus0_conv_initiated = issue_convert_on_bus(0);
         bus_to_address = 1;
         break;
 
       case 1:
+        // Evaluate side effect: Only read until read is succesful
         if (bus1_conv_initiated)
-          read_DS18xxx(1);
-        bus1_conv_initiated = issue_convert_on_bus(1);
+          {
+            read_DS18xxx(2);
+          }
+        bus1_conv_initiated = issue_convert_on_bus(2);
         bus_to_address = 0;
         break;
         }
@@ -649,8 +657,8 @@ main(void)
   EA = 1;
   init_timer();
 
-// Set 4800 baud
-  init_device_comm(HOST_ID, COMM_SPEED_4800_H);
+//  init_device_comm(HOST_ID, COMM_SPEED_4800_H);
+  init_device_comm(HOST_ID, COMM_SPEED_115200_H);
 
   device_specific_init();
 

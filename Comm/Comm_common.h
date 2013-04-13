@@ -44,6 +44,9 @@
 #define MSG_TIMEOUT 0
 #define RSP_TIMEOUT 1
 
+// Broadcast address
+#define BUS_BROADCAST_ADDRESS 255
+
 // Messaging buffer STRUCT
 struct message_struct
 {
@@ -193,11 +196,11 @@ static void UART_putc(unsigned char c);
 // Read a character from the UART buffer
 static unsigned char UART_getc(void);
 
-// Are there any characters in the UART buffer available for reading?
-static bool UART_is_char_available(void);
-
 // Is UART character transmission complete?
 //static bool is_UART_send_complete (void);
+
+// Are there any characters in the UART buffer available for reading?
+static bool UART_is_char_available(void);
 
 //Calculate the 16-Bit checksum of the message
 static unsigned int calculate_CRC16(unsigned char *buf, unsigned char end_position);

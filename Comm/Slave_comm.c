@@ -11,9 +11,9 @@
 #include "Base.h"
 #include "Slave_comm.h"
 
-
 // Set the direction of communication
-static void set_device_comm_direction(unsigned char direction)
+static void
+set_device_comm_direction(unsigned char direction)
 {
   COMM_DIRECTION_PIN = direction;
 }
@@ -23,7 +23,8 @@ static void set_device_comm_direction(unsigned char direction)
  */
 
 // Reset the state of the communication channel
-void reset_device_comm(void)
+void
+reset_device_comm(void)
 {
   // Listen on the bus for commands
   set_device_comm_direction(DEVICE_LISTENS);
@@ -33,7 +34,8 @@ void reset_device_comm(void)
 }
 
 // Initialize the communication module
-void init_device_comm(unsigned char host_address, unsigned char comm_speed)
+void
+init_device_comm(unsigned char host_address, unsigned char comm_speed)
 {
   // Set the communication speed
   set_comm_speed(comm_speed);
@@ -48,8 +50,9 @@ void init_device_comm(unsigned char host_address, unsigned char comm_speed)
 /* Function to send response to the master on the bus
  * the function expects message content to be prepared by the caller
  * including message SEQ number
-*/
-void send_response(unsigned char opcode)
+ */
+void
+send_response(unsigned char opcode)
 {
   // Set bus direction to transmit
   set_device_comm_direction(DEVICE_SENDS);
@@ -62,13 +65,19 @@ void send_response(unsigned char opcode)
 }
 
 // Returns if a message is received
-bool get_device_message(void)
+bool
+get_device_message(void)
 {
   if (get_message())
     {
-    // If there is a CRC error then ignore the message
-     if (get_comm_error() == COMM_CRC_ERROR) return FALSE;
-       else {P1_7 =0; return get_host_address() == message_buffer.content[SLAVE_ADDRESS]; }
+      // If there is a CRC error then ignore the message
+      if (get_comm_error() == COMM_CRC_ERROR)
+        return FALSE;
+      else
+        {
+          return message_buffer.content[SLAVE_ADDRESS] == get_host_address()
+              || message_buffer.content[SLAVE_ADDRESS] == BUS_BROADCAST_ADDRESS;
+        }
     }
- return FALSE;
+  return FALSE;
 }
