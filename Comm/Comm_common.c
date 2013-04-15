@@ -10,7 +10,7 @@
 // Global variables facilitating serial communication
 static unsigned char send_buffer[UART_XBUFLEN];
 static volatile unsigned char send_counter, send_position;
-static volatile bool UART_busy;
+static volatile bool UART_busy, message_awaits_processing, timeout_flag;
 static bool msg_timeout_active;
 static unsigned char host_address;
 static unsigned char comm_speed;
@@ -29,24 +29,24 @@ struct message_struct message_buffer;
 #ifdef CRYSTAL_SPEED_LO
 __code const struct comm_speed_struct comm_speeds[] =
   {
-      { 0xe8, 0, 120, 580}, //COMM_SPEED_1200_L,SMOD not set in PCON
-      { 0xf4, 0, 60, 340}, //COMM_SPEED_2400_L,SMOD not set in PCON
-      { 0xfa, 0, 30, 220}, //COMM_SPEED_4800_L,SMOD not set in PCON
-      { 0xfd, 0, 15, 160}, //COMM_SPEED_9600_L,SMOD not set in PCON
-      { 0xfe, 0, 14, 140}, //COMM_SPEED_14400_L,SMOD not set in PCON
+      { 0xe8, 0, 150, 700}, //COMM_SPEED_1200_L,SMOD not set in PCON
+      { 0xf4, 0, 80, 420}, //COMM_SPEED_2400_L,SMOD not set in PCON
+      { 0xfa, 0, 40, 260}, //COMM_SPEED_4800_L,SMOD not set in PCON
+      { 0xfd, 0, 25, 200}, //COMM_SPEED_9600_L,SMOD not set in PCON
+      { 0xfe, 0, 20, 180}, //COMM_SPEED_14400_L,SMOD not set in PCON
       { 0x00, 0, 0, 0}, //COMM_SPEED_19200_L,SMOD not set in PCON
-      { 0xff, 0, 5, 120}, //COMM_SPEED_28800_L,SMOD not set in PCON
+      { 0xff, 0, 10, 140}, //COMM_SPEED_28800_L,SMOD not set in PCON
       { 0x00, 0, 0, 0}, //COMM_SPEED_57600_L,SMOD not set in PCON
 
       { 0x40, 0, 0, 0}, //COMM_SPEED_300_H,SMOD set in PCON
       { 0xd0, 0, 0, 0}, //COMM_SPEED_1200_H,SMOD set in PCON
-      { 0xe8, 1, 60, 340}, //COMM_SPEED_2400_H,SMOD set in PCON
-      { 0xf4, 1, 30, 220}, //COMM_SPEED_4800_H,SMOD set in PCON
-      { 0xfa, 1, 15, 160}, //COMM_SPEED_9600_H,SMOD set in PCON
-      { 0xfc, 1, 14, 140}, //COMM_SPEED_14400_H,SMOD set in PCON
-      { 0xfd, 1, 10, 130}, //COMM_SPEED_19200_H,SMOD set in PCON
-      { 0xfe, 1, 5, 120}, //COMM_SPEED_28800_H,SMOD set in PCON
-      { 0xff, 1, 3, 110}, //COMM_SPEED_57600_H,SMOD set in PCON
+      { 0xe8, 1, 80, 420}, //COMM_SPEED_2400_H,SMOD set in PCON
+      { 0xf4, 1, 40, 260}, //COMM_SPEED_4800_H,SMOD set in PCON
+      { 0xfa, 1, 25, 200}, //COMM_SPEED_9600_H,SMOD set in PCON
+      { 0xfc, 1, 20, 180}, //COMM_SPEED_14400_H,SMOD set in PCON
+      { 0xfd, 1, 18, 172}, //COMM_SPEED_19200_H,SMOD set in PCON
+      { 0xfe, 1, 10, 140}, //COMM_SPEED_28800_H,SMOD set in PCON
+      { 0xff, 1, 6, 124}, //COMM_SPEED_57600_H,SMOD set in PCON
       { 0x00, 0, 0, 0} //COMM_SPEED_115200_H,SMOD set in PCON
   };
 
@@ -54,25 +54,25 @@ __code const struct comm_speed_struct comm_speeds[] =
 
 __code const struct comm_speed_struct comm_speeds[] =
   {
-    { 0xd0, 0, 120, 580 }, //COMM_SPEED_1200_L,SMOD not set in PCON
-        { 0xe8, 0, 60, 340 }, //COMM_SPEED_2400_L,SMOD not set in PCON
-        { 0xf4, 0, 30, 220 }, //COMM_SPEED_4800_L,SMOD not set in PCON
-        { 0xfa, 0, 15, 160 }, //COMM_SPEED_9600_L,SMOD not set in PCON
-        { 0xfc, 0, 14, 140 }, //COMM_SPEED_14400_L,SMOD not set in PCON
-        { 0xfd, 0, 10, 130 }, //COMM_SPEED_19200_L,SMOD not set in PCON
-        { 0xfe, 0, 5, 120 }, //COMM_SPEED_28800_L,SMOD not set in PCON
-        { 0xff, 0, 3, 110 }, //COMM_SPEED_57600_L,SMOD not set in PCON
+    { 0xd0, 0, 150, 700 }, //COMM_SPEED_1200_L,SMOD not set in PCON
+        { 0xe8, 0, 80, 420 }, //COMM_SPEED_2400_L,SMOD not set in PCON
+        { 0xf4, 0, 40, 260 }, //COMM_SPEED_4800_L,SMOD not set in PCON
+        { 0xfa, 0, 25, 200 }, //COMM_SPEED_9600_L,SMOD not set in PCON
+        { 0xfc, 0, 20, 180 }, //COMM_SPEED_14400_L,SMOD not set in PCON
+        { 0xfd, 0, 18, 172 }, //COMM_SPEED_19200_L,SMOD not set in PCON
+        { 0xfe, 0, 10, 140 }, //COMM_SPEED_28800_L,SMOD not set in PCON
+        { 0xff, 0, 6, 124 }, //COMM_SPEED_57600_L,SMOD not set in PCON
 
         { 0x00, 0, 0, 0 }, //COMM_SPEED_300_H,SMOD set in PCON
-        { 0xa0, 1, 120, 580 }, //COMM_SPEED_1200_H,SMOD set in PCON
-        { 0xd0, 1, 60, 340 }, //COMM_SPEED_2400_H,SMOD set in PCON
-        { 0xe8, 1, 30, 220 }, //COMM_SPEED_4800_H,SMOD set in PCON
-        { 0xf4, 1, 15, 160 }, //COMM_SPEED_9600_H,SMOD set in PCON
-        { 0xf8, 1, 14, 140 }, //COMM_SPEED_14400_H,SMOD set in PCON
-        { 0xfa, 1, 10, 130 }, //COMM_SPEED_19200_H,SMOD set in PCON
-        { 0xfc, 1, 5, 120 }, //COMM_SPEED_28800_H,SMOD set in PCON
-        { 0xfe, 1, 3, 110 }, //COMM_SPEED_57600_H,SMOD set in PCON
-        { 0xff, 1, 2, 105 } //COMM_SPEED_115200_H,SMOD set in PCON
+        { 0xa0, 1, 150, 700 }, //COMM_SPEED_1200_H,SMOD set in PCON
+        { 0xd0, 1, 80, 420 }, //COMM_SPEED_2400_H,SMOD set in PCON
+        { 0xe8, 1, 40, 260 }, //COMM_SPEED_4800_H,SMOD set in PCON
+        { 0xf4, 1, 25, 200 }, //COMM_SPEED_9600_H,SMOD set in PCON
+        { 0xf8, 1, 20, 180 }, //COMM_SPEED_14400_H,SMOD set in PCON
+        { 0xfa, 1, 18, 172 }, //COMM_SPEED_19200_H,SMOD set in PCON
+        { 0xfc, 1, 10, 140 }, //COMM_SPEED_28800_H,SMOD set in PCON
+        { 0xfe, 1, 6, 124 }, //COMM_SPEED_57600_H,SMOD set in PCON
+        { 0xff, 1, 4, 116 } //COMM_SPEED_115200_H,SMOD set in PCON
   };
 
 #else
@@ -91,6 +91,7 @@ ISR(SERIAL,0)
       {
         chr_received = SBUF;
         RI = 0;
+        if (comm_state == MESSAGE_AWAITS_PROCESSING && !message_awaits_processing) comm_state = WAITING_FOR_TRAIN;
         switch(comm_state)
           {
             case WAITING_FOR_TRAIN:
@@ -98,11 +99,13 @@ ISR(SERIAL,0)
               {
                 comm_state = RECEIVING_TRAIN;
                 train_char_seen = 1;
+                timeout_flag = TRUE;
               }
             break;
 
             case RECEIVING_TRAIN:
-            comm_error = NO_ERROR;
+            if(!timeout_flag) comm_state = WAITING_FOR_TRAIN;
+
             if(chr_received == TRAIN_CHR)
               {
                 train_char_seen++;
@@ -115,18 +118,22 @@ ISR(SERIAL,0)
               }
             else
               {
-                comm_error = BROKEN_MESSAGE;
                 comm_state = WAITING_FOR_TRAIN;
               }
             break;
 
             case RECEIVING_MESSAGE:
+            if(!timeout_flag) comm_state = WAITING_FOR_TRAIN;
+
             message_buffer.content[message_buffer.index++] = chr_received;
             if (message_buffer.index == message_buffer.content[0])
               {
                 comm_state = MESSAGE_AWAITS_PROCESSING;
+                message_awaits_processing = TRUE;
+                timeout_flag = FALSE;
               }
             break;
+
             case MESSAGE_AWAITS_PROCESSING:
             break;
           }
@@ -298,6 +305,8 @@ reset_comm(void)
   // Reset communication state
   comm_state = WAITING_FOR_TRAIN;
   msg_timeout_active = FALSE;
+  timeout_flag = FALSE;
+  message_awaits_processing = FALSE;
 
   // Clear receiving queue
   CRC_error_count = 0;
@@ -377,31 +386,36 @@ get_message(void)
 {
 
   // If there is no timeout running and reception in progress start watching timeout
-  if (!msg_timeout_active)
+  if (timeout_flag && !msg_timeout_active)
     {
-      if (comm_state != MESSAGE_AWAITS_PROCESSING
-          && comm_state != WAITING_FOR_TRAIN)
-        {
-          msg_timeout_active = TRUE;
-          reset_timeout(MSG_TIMEOUT);
-        }
+      msg_timeout_active = TRUE;
+      reset_timeout(MSG_TIMEOUT);
     }
   // Reset the UART if there was a timeout
-  else if (timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout))
+  if (msg_timeout_active
+      && timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout))
     {
       // Safe to write as we are in timeout - nothing happens on the serial line
       comm_error = MESSAGING_TIMEOUT;
       message_buffer.index = 0;
-      comm_state = WAITING_FOR_TRAIN;
+      ES = 0;
+      timeout_flag = FALSE;
+      ES = 1;
       msg_timeout_active = FALSE;
       return FALSE;
     }
 
-  // Return FALSE unless in
-  if (comm_state != MESSAGE_AWAITS_PROCESSING)
+  // Return FALSE unless message received
+  if (!message_awaits_processing)
     return FALSE;
 
+  ES = 0;
+  message_awaits_processing = FALSE;
+  comm_state = WAITING_FOR_TRAIN;
+  ES = 1;
+
   // OK, we have a structurrally correct message in the buffer
+  msg_timeout_active = FALSE;
   message_buffer.index -= 3;
 
   // Check the CRC of the message
@@ -417,6 +431,7 @@ get_message(void)
     }
   else
     {
+      comm_error = NO_ERROR;
       return TRUE;
     }
 }
