@@ -118,6 +118,7 @@ ISR(SERIAL,0)
             else
               {
                 comm_state = WAITING_FOR_TRAIN;
+                timeout_flag = FALSE;
               }
             break;
 
@@ -382,7 +383,8 @@ send_message(unsigned char opcode)
     ;
 
   // Re-enable message receiving if not enabled
-  if (!REN && !message_awaits_processing) REN = 1;
+  if (!REN && !message_awaits_processing)
+    REN = 1;
 }
 
 // Periodically check if a message is received on the serial line
@@ -390,14 +392,20 @@ bool
 get_message(void)
 {
   // Re-enable message receiving if not enabled
-  if (!REN && !message_awaits_processing) REN = 1;
+  if (!REN && !message_awaits_processing)
+    REN = 1;
 
+  // Adjust timeout state
   // If there is no timeout running and reception in progress start watching timeout
   if (timeout_flag && !msg_timeout_active)
     {
       msg_timeout_active = TRUE;
       reset_timeout(MSG_TIMEOUT);
     }
+  // If timeout request cancelled stop timeout activity
+  else if (msg_timeout_active)
+    msg_timeout_active = FALSE;
+
   // Reset receiving if there was a timeout
   if (msg_timeout_active
       && timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout))
