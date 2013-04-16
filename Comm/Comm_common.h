@@ -29,7 +29,6 @@
 #define WAITING_FOR_TRAIN 0
 #define RECEIVING_TRAIN 1
 #define RECEIVING_MESSAGE 2
-#define MESSAGE_AWAITS_PROCESSING 3
 
 // Messaging error conditions
 #define NO_ERROR 0 // No error

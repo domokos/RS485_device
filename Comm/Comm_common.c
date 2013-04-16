@@ -91,7 +91,6 @@ ISR(SERIAL,0)
       {
         chr_received = SBUF;
         RI = 0;
-        if (comm_state == MESSAGE_AWAITS_PROCESSING && !message_awaits_processing) comm_state = WAITING_FOR_TRAIN;
         switch(comm_state)
           {
             case WAITING_FOR_TRAIN:
@@ -128,13 +127,15 @@ ISR(SERIAL,0)
             message_buffer.content[message_buffer.index++] = chr_received;
             if (message_buffer.index == message_buffer.content[0])
               {
-                comm_state = MESSAGE_AWAITS_PROCESSING;
+                comm_state = WAITING_FOR_TRAIN;
                 message_awaits_processing = TRUE;
                 timeout_flag = FALSE;
-              }
-            break;
 
-            case MESSAGE_AWAITS_PROCESSING:
+                // Disable reveiving if a message is received.
+                // The next call to send_message or get_message will re-enable receiving
+                // makig sure transients on the line are gone
+                REN = 0;
+              }
             break;
           }
       }
@@ -174,13 +175,14 @@ static void
 reset_serial(void)
 {
   // Disable serial communication
+  REN = 0;
   ES = 0;
 
   // Setup the serial port operation mode
   // Reset receive and transmit interrupt flags and disable receiver enable
   RI = 0;
   TI = 0;
-  REN = 0;
+
   // 8-bit UART mode for serial TIMER1 Mode2 SMOD=1
   SM1 = 1;
   SM0 = 0;
@@ -378,12 +380,17 @@ send_message(unsigned char opcode)
 
   while (UART_busy)
     ;
+
+  // Re-enable message receiving if not enabled
+  if (!REN && !message_awaits_processing) REN = 1;
 }
 
 // Periodically check if a message is received on the serial line
 bool
 get_message(void)
 {
+  // Re-enable message receiving if not enabled
+  if (!REN && !message_awaits_processing) REN = 1;
 
   // If there is no timeout running and reception in progress start watching timeout
   if (timeout_flag && !msg_timeout_active)
@@ -391,11 +398,10 @@ get_message(void)
       msg_timeout_active = TRUE;
       reset_timeout(MSG_TIMEOUT);
     }
-  // Reset the UART if there was a timeout
+  // Reset receiving if there was a timeout
   if (msg_timeout_active
       && timeout_occured(MSG_TIMEOUT, comm_speeds[comm_speed].msg_timeout))
     {
-      // Safe to write as we are in timeout - nothing happens on the serial line
       comm_error = MESSAGING_TIMEOUT;
       message_buffer.index = 0;
       ES = 0;
@@ -409,10 +415,10 @@ get_message(void)
   if (!message_awaits_processing)
     return FALSE;
 
-  ES = 0;
+  // Beyond this point we know that REN is disabled, no RI interrupt will occur
+  // We are free to modify all variables used by the Serial ISR
+
   message_awaits_processing = FALSE;
-  comm_state = WAITING_FOR_TRAIN;
-  ES = 1;
 
   // OK, we have a structurrally correct message in the buffer
   msg_timeout_active = FALSE;
