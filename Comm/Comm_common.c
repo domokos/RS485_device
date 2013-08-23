@@ -441,6 +441,7 @@ get_message(void)
       CRC_error_count++;
       comm_error = COMM_CRC_ERROR;
       message_buffer.index = 0;
+      REN = 1;
       return FALSE;
     }
   else
