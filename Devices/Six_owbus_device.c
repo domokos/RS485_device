@@ -23,29 +23,29 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
   {
   // Furnace temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-  // HW temp sensor
+      // HW temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-  // Basement temp sensor
+      // Basement temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-  // Return temp sensor
+      // Return temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-  // Floor water temp sensor
+      // Floor water temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-  // Spare1 temp sensor
+      // Spare1 temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION } // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-    };
+  };
 
 /*
  * Onewire specific declarations and defines
  */
 // Map registers to onewire buses: Register N is on P1_N
 __code const unsigned char register_pinmask_map[6] =
-  { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20};
+  { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20 };
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
   {
-      // First byte is zero, only one device on bus other chars are ignored
+  // First byte is zero, only one device on bus other chars are ignored
         { SINGLE_DEVICE_ON_BUS, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
       // First byte is zero, only one device on bus other chars are ignored
         { SINGLE_DEVICE_ON_BUS, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
@@ -180,6 +180,9 @@ issue_convert_on_bus(unsigned char register_id)
 void
 operate_onewire_temp_measurement(void)
 {
+  conv_complete |= timeout_occured(TEMP_CONV_TIMER,
+      DS18x20_CONV_TIME / NR_OF_OW_BUSES);
+
   if (conv_complete)
     {
       switch (bus_to_address)
@@ -199,25 +202,25 @@ operate_onewire_temp_measurement(void)
       case 2:
         if (bus2_conv_initiated)
           read_DS18xxx(2);
-        bus1_conv_initiated = issue_convert_on_bus(2);
+        bus2_conv_initiated = issue_convert_on_bus(2);
         bus_to_address = 3;
         break;
       case 3:
         if (bus3_conv_initiated)
           read_DS18xxx(3);
-        bus1_conv_initiated = issue_convert_on_bus(3);
+        bus3_conv_initiated = issue_convert_on_bus(3);
         bus_to_address = 4;
         break;
       case 4:
         if (bus4_conv_initiated)
           read_DS18xxx(4);
-        bus1_conv_initiated = issue_convert_on_bus(4);
+        bus4_conv_initiated = issue_convert_on_bus(4);
         bus_to_address = 5;
         break;
       case 5:
         if (bus5_conv_initiated)
           read_DS18xxx(5);
-        bus1_conv_initiated = issue_convert_on_bus(5);
+        bus5_conv_initiated = issue_convert_on_bus(5);
         bus_to_address = 0;
         break;
         }
@@ -226,11 +229,6 @@ operate_onewire_temp_measurement(void)
       // can wait for conversion time expiry on the next bus
       reset_timeout(TEMP_CONV_TIMER);
       conv_complete = FALSE;
-    }
-  else
-    {
-      conv_complete = timeout_occured(TEMP_CONV_TIMER,
-          DS18x20_CONV_TIME / NR_OF_OW_BUSES);
     }
 }
 
@@ -273,7 +271,7 @@ operate_device(void)
             // The next 6 registers return ROM values of sensors attached
             else if (p < 13)
               {
-                pinmask = register_pinmask_map[p-6];
+                pinmask = register_pinmask_map[p - 6];
                 onewire_reset(pinmask);
                 onewire_write_byte(CMD_READ_ROM, pinmask);
 
@@ -319,11 +317,16 @@ device_specific_init(void)
   // Set initial resolutions to 12 bit
   set_temp_resolution(0, TEMP_RESOLUTION_12BIT);
   set_temp_resolution(1, TEMP_RESOLUTION_12BIT);
+  set_temp_resolution(2, TEMP_RESOLUTION_12BIT);
+  set_temp_resolution(3, TEMP_RESOLUTION_12BIT);
+  set_temp_resolution(4, TEMP_RESOLUTION_12BIT);
+  set_temp_resolution(5, TEMP_RESOLUTION_12BIT);
 
   // We need to start a new conversion so it is complete on init
   conv_complete = TRUE;
 
-  bus0_conv_initiated = FALSE;
+  bus0_conv_initiated = bus1_conv_initiated = bus2_conv_initiated = FALSE;
+  bus3_conv_initiated = bus4_conv_initiated = bus5_conv_initiated = FALSE;
   bus_to_address = 0;
 
   // Reset conversion timers and distribute conversion across the 3 sensors
