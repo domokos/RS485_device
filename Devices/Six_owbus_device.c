@@ -340,8 +340,8 @@ main(void)
   EA = 1;
   init_timer();
 
-// Set 4800 baud
-  init_device_comm(HOST_ID, COMM_SPEED_4800_H);
+// Set 115200 baud
+  init_device_comm(HOST_ID, COMM_SPEED_115200_H);
 
   device_specific_init();
 
