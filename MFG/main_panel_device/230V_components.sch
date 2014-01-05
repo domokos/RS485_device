@@ -6,7 +6,7 @@ device=CONN3
 T 26000 85800 5 10 0 0 180 0 1
 footprint=CONN3
 T 25900 87500 5 10 1 1 180 0 1
-refdes=CONN3
+refdes=CONN_GAS
 }
 C 9200 84400 1 180 0 CONN3.sym
 {
@@ -15,7 +15,7 @@ device=CONN3
 T 9100 83100 5 10 0 0 180 0 1
 footprint=CONN3
 T 9200 84700 5 10 1 1 180 0 1
-refdes=CONN4
+refdes=CONN_PUMPS
 }
 C 18000 84100 1 180 0 CONN3.sym
 {
@@ -24,7 +24,7 @@ device=CONN3
 T 17900 82800 5 10 0 0 180 0 1
 footprint=CONN3
 T 18000 84400 5 10 1 1 180 0 1
-refdes=CONN7
+refdes=CONN_VALVES
 }
 C 11200 82700 1 0 0 BS170.sym
 {
@@ -141,15 +141,6 @@ device=none
 T 10200 79200 5 10 1 1 180 0 1
 net=BasRadValve
 T 9800 79400 5 10 1 1 180 1 1
-value=IO
-}
-C 18800 78700 1 180 0 io-1.sym
-{
-T 18800 78500 5 10 1 1 180 0 1
-net=OWBus
-T 18200 78000 5 10 0 0 180 0 1
-device=none
-T 18300 78600 5 10 1 1 180 7 1
 value=IO
 }
 C 12000 83500 1 0 0 TLP3063.sym
