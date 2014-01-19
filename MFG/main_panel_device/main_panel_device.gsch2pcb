@@ -1,2 +1,2 @@
 schematics rs485_components.sch 230V_components.sch 230V_control.sch
-output-name main_panel__device
+output-name main_panel_device

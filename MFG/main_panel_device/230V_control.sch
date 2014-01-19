@@ -51,6 +51,8 @@ T 700 86900 5 10 1 1 0 0 1
 refdes=C200
 T 700 87300 5 10 0 0 0 0 1
 symversion=0.1
+T 500 86400 5 10 1 1 0 0 1
+footprint=FOILCON_600
 }
 C 500 84400 1 0 0 capacitor-1.sym
 {
@@ -60,6 +62,8 @@ T 700 84900 5 10 1 1 0 0 1
 refdes=C210
 T 700 85300 5 10 0 0 0 0 1
 symversion=0.1
+T 500 84400 5 10 1 1 0 0 1
+footprint=FOILCON_600
 }
 N 3300 85100 2900 85100 4
 C 1800 86500 1 0 0 SMALLRES.sym
@@ -107,6 +111,8 @@ T 5500 86300 5 10 1 1 180 0 1
 refdes=C201
 T 5500 85900 5 10 0 0 180 0 1
 symversion=0.1
+T 5700 86800 5 10 1 1 0 0 1
+footprint=RCY100P
 }
 C 5700 84800 1 180 0 capacitor-2.sym
 {
@@ -116,6 +122,8 @@ T 5500 84300 5 10 1 1 180 0 1
 refdes=C211
 T 5500 83900 5 10 0 0 180 0 1
 symversion=0.1
+T 5700 84800 5 10 1 1 0 0 1
+footprint=RCY100P
 }
 C 7100 87200 1 180 0 SMALLRES.sym
 {
@@ -156,6 +164,8 @@ T 3500 87800 5 10 0 0 0 0 1
 device=bridge
 T 3500 88200 5 10 0 0 0 0 1
 symversion=0.1
+T 3300 86400 5 10 1 1 0 0 1
+footprint=DIP4
 }
 C 3300 84400 1 0 0 bridge-1.sym
 {
@@ -165,6 +175,8 @@ T 3500 85800 5 10 0 0 0 0 1
 device=bridge
 T 3500 86200 5 10 0 0 0 0 1
 symversion=0.1
+T 3300 84400 5 10 1 1 0 0 1
+footprint=DIP4
 }
 N 4500 86600 4800 86600 4
 N 4500 84600 4800 84600 4
