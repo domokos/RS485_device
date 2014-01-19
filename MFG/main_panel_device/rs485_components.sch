@@ -304,7 +304,7 @@ B 16700 81700 2000 700 3 0 0 0 -1 -1 0 -1 -1 -1 -1 -1
 C 11400 84900 1 0 0 io-1.sym
 {
 T 12300 84900 5 10 1 1 0 0 1
-net=LOGasValve
+net=LOGasValve:1
 T 11600 85600 5 10 0 0 0 0 1
 device=none
 T 11800 85000 5 10 1 1 0 1 1
@@ -313,7 +313,7 @@ value=IO
 C 11400 84500 1 0 0 io-1.sym
 {
 T 12300 84500 5 10 1 1 0 0 1
-net=HIGasValve
+net=HIGasValve:1
 T 11600 85200 5 10 0 0 0 0 1
 device=none
 T 11800 84600 5 10 1 1 0 1 1
@@ -322,7 +322,7 @@ value=IO
 C 11400 84100 1 0 0 io-1.sym
 {
 T 12300 84100 5 10 1 1 0 0 1
-net=RadPump
+net=RadPump:1
 T 11600 84800 5 10 0 0 0 0 1
 device=none
 T 11800 84200 5 10 1 1 0 1 1
@@ -331,7 +331,7 @@ value=IO
 C 11400 83700 1 0 0 io-1.sym
 {
 T 12300 83700 5 10 1 1 0 0 1
-net=FloorPump
+net=FloorPump:1
 T 11600 84400 5 10 0 0 0 0 1
 device=none
 T 11800 83800 5 10 1 1 0 1 1
@@ -340,7 +340,7 @@ value=IO
 C 11400 83300 1 0 0 io-1.sym
 {
 T 12300 83300 5 10 1 1 0 0 1
-net=HidrPump
+net=HidrPump:1
 T 11600 84000 5 10 0 0 0 0 1
 device=none
 T 11800 83400 5 10 1 1 0 1 1
@@ -349,7 +349,7 @@ value=IO
 C 11400 82900 1 0 0 io-1.sym
 {
 T 12300 82900 5 10 1 1 0 0 1
-net=HWPump
+net=HWPump:1
 T 11600 83600 5 10 0 0 0 0 1
 device=none
 T 11800 83000 5 10 1 1 0 1 1
@@ -358,7 +358,7 @@ value=IO
 C 11400 82500 1 0 0 io-1.sym
 {
 T 12300 82500 5 10 1 1 0 0 1
-net=BasFlValve
+net=BasFlValve:1
 T 11600 83200 5 10 0 0 0 0 1
 device=none
 T 11800 82600 5 10 1 1 0 1 1
@@ -367,7 +367,7 @@ value=IO
 C 11400 82100 1 0 0 io-1.sym
 {
 T 12300 82100 5 10 1 1 0 0 1
-net=BasRadValve
+net=BasRadValve:1
 T 11600 82800 5 10 0 0 0 0 1
 device=none
 T 11800 82200 5 10 1 1 0 1 1
@@ -404,7 +404,7 @@ N 9400 82200 11400 82200 4
 C 5900 85200 1 180 0 io-1.sym
 {
 T 5900 85000 5 10 1 1 180 0 1
-net=OverHeat
+net=OverHeat:1
 T 5300 84500 5 10 0 0 180 0 1
 device=none
 T 5400 85100 5 10 1 1 180 7 1
@@ -413,7 +413,7 @@ value=IO
 C 5900 84500 1 180 0 io-1.sym
 {
 T 6000 84300 5 10 1 1 180 0 1
-net=Smoke_Heat
+net=Smoke_Heat:1
 T 5300 83800 5 10 0 0 180 0 1
 device=none
 T 5400 84400 5 10 1 1 180 7 1

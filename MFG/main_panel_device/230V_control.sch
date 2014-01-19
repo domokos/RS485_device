@@ -15,7 +15,7 @@ C 10500 86400 1 0 0 io-1.sym
 T 11100 87100 5 10 0 0 0 0 1
 device=none
 T 10500 86700 5 10 1 1 0 0 1
-net=OverHeat
+net=OverHeat:1
 T 11000 86500 5 10 1 1 0 7 1
 value=IO
 }
@@ -24,7 +24,7 @@ C 10500 84400 1 0 0 io-1.sym
 T 11100 85100 5 10 0 0 0 0 1
 device=none
 T 10500 84700 5 10 1 1 0 0 1
-net=Smoke_Heat
+net=Smoke_Heat:1
 T 11000 84500 5 10 1 1 0 7 1
 value=IO
 }
@@ -33,7 +33,7 @@ C 10500 89600 1 0 0 io-1.sym
 T 11100 90300 5 10 0 0 0 0 1
 device=none
 T 10600 89900 5 10 1 1 0 0 1
-net=SW230L
+net=SW230L:1
 T 11000 89700 5 10 1 1 0 7 1
 value=IO
 }
