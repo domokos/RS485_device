@@ -196,7 +196,7 @@ device=SMALLRES
 T 6900 84700 5 10 0 0 180 0 1
 footprint=ACY300
 T 6400 85300 5 10 1 1 0 0 1
-refdes=R201
+refdes=R211
 T 6700 85200 5 10 1 1 180 0 1
 value=360R
 }
