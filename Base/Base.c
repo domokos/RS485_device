@@ -106,7 +106,6 @@ void delay_msec(unsigned int msec)
   return;
 }
 
-
 // start and reset the messaging timeout counter
 void reset_timeout(unsigned char type)
 {

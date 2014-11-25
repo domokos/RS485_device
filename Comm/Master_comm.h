@@ -14,7 +14,6 @@
 
 
 // Master communication states
-#define MASTER_COMM_DIRECTION_PIN P1_0
 #define MASTER_TALKS_TO_HOST 0
 #define MASTER_TALKS_TO_BUS 1
 

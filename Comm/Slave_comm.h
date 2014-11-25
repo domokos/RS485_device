@@ -20,11 +20,6 @@
 #define MESSAGE_TIMEOUT_COUNT_LIMIT 500
 
 
-/*
- * Pins of the microcontroller reserved for communication
-*/
-
-#define COMM_DIRECTION_PIN P3_7
 // States of the communication direction pin
 #define DEVICE_LISTENS 0
 #define DEVICE_SENDS 1

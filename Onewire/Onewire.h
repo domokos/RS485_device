@@ -40,6 +40,10 @@
 
 extern unsigned char ow_buf[9];
 
+// Onewire Bus port name
+#define ONEWIRE_BUS_PORT P3
+
+
 /*
  * Public module functions
  */
@@ -57,12 +61,6 @@ unsigned char onewire_read_byte(unsigned char pinmask);
 // Check the crc of the onewire bus message
 unsigned char calculate_onewire_crc(unsigned char *p, unsigned char num);
 
-// Wait for 60us - used for 1wire timing
-void delay_60us(void);
-
-// Wait for 480us - used for 1wire timing
-void delay_480us(void);
-
 /*
  * Internal utility functions
  */
@@ -72,5 +70,11 @@ static void onewire_write_bit(unsigned int bit0_pinmask);
 
 // Read a bit from the onewire bus
 static unsigned char onewire_read_bit(unsigned char pinmask);
+
+// Precision wait for 60us - used for 1wire timing
+static void delay_60us(void);
+
+// Precision wait for 480us - used for 1wire timing
+static void delay_480us(void);
 
 #endif /* ONEWIRE_H_ */

@@ -9,25 +9,15 @@
 #define FURNACE_TEMP_DEVICE_H
 
 #include "Slave_comm.h"
+#include "MCP4161.h"
 
+// Onewire functions
 bool set_temp_resolution(unsigned char register_id, unsigned char resolution);
 void scale_DS18B20_result(unsigned char register_id);
 void send_onewire_rom_commands(unsigned char register_id);
 void read_DS18xxx(unsigned char register_id);
 bool issue_convert_on_bus(unsigned char register_id);
 void operate_onewire_temp_measurement(void);
-
-
-void reset_extender_switches(void);
-void write_extender_switches(void);
-__bit get_extender_switch_buffer(unsigned char reg_nr);
-void set_extender_switch_buffer(unsigned char reg_nr, __bit value);
-void set_new_pwm_values(void);
-void activate_pwm_state(unsigned char next_pwm_state);
-unsigned char evaluate_state_change_rule1(void);
-unsigned char evaluate_state_change_rule2(void);
-unsigned char evaluate_state_change_rule3(void);
-void operate_PWM(void);
 
 
 void operate_device(void);

@@ -15,7 +15,7 @@
 static void
 set_device_comm_direction(unsigned char direction)
 {
-  COMM_DIRECTION_PIN = direction;
+  SLAVE_COMM_DIRECTION_PIN = direction;
 }
 
 /*

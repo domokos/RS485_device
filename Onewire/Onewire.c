@@ -61,6 +61,8 @@ unsigned char calculate_onewire_crc(unsigned char *p, unsigned char num)
 #pragma save
 #pragma disable_warning 59
 
+
+#ifdef ONEWIRE_IS_ON_P3
 // Do a 1-wire reset cycle
 // return true if presense pulse detected, 0 if no device(s) present
 bool onewire_reset(unsigned char pinmask)
@@ -72,16 +74,16 @@ bool onewire_reset(unsigned char pinmask)
 	mov     a, dpl
 	mov     r7, a           // Store pinmask in r7
 	cpl     a
-	anl     _P1, a          // do the reset pulse
-	                        // P1 &= ~pinmask - pull bus pin low
+	anl     _P3, a          // do the reset pulse
+	                        // PORT &= ~pinmask - pull bus pin low
 	lcall	_delay_480us
 	push	ie
 	clr	ea		// disable interrupts
 	mov     a, r7
-	orl     _P1, a          // P1 |= pinmask - pull bus pin high
+	orl     _P3, a          // PORT |= pinmask - pull bus pin high
 	lcall	_delay_60us	// wait for the presence pulse
 	mov     a, r7           // read the presence pulse
-	anl	a, _P1
+	anl	a, _P3
 	pop	ie		// restore interrupt status
 	clr     c
 	jnz     no_presence_pulse
@@ -108,18 +110,18 @@ void onewire_write_bit(unsigned int pinmask_bit0)
 	push	ie
 	clr	ea
 	cpl     a
-        anl     _P1, a          // P1 &= ~pinmask - pull bus pin low
+        anl     _P3, a          // PORT &= ~pinmask - pull bus pin low
         mov     a, r6
 	jnb	acc.0, onewire_write_bit0
 onewire_write_bit1:
         mov     a, r7
-        orl     _P1, a          // P1 |= pinmask - pull bus pin high
+        orl     _P3, a          // PORT |= pinmask - pull bus pin high
 	pop	ie
 	sjmp	_delay_60us
 onewire_write_bit0:
 	lcall	_delay_60us
         mov     a, r7
-        orl     _P1, a          // P1 |= pinmask  - pull bus pin high
+        orl     _P3, a          // PORT |= pinmask  - pull bus pin high
 	pop	ie
 	__endasm;
 }
@@ -135,7 +137,7 @@ unsigned char onewire_read_bit(unsigned char pinmask)
 	push	ie
 	clr	ea
 	cpl     a
-	anl     _P1, a          // P1 &= ~pinmask - pull bus pin low
+	anl     _P3, a          // PORT &= ~pinmask - pull bus pin low
 #ifdef  CRYSTAL_SPEED_HI
 	mov		r2, #2
 #elif defined CRYSTAL_SPEED_LO
@@ -144,11 +146,11 @@ unsigned char onewire_read_bit(unsigned char pinmask)
 #error "No or incorrect crystal speed defined."
 #endif
 	mov     a, r7
-	orl     _P1, a          // P1 |= pinmask - pull bus pin high
+	orl     _P3, a          // PORT |= pinmask - pull bus pin high
 onewire_read_bit_wait:
 	djnz	r2, onewire_read_bit_wait
 	mov     a, r7
-	anl     a, _P1          // read the bus
+	anl     a, _P3          // read the bus
 	pop	ie
 	mov	dpl, #0
 	jz    	read_zero
@@ -162,8 +164,115 @@ read_zero:
 #endif
 }
 
-#pragma restore
 
+#elif defined ONEWIRE_IS_ON_P1
+
+// Do a 1-wire reset cycle
+// return true if presense pulse detected, 0 if no device(s) present
+bool onewire_reset(unsigned char pinmask)
+{
+#ifdef SDCC
+        pinmask;
+#endif
+        __asm
+        mov     a, dpl
+        mov     r7, a           // Store pinmask in r7
+        cpl     a
+        anl     _P1, a          // do the reset pulse
+                                // PORT &= ~pinmask - pull bus pin low
+        lcall   _delay_480us
+        push    ie
+        clr     ea              // disable interrupts
+        mov     a, r7
+        orl     _P1, a          // PORT |= pinmask - pull bus pin high
+        lcall   _delay_60us     // wait for the presence pulse
+        mov     a, r7           // read the presence pulse
+        anl     a, _P1
+        pop     ie              // restore interrupt status
+        clr     c
+        jnz     no_presence_pulse
+        setb    c
+no_presence_pulse:
+        lcall   _delay_480us    // wait the rest of init cycle
+        __endasm;
+
+#ifndef SDCC
+        return FALSE;
+#endif
+}
+
+void onewire_write_bit(unsigned int pinmask_bit0)
+{
+#ifdef SDCC
+        pinmask_bit0;
+#endif
+        __asm
+        mov     a, dpl
+        mov     r6, a           // Store bit to be sent in r6
+        mov     a, dph
+        mov     r7, dph         // Store pinmask in r7
+        push    ie
+        clr     ea
+        cpl     a
+        anl     _P1, a          // PORT &= ~pinmask - pull bus pin low
+        mov     a, r6
+        jnb     acc.0, onewire_write_bit0
+onewire_write_bit1:
+        mov     a, r7
+        orl     _P1, a          // PORT |= pinmask - pull bus pin high
+        pop     ie
+        sjmp    _delay_60us
+onewire_write_bit0:
+        lcall   _delay_60us
+        mov     a, r7
+        orl     _P1, a          // PORT |= pinmask  - pull bus pin high
+        pop     ie
+        __endasm;
+}
+
+unsigned char onewire_read_bit(unsigned char pinmask)
+{
+#ifdef SDCC
+        pinmask;
+#endif
+        __asm
+        mov     a, dph
+        mov     r7, dph         // Store bitmask in r7
+        push    ie
+        clr     ea
+        cpl     a
+        anl     _P1, a          // PORT &= ~pinmask - pull bus pin low
+#ifdef  CRYSTAL_SPEED_HI
+        mov             r2, #2
+#elif defined CRYSTAL_SPEED_LO
+        mov     r2, #1
+#else
+#error "No or incorrect crystal speed defined."
+#endif
+        mov     a, r7
+        orl     _P1, a          // PORT |= pinmask - pull bus pin high
+onewire_read_bit_wait:
+        djnz    r2, onewire_read_bit_wait
+        mov     a, r7
+        anl     a, _P1          // read the bus
+        pop     ie
+        mov     dpl, #0
+        jz      read_zero
+        inc     dptr
+read_zero:
+        lcall   _delay_60us
+        __endasm;
+
+#ifndef SDCC
+        return 0;
+#endif
+}
+
+#else
+#error "Onewire bus is not on any ports of the microcontroller"
+#endif /* Onewire on which bus onewire is */
+
+#pragma restore
 
 
 // CRYSTAL_SPEED_11.0592
@@ -183,8 +292,8 @@ read_zero:
 
 #ifdef  CRYSTAL_SPEED_LO
 
-// Wait for 60us - used for 1wire timing
-void delay_60us(void)
+// Precision Wait for 60us - used for 1wire timing
+static void delay_60us(void)
 {
         __asm
         mov     r2, #11
@@ -196,8 +305,8 @@ delay_60us_loop:
         __endasm;
 }
 
-// Wait for 480us - used for 1wire timing
-void delay_480us(void)
+// Precision Wait for 480us - used for 1wire timing
+static void delay_480us(void)
 {
         __asm
         mov     r2, #221
@@ -208,8 +317,8 @@ delay_480us_loop:
 
 #elif defined CRYSTAL_SPEED_HI
 
-// Wait for 60us - used for 1wire timing
-void delay_60us(void)
+// Precision Wait for 60us - used for 1wire timing
+static void delay_60us(void)
 {
         __asm
         mov     r2, #52
@@ -218,8 +327,8 @@ delay_60us_loop:
         __endasm;
 }
 
-// Wait for 480us - used for 1wire timing
-void delay_480us(void)
+// Precision Wait for 480us - used for 1wire timing
+static void delay_480us(void)
 {
         __asm
         mov     r2, #177

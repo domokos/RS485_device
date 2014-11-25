@@ -10,6 +10,7 @@
 
 #include <stddef.h>
 #include "at89c4051.h"
+#include "Pinlayout.h"
 
 // Global constants
 #define TRUE 1
@@ -41,9 +42,6 @@ typedef __bit bool;
 #else
   #error "Unknown device type for setting timer constants"
 #endif
-
-// Watchdog pin
-#define WATCHDOG_PIN P3_5
 
 /*
  * Internal utility functions
