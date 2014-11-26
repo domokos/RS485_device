@@ -42,6 +42,7 @@ write_wiper(unsigned int value, bool is_volatile)
 
 //  Read CMDERR condition and reset the bus/return failure if error is detected
 //  Set pin to HI to read SDI/SDO line
+  set_clock_lo();
   PIN_SDI_SDO = 1;
 
   set_clock_hi();
@@ -53,12 +54,11 @@ write_wiper(unsigned int value, bool is_volatile)
   set_clock_lo();
 
 // Write the last bit of the command byte
-  PIN_SDI_SDO = command_byte | 0x01;
+  PIN_SDI_SDO = command_byte & 0x01;
   set_clock_hi();
 
 // Write the data_byte
   write_SPI_bits(data_byte, 8);
-
   rheostat_reset();
 
   return TRUE;
@@ -93,10 +93,10 @@ read_wiper(unsigned int *value, bool is_volatile)
       return FALSE;
     }
   set_clock_lo();
+
   // Read bit 8
   if (PIN_SDI_SDO)
     command_byte |= 1;
-
   set_clock_hi();
 
   // Read the remaining 8 bits

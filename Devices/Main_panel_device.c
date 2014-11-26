@@ -309,12 +309,18 @@ operate_device(void)
 *           Byte 1 & 2 - 9 bits of data holdiong the desired wiper setting
 *           Byte 3 - bool flag - is volatile */
             case 11:
-              write_wiper( *(message_buffer.content + PARAMETER_START + 1), message_buffer.content[PARAMETER_START + 2]);
+              if (!write_wiper(
+                  (message_buffer.content[PARAMETER_START+1] << 8) | message_buffer.content[PARAMETER_START+2] ,
+                  message_buffer.content[PARAMETER_START + 3]))
+                response_opcode = COMMAND_FAIL;
               break;
             default: // Any other address fails
               response_opcode = COMMAND_FAIL;
               break;
             }
+
+            message_buffer.index = PARAMETER_START-1;
+
             break;
 
           case READ_REGISTER:
