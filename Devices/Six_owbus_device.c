@@ -248,6 +248,9 @@ operate_device(void)
       // Take care of messaging
       if (get_device_message() && !process_generic_messages())
         {
+          // Set response opcode to undefined to ensure issue identification
+          response_opcode = RESPONSE_UNDEFINED;
+
           switch (message_buffer.content[OPCODE])
             {
           case SET_REGISTER:
@@ -340,8 +343,8 @@ main(void)
   EA = 1;
   init_timer();
 
-// Set 115200 baud
-  init_device_comm(HOST_ID, COMM_SPEED_115200_H);
+// Set 9600 baud
+  init_device_comm(HOST_ID, COMM_SPEED_9600_H);
 
   device_specific_init();
 

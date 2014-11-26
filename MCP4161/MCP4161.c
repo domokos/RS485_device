@@ -14,7 +14,7 @@ void rheostat_reset(void)
 // Deselect chip
   PIN_NCS = NCS_INACTIVE;
 
-// Prepare for SPI Mode 1,1
+// Prepare for SPI Mode 0,0
   PIN_SCK = 0;
 }
 
@@ -83,6 +83,7 @@ read_wiper(unsigned int *value, bool is_volatile)
 
 //  Read CMDERR condition and reset the bus/return failure if error is detected
 //  Set pin to HI to read SDI/SDO line
+  set_clock_lo();
   PIN_SDI_SDO = 1;
 
   set_clock_hi();
@@ -92,6 +93,11 @@ read_wiper(unsigned int *value, bool is_volatile)
       return FALSE;
     }
   set_clock_lo();
+  // Read bit 8
+  if (PIN_SDI_SDO)
+    command_byte |= 1;
+
+  set_clock_hi();
 
   // Read the remaining 8 bits
   data_byte = read_SPI_bits(8);

@@ -264,6 +264,9 @@ operate_device(void)
       // Take care of messaging
       if (get_device_message() && !process_generic_messages())
         {
+          // Set response opcode to undefined to filter response opcode programming issues
+          response_opcode = RESPONSE_UNDEFINED;
+
           switch (message_buffer.content[OPCODE])
             {
           case SET_REGISTER:
@@ -327,6 +330,9 @@ operate_device(void)
           case READ_REGISTER:
             // p holds register to read
             p = message_buffer.content[PARAMETER_START];
+
+            // Preset response opcode to success
+            response_opcode = COMMAND_SUCCESS;
 
             switch (p)
             {

@@ -12,7 +12,14 @@
  *  This section defines the pins assignments the microcontroller
  */
 
-// Watchdog pin
+/* Watchdog pin
+ * This - for PCB layoutting reasons - is:
+ *
+ *  P3_5 on the Master Controller
+ *  P3_5 on the Six Owbus Device
+ *  P3_3 on the Main panel device
+ */
+
 #define WATCHDOG_PIN P3_3
 
 // Communication direction pins of the microcontroller
