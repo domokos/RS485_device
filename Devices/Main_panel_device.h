@@ -11,6 +11,18 @@
 #include "Slave_comm.h"
 #include "MCP4161.h"
 
+/*
+ * PIN mappings of the main panel device
+ */
+
+#define RADIATOR_PUMP_PIN P1_4
+#define FLOOR_PUMP_PIN P1_5
+#define HIDR_SHIFT_PUMP_PIN P1_3
+#define HW_PUMP_PIN P1_6
+#define BASEMENT_FLOOR_VALVE_PIN P1_2
+#define BASEMENT_RADIATOR_VALVE_PIN P1_1
+#define HEATER_RELAY_PIN P3_5
+
 // Onewire functions
 bool set_temp_resolution(unsigned char register_id, unsigned char resolution);
 void scale_DS18B20_result(unsigned char register_id);

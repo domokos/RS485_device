@@ -31,11 +31,9 @@
 #define PIN_SCK P3_7
 #define PIN_SDI_SDO P3_4
 
-
 // Define on which port the onewire interface is
 #define ONEWIRE_IS_ON_P3
 //#define ONEWIRE_IS_ON_P1
-
 
 /*
  * Extender switch specific pin assignments

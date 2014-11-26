@@ -278,50 +278,40 @@ operate_device(void)
 
             switch (p)
             {
-            // HW temp sensor
-            case 1:
-            // Return temp sensor
-            case 2:
-            // Basement temp sensor
-            case 3:
+            case 1: // HW temp sensor
+            case 2: // Return temp sensor
+            case 3: // Basement temp sensor
               response_opcode = COMMAND_FAIL;
               break;
-            // Radiator pump P1_4
-            case 4:
-              P1_4 = message_buffer.content[PARAMETER_START + 1];
+            case 4: // Radiator pump P1_4
+              RADIATOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            // Floor pump P1_5
-            case 5:
-              P1_5 = message_buffer.content[PARAMETER_START + 1];
+            case 5: // Floor pump P1_5
+              FLOOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            // Hidraulic Shifter pump P1_3
-            case 6:
-              P1_3 = message_buffer.content[PARAMETER_START + 1];
+            case 6: // Hidraulic Shifter pump P1_3
+              HIDR_SHIFT_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            // HW pump P1_6
-            case 7:
-              P1_6 = message_buffer.content[PARAMETER_START + 1];
+            case 7: // HW pump P1_6
+              HW_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            // Basement floor valve P1_2
-            case 8:
-              P1_2 = message_buffer.content[PARAMETER_START + 1];
+            case 8: // Basement floor valve P1_2
+              BASEMENT_FLOOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            // Basement radiator valve P1_1
-            case 9:
-              P1_1 = message_buffer.content[PARAMETER_START + 1];
+            case 9: // Basement radiator valve P1_1
+              BASEMENT_RADIATOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            // Heater relay P3_5
-            case 10:
-              P3_5 = message_buffer.content[PARAMETER_START + 1];
+            case 10: // Heater relay P3_5
+              HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            // Furnace temp wiper - expected data format:
-            // Byte 1 & 2 - 9 bits of data holdiong the desired wiper setting
-            // Byte 3 - bool flag - is volatile
+/*
+*           Furnace temp wiper - expected data format:
+*           Byte 1 & 2 - 9 bits of data holdiong the desired wiper setting
+*           Byte 3 - bool flag - is volatile */
             case 11:
               write_wiper( *(message_buffer.content + PARAMETER_START + 1), message_buffer.content[PARAMETER_START + 2]);
               break;
-            // Any other address fails
-            default:
+            default: // Any other address fails
               response_opcode = COMMAND_FAIL;
               break;
             }
@@ -336,55 +326,46 @@ operate_device(void)
 
             switch (p)
             {
-            // HW temp sensor
-            case 1:
-            // Return temp sensor
-            case 2:
-            // Basement temp sensor
-            case 3:
+            case 1: // HW temp sensor
+            case 2: // Return temp sensor
+            case 3: // Basement temp sensor
               message_buffer.content[PARAMETER_START] = temperatures[p - 1]
                   & 0x00ff;
               message_buffer.content[PARAMETER_START + 1] = (temperatures[p
                   - 1] >> 8) & 0x00ff;
               message_buffer.index = PARAMETER_START + 1;
               break;
-            // Radiator pump P1_4
-            case 4:
-              message_buffer.content[PARAMETER_START] = P1_4;
+            case 4: // Radiator pump P1_4
+              message_buffer.content[PARAMETER_START] = RADIATOR_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Floor pump P1_5
-            case 5:
-              message_buffer.content[PARAMETER_START] = P1_5;
+            case 5: // Floor pump P1_5
+              message_buffer.content[PARAMETER_START] = FLOOR_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Hidraulic Shifter pump P1_3
-            case 6:
-              message_buffer.content[PARAMETER_START] = P1_3;
+            case 6: // Hidraulic Shifter pump P1_3
+              message_buffer.content[PARAMETER_START] = HIDR_SHIFT_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // HW pump P1_6
-            case 7:
-              message_buffer.content[PARAMETER_START] = P1_6;
+            case 7: // HW pump P1_6
+              message_buffer.content[PARAMETER_START] = HW_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Basement floor valve P1_2
-            case 8:
-              message_buffer.content[PARAMETER_START] = P1_2;
+            case 8: // Basement floor valve P1_2
+              message_buffer.content[PARAMETER_START] = BASEMENT_FLOOR_VALVE_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Basement radiator valve P1_1
-            case 9:
-              message_buffer.content[PARAMETER_START] = P1_1;
+            case 9: // Basement radiator valve P1_1
+              message_buffer.content[PARAMETER_START] = BASEMENT_RADIATOR_VALVE_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Heater relay P3_5
-            case 10:
-              message_buffer.content[PARAMETER_START] = P3_5;
+            case 10: // Heater relay P3_5
+              message_buffer.content[PARAMETER_START] = HEATER_RELAY_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Furnace temp wiper - expected data format:
-            // Byte 1 - bool flag - is volatile
+/*
+*             Furnace temp wiper - expected data format:
+*             Byte 1 - bool flag - is volatile */
             case 11:
               read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START]);
               message_buffer.index = PARAMETER_START+1;
@@ -430,7 +411,13 @@ device_specific_init(void)
   reset_timeout(TEMP_CONV_TIMER);
 
   // Turn off all outputs
-  P3_5=P1_1=P1_2=P1_3=P1_4=P1_5=P1_6=0;
+  RADIATOR_PUMP_PIN = 0;
+  FLOOR_PUMP_PIN = 0;
+  HIDR_SHIFT_PUMP_PIN = 0;
+  HW_PUMP_PIN = 0;
+  BASEMENT_FLOOR_VALVE_PIN = 0;
+  BASEMENT_RADIATOR_VALVE_PIN = 0;
+  HEATER_RELAY_PIN = 0;
 
   // Reset the MCP4161 rheostat
   rheostat_reset();
