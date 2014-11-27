@@ -57,6 +57,6 @@ static unsigned char
 read_SPI_bits(unsigned char bit_count);
 
 // Precision wait for 60us
-static void delay_60us(void);
+static void sck_delay(void);
 
 #endif /* MCP4161_H_ */

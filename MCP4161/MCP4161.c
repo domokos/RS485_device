@@ -93,11 +93,10 @@ read_wiper(unsigned int *value, bool is_volatile)
       return FALSE;
     }
   set_clock_lo();
-
+  set_clock_hi();
   // Read bit 8
   if (PIN_SDI_SDO)
-    command_byte |= 1;
-  set_clock_hi();
+    command_byte |= 0x01;
 
   // Read the remaining 8 bits
   data_byte = read_SPI_bits(8);
@@ -116,17 +115,17 @@ read_wiper(unsigned int *value, bool is_volatile)
 static void
 set_clock_hi(void)
 {
-  delay_60us();
+  sck_delay();
   PIN_SCK = 1;
-  delay_60us();
+  sck_delay();
 }
 
 static void
 set_clock_lo(void)
 {
-  delay_60us();
+  sck_delay();
   PIN_SCK = 0;
-  delay_60us();
+  sck_delay();
 }
 
 static void
@@ -164,29 +163,36 @@ read_SPI_bits(unsigned char bit_count)
   return retval;
 }
 
+/*
+ *  Wait for about 2.5 us - used for SPI clock timing
+ *  we are targetting a 100 kHz clock frequency. With 4 calls to
+ *  sck_delay per period we get a minimum of 2.5*4=10us period, which is a 100 kHz frequency.
+ *  As per the datasheet the MCP4161 allows a maximum clock frequency of 250 kHz
+ *  when reading non-volatile memory w/o external pullup.
+ *  So setting 100 kHz should be safe for everything
+ */
 #ifdef  CRYSTAL_SPEED_LO
 
-static void delay_60us(void)
+static void sck_delay(void)
 {
         __asm
-        mov     r2, #11
-delay_60us_loop:
+        mov     r2, #2
+spi_clock_delay_loop:
         nop
         nop
         nop
-        djnz    r2, delay_60us_loop
+        djnz    r2, spi_clock_delay_loop
         __endasm;
 }
 
 #elif defined CRYSTAL_SPEED_HI
 
-// Wait for 60us - used for 1wire timing
-static void delay_60us(void)
+static void sck_delay(void)
 {
         __asm
-        mov     r2, #52
-delay_60us_loop:
-        djnz    r2, delay_60us_loop
+        mov     r2, #3
+spi_clock_delay_loop:
+        djnz    r2, spi_clock_delay_loop
         __endasm;
 }
 
