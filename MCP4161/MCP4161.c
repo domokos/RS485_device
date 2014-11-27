@@ -176,9 +176,8 @@ read_SPI_bits(unsigned char bit_count)
 static void sck_delay(void)
 {
         __asm
-        mov     r2, #2
+        mov     r2, #1
 spi_clock_delay_loop:
-        nop
         nop
         nop
         djnz    r2, spi_clock_delay_loop
@@ -190,7 +189,7 @@ spi_clock_delay_loop:
 static void sck_delay(void)
 {
         __asm
-        mov     r2, #3
+        mov     r2, #1
 spi_clock_delay_loop:
         djnz    r2, spi_clock_delay_loop
         __endasm;
