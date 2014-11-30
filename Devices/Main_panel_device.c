@@ -17,7 +17,7 @@
 // This device has 11 registers
 __code const unsigned char nr_of_registers = 11;
 
-#define NR_OF_TEMP_SENSORS 3
+#define NR_OF_TEMP_SENSORS 4
 #define NR_OF_OW_BUSES 1
 
 // Describe the registers of this device
@@ -25,9 +25,11 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
   {
       // HW temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
+      // Basement temp sensor
+        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
       // Return temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // Basement temp sensor
+      // Hidr Shift temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
 
       // Single pin outputs
@@ -54,20 +56,21 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
  * Onewire specific declarations and defines
  */
 // Map registers to onewire buses all registers are P3_3
-__code const unsigned char register_pinmask_map[1] =
-  { 0x04};
+__code const unsigned char register_pinmask_map[4] =
+  {0x04, 0x04, 0x04, 0x04};
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
   {
   // If the first byte is zero, then there is only one device on bus
-
-      // TODO: Get the real sensor ID's for the device
-        { 0x28, 0xe8, 0x33, 0x50, 0x01, 0x00, 0x00, 0x2f },
-      // TODO: Get the real sensor ID's for the device
-        { 0x28, 0x5f, 0xfb, 0x4f, 0x01, 0x00, 0x00, 0x13 },
-      // TODO: Get the real sensor ID's for the device
-        { 0x00, 0x5f, 0xfb, 0x4f, 0x01, 0x00, 0x00, 0x13 } };
+      // The HW sesor
+        { 0x10, 0xc7, 0xa2, 0x23, 0x01, 0x08, 0x00, 0x74 },
+      // The Basement sensor
+        { 0x10, 0x47, 0xbf, 0x24, 0x01, 0x08, 0x00, 0x88 },
+      // The return water temp sensor
+        { 0x28, 0x91, 0x2d, 0x50, 0x01, 0x00, 0x00, 0xff },
+      // The Hidr Shift water temp sensor
+        { 0x28, 0x5a, 0xe6, 0x48, 0x01, 0x00, 0x00, 0xee }};
 
 bool conv_complete, bus0_conv_initiated;
 
@@ -200,6 +203,7 @@ operate_onewire_temp_measurement(void)
             read_DS18xxx(0);
             read_DS18xxx(1);
             read_DS18xxx(2);
+            read_DS18xxx(3);
           }
         bus0_conv_initiated = issue_convert_on_bus(0);
 // Only single bus on this device so there is no need to switch between buses
@@ -279,36 +283,37 @@ operate_device(void)
             switch (p)
             {
             case 1: // HW temp sensor
-            case 2: // Return temp sensor
-            case 3: // Basement temp sensor
+            case 2: // Basement temp sensor
+            case 3: // Return temp sensor
+            case 4: // Hidr Shift temp sensor
               response_opcode = COMMAND_FAIL;
               break;
-            case 4: // Radiator pump P1_4
+            case 5: // Radiator pump P1_4
               RADIATOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 5: // Floor pump P1_5
+            case 6: // Floor pump P1_5
               FLOOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 6: // Hidraulic Shifter pump P1_3
+            case 7: // Hidraulic Shifter pump P1_3
               HIDR_SHIFT_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 7: // HW pump P1_6
+            case 8: // HW pump P1_6
               HW_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 8: // Basement floor valve P1_2
+            case 9: // Basement floor valve P1_2
               BASEMENT_FLOOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 9: // Basement radiator valve P1_1
+            case 10: // Basement radiator valve P1_1
               BASEMENT_RADIATOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 10: // Heater relay P3_5
+            case 11: // Heater relay P3_5
               HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
 /*
 *           Furnace temp wiper - expected data format:
 *           Byte 1 & 2 - 9 bits of data holdiong the desired wiper setting
 *           Byte 3 - bool flag - is volatile */
-            case 11:
+            case 12:
               if (!write_wiper(
                   (message_buffer.content[PARAMETER_START+1] << 8) | message_buffer.content[PARAMETER_START+2] ,
                   message_buffer.content[PARAMETER_START + 3]))
@@ -332,51 +337,62 @@ operate_device(void)
 
             switch (p)
             {
-            case 1: // HW temp sensor
-            case 2: // Return temp sensor
-            case 3: // Basement temp sensor
+              case 1: // HW temp sensor
+              case 2: // Basement temp sensor
+              case 3: // Return temp sensor
+              case 4: // Hidr Shift temp sensor
               message_buffer.content[PARAMETER_START] = temperatures[p - 1]
                   & 0x00ff;
               message_buffer.content[PARAMETER_START + 1] = (temperatures[p
                   - 1] >> 8) & 0x00ff;
               message_buffer.index = PARAMETER_START + 1;
               break;
-            case 4: // Radiator pump P1_4
+            case 5: // Radiator pump P1_4
               message_buffer.content[PARAMETER_START] = RADIATOR_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 5: // Floor pump P1_5
+            case 6: // Floor pump P1_5
               message_buffer.content[PARAMETER_START] = FLOOR_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 6: // Hidraulic Shifter pump P1_3
+            case 7: // Hidraulic Shifter pump P1_3
               message_buffer.content[PARAMETER_START] = HIDR_SHIFT_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 7: // HW pump P1_6
+            case 8: // HW pump P1_6
               message_buffer.content[PARAMETER_START] = HW_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 8: // Basement floor valve P1_2
+            case 9: // Basement floor valve P1_2
               message_buffer.content[PARAMETER_START] = BASEMENT_FLOOR_VALVE_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 9: // Basement radiator valve P1_1
+            case 10: // Basement radiator valve P1_1
               message_buffer.content[PARAMETER_START] = BASEMENT_RADIATOR_VALVE_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 10: // Heater relay P3_5
+            case 11: // Heater relay P3_5
               message_buffer.content[PARAMETER_START] = HEATER_RELAY_PIN;
               message_buffer.index = PARAMETER_START;
               break;
 /*
 *             Furnace temp wiper - expected data format:
 *             Byte 1 - bool flag - is volatile */
-            case 11:
+            case 12:
               read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START]);
               message_buffer.index = PARAMETER_START+1;
               break;
             // Any other address fails
+            case 13: // Test address to read rom on onewire bus - a single device should be connected to the bus in this case
+
+              onewire_reset(0x04);
+              onewire_write_byte(CMD_READ_ROM, 0x04);
+
+              for (p = 0; p < 8; p++)
+                message_buffer.content[PARAMETER_START+p] =  onewire_read_byte(0x04);
+
+              message_buffer.index = PARAMETER_START+7;
+              break;
             default:
               response_opcode = COMMAND_FAIL;
               break;
@@ -393,8 +409,25 @@ operate_device(void)
     }
 }
 
+
 void
-device_specific_init(void)
+device_specific_init_phase1(void)
+{
+  // Turn off all outputs
+  RADIATOR_PUMP_PIN = 0;
+  FLOOR_PUMP_PIN = 0;
+  HIDR_SHIFT_PUMP_PIN = 0;
+  HW_PUMP_PIN = 0;
+  BASEMENT_FLOOR_VALVE_PIN = 0;
+  BASEMENT_RADIATOR_VALVE_PIN = 0;
+  HEATER_RELAY_PIN = 0;
+
+  // Reset the MCP4161 rheostat
+  rheostat_reset();
+}
+
+void
+device_specific_init_phase2(void)
 {
   unsigned char i;
 
@@ -415,30 +448,21 @@ device_specific_init(void)
 
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);
-
-  // Turn off all outputs
-  RADIATOR_PUMP_PIN = 0;
-  FLOOR_PUMP_PIN = 0;
-  HIDR_SHIFT_PUMP_PIN = 0;
-  HW_PUMP_PIN = 0;
-  BASEMENT_FLOOR_VALVE_PIN = 0;
-  BASEMENT_RADIATOR_VALVE_PIN = 0;
-  HEATER_RELAY_PIN = 0;
-
-  // Reset the MCP4161 rheostat
-  rheostat_reset();
 }
 
 void
 main(void)
 {
+
+  device_specific_init_phase1();
+
 // Enable interrupts and initialize timer
   EA = 1;
   init_timer();
 
   init_device_comm(HOST_ID, COMM_SPEED_9600_H);
 
-  device_specific_init();
+  device_specific_init_phase2();
 
   operate_device();
 }

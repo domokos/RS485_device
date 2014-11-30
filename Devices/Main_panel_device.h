@@ -33,7 +33,8 @@ void operate_onewire_temp_measurement(void);
 
 
 void operate_device(void);
-void device_specific_init(void);
+void device_specific_init_phase1(void);
+void device_specific_init_phase2(void);
 void main(void);
 
 #endif /* FURNACE_TEMP_DEVICE_H */
