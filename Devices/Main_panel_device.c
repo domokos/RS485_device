@@ -288,32 +288,32 @@ operate_device(void)
             case 4: // Hidr Shift temp sensor
               response_opcode = COMMAND_FAIL;
               break;
-            case 5: // Radiator pump P1_4
+            case 5: // Radiator pump P1_4 - contact 1
               RADIATOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 6: // Floor pump P1_5
+            case 6: // Floor pump P1_5 - contact 2
               FLOOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 7: // Hidraulic Shifter pump P1_3
+            case 7: // Hidraulic Shifter pump P1_3  - contact 3
               HIDR_SHIFT_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 8: // HW pump P1_6
+            case 8: // HW pump P1_6 - contact 4
               HW_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 9: // Basement floor valve P1_2
+            case 9: // Basement floor valve P1_2  - contact 5
               BASEMENT_FLOOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 10: // Basement radiator valve P1_1
+            case 10: // Basement radiator valve P1_1 - contact 6
               BASEMENT_RADIATOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
-            case 11: // Heater relay P3_5
+            case 11: // Heater relay P3_5 - Heater contact
               HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1];
               break;
 /*
 *           Furnace temp wiper - expected data format:
 *           Byte 1 & 2 - 9 bits of data holdiong the desired wiper setting
 *           Byte 3 - bool flag - is volatile */
-            case 12:
+            case 12: // Wiper contact
               if (!write_wiper(
                   (message_buffer.content[PARAMETER_START+1] << 8) | message_buffer.content[PARAMETER_START+2] ,
                   message_buffer.content[PARAMETER_START + 3]))
@@ -347,38 +347,38 @@ operate_device(void)
                   - 1] >> 8) & 0x00ff;
               message_buffer.index = PARAMETER_START + 1;
               break;
-            case 5: // Radiator pump P1_4
+            case 5: // Radiator pump P1_4 - contact 1
               message_buffer.content[PARAMETER_START] = RADIATOR_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 6: // Floor pump P1_5
+            case 6: // Floor pump P1_5 - contact 2
               message_buffer.content[PARAMETER_START] = FLOOR_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 7: // Hidraulic Shifter pump P1_3
+            case 7: // Hidraulic Shifter pump P1_3 - contact 3
               message_buffer.content[PARAMETER_START] = HIDR_SHIFT_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 8: // HW pump P1_6
+            case 8: // HW pump P1_6 - contact 4
               message_buffer.content[PARAMETER_START] = HW_PUMP_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 9: // Basement floor valve P1_2
+            case 9: // Basement floor valve P1_2 - contact 5
               message_buffer.content[PARAMETER_START] = BASEMENT_FLOOR_VALVE_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 10: // Basement radiator valve P1_1
+            case 10: // Basement radiator valve P1_1 - contact 6
               message_buffer.content[PARAMETER_START] = BASEMENT_RADIATOR_VALVE_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            case 11: // Heater relay P3_5
+            case 11: // Heater relay P3_5 - Heater contact
               message_buffer.content[PARAMETER_START] = HEATER_RELAY_PIN;
               message_buffer.index = PARAMETER_START;
               break;
 /*
 *             Furnace temp wiper - expected data format:
 *             Byte 1 - bool flag - is volatile */
-            case 12:
+            case 12: // Wiper contact
               read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START]);
               message_buffer.index = PARAMETER_START+1;
               break;
