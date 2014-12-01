@@ -24,9 +24,9 @@ __code const unsigned char nr_of_registers = 11;
 __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
   {
       // HW temp sensor
-        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
+        { REG_TYPE_TEMP, REG_RW, 2, SCALE_TEMP, FIXED_RESOLUTION }, // DS18S20 - value1: scaling is needed(1), value2: fixed reesolution(0)
       // Basement temp sensor
-        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
+        { REG_TYPE_TEMP, REG_RW, 2, SCALE_TEMP, FIXED_RESOLUTION }, // DS18S20 - value1: scaling is needed(1), value2: fixed resolution(0)
       // Return temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
       // Hidr Shift temp sensor
@@ -114,7 +114,7 @@ void
 scale_DS18B20_result(unsigned char register_id)
 {
   temperatures[register_id] *= 8;
-  temperatures[register_id] &= 0xFFF0;
+  temperatures[register_id] &= 0xFFFE;
   temperatures[register_id] += 12;
   temperatures[register_id] -= ow_buf[6];
 }
