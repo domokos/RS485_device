@@ -289,25 +289,26 @@ operate_device(void)
               response_opcode = COMMAND_FAIL;
               break;
             case 5: // Radiator pump P1_4 - contact 1
-              RADIATOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
+              RADIATOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
               break;
             case 6: // Floor pump P1_5 - contact 2
-              FLOOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
+              FLOOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
               break;
             case 7: // Hidraulic Shifter pump P1_3  - contact 3
-              HIDR_SHIFT_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
+              HIDR_SHIFT_PUMP_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
               break;
             case 8: // HW pump P1_6 - contact 4
-              HW_PUMP_PIN = message_buffer.content[PARAMETER_START + 1];
+              HW_PUMP_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
               break;
             case 9: // Basement floor valve P1_2  - contact 5
-              BASEMENT_FLOOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1];
-              break;
+              BASEMENT_FLOOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
+               break;
             case 10: // Basement radiator valve P1_1 - contact 6
-              BASEMENT_RADIATOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1];
+              BASEMENT_RADIATOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
+
               break;
             case 11: // Heater relay P3_5 - Heater contact
-              HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1];
+              HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
               break;
 /*
 *           Furnace temp wiper - expected data format:
