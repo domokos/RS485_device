@@ -111,10 +111,10 @@ set_temp_resolution(unsigned char register_id, unsigned char resolution)
 }
 
 void
-scale_DS18B20_result(unsigned char register_id)
+scale_DS18S20_result(unsigned char register_id)
 {
-  temperatures[register_id] *= 8;
   temperatures[register_id] &= 0xFFFE;
+  temperatures[register_id] *= 8;
   temperatures[register_id] += 12;
   temperatures[register_id] -= ow_buf[6];
 }
@@ -163,7 +163,7 @@ read_DS18xxx(unsigned char register_id)
 
           // If result needs scaling up then scale it up
           if (register_identification[register_id][SCALE_POSITION] == SCALE_TEMP)
-            scale_DS18B20_result(register_id);
+            scale_DS18S20_result(register_id);
         }
       else
         {

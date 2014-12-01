@@ -25,7 +25,7 @@
 
 // Onewire functions
 bool set_temp_resolution(unsigned char register_id, unsigned char resolution);
-void scale_DS18B20_result(unsigned char register_id);
+void scale_DS18S20_result(unsigned char register_id);
 void send_onewire_rom_commands(unsigned char register_id);
 void read_DS18xxx(unsigned char register_id);
 bool issue_convert_on_bus(unsigned char register_id);
