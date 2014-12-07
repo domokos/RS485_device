@@ -317,7 +317,7 @@ operate_device(void)
             case 12: // Wiper contact
               if (!write_wiper(
                   (message_buffer.content[PARAMETER_START+1] << 8) | message_buffer.content[PARAMETER_START+2] ,
-                  message_buffer.content[PARAMETER_START + 3]))
+                  message_buffer.content[PARAMETER_START + 3]>0))
                 response_opcode = COMMAND_FAIL;
               break;
             default: // Any other address fails
@@ -380,7 +380,7 @@ operate_device(void)
 *             Furnace temp wiper - expected data format:
 *             Byte 1 - bool flag - is volatile */
             case 12: // Wiper contact
-              read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START]);
+              read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START+1]>0);
               message_buffer.index = PARAMETER_START+1;
               break;
             // Any other address fails
