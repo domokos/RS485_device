@@ -19,15 +19,15 @@ void rheostat_reset(void)
 }
 
 bool
-write_wiper(unsigned int value, bool is_volatile)
+write_wiper(unsigned int value, bool is_non_volatile)
 {
   unsigned char command_byte, data_byte;
 
 // Set command and addres part of the command byte
-  if(is_volatile)
-      command_byte = 0x10;
-    else
+  if(is_non_volatile)
       command_byte = 0x00;
+    else
+      command_byte = 0x20;
 
 // Set the upper part of data to the
 // lowest two bits of the command byte
@@ -65,15 +65,15 @@ write_wiper(unsigned int value, bool is_volatile)
 }
 
 bool
-read_wiper(unsigned int *value, bool is_volatile)
+read_wiper(unsigned int *value, bool is_non_volatile)
 {
   unsigned char command_byte, data_byte;
 
 // Set command and addres part of the command byte
-  if(is_volatile)
-      command_byte = 0x0c;
-    else
+  if(is_non_volatile)
       command_byte = 0x2c;
+    else
+      command_byte = 0x0c;
 
 // Activate the chip
   PIN_NCS = NCS_ACTIVE;
