@@ -72,7 +72,10 @@ __code const unsigned char register_rom_map[][8] =
       // The Hidr Shift water temp sensor
         { 0x28, 0x5a, 0xe6, 0x48, 0x01, 0x00, 0x00, 0xee }};
 
-bool conv_complete, bus0_conv_initiated;
+bool conv_complete;
+
+// Bitfield to store register conversion initiation information
+unsigned char register_conv_initiated;
 
 // Buffer to store Temperatures and temp reading timeout
 // temperatures are initialized @ 0C. At each unsuccesful reset or read attempt
@@ -81,7 +84,7 @@ int temperatures[NR_OF_TEMP_SENSORS];
 
 // Sensors are read in a circular manner. On e cycle completes in time equal to the conversion
 // time. This variable holds the id of the sensor to be addressed next during the cycle.
-unsigned char bus_to_address;
+unsigned char register_to_address;
 
 
 /*
@@ -91,7 +94,7 @@ unsigned char bus_to_address;
  */
 
 bool
-set_temp_resolution(unsigned char register_id, unsigned char resolution)
+set_temp_resolution_on_bus(unsigned char register_id, unsigned char resolution)
 {
   unsigned char pinmask = register_pinmask_map[register_id];
 
@@ -188,50 +191,53 @@ issue_convert_on_bus(unsigned char register_id)
   return FALSE;
 }
 
-// Keep conversions going on for each sensor on each onewire bus
+// Return if conversion command is sent succesfully
+// It takes a reference to a specific device and issues the convert command specificly for it
+bool
+issue_convert_for_device(unsigned char register_id)
+{
+  unsigned char pinmask = register_pinmask_map[register_id];
+
+  if (onewire_reset(pinmask))
+    {
+      send_onewire_rom_commands(register_id);
+      onewire_write_byte(CMD_CONVERT_T, pinmask);
+      return TRUE;
+    }
+  return FALSE;
+}
+
+
+// Keep conversions going on for each sensor on the single bus there is on this device
 void
 operate_onewire_temp_measurement(void)
 {
+  unsigned char register_testmask;
+
   if (conv_complete)
     {
-      switch (bus_to_address)
-        {
-      case 0:
-        // Evaluate side effect: Only read until read is succesful
-        if (bus0_conv_initiated)
-          {
-            read_DS18xxx(0);
-            read_DS18xxx(1);
-            read_DS18xxx(2);
-            read_DS18xxx(3);
-          }
-        bus0_conv_initiated = issue_convert_on_bus(0);
-// Only single bus on this device so there is no need to switch between buses
-//        bus_to_address = 1;
-        break;
-// There is only a single onewire bus on this device
-#if 0
-      case 1:
-        // Evaluate side effect: Only read until read is succesful
-        if (bus1_conv_initiated)
-          {
-            read_DS18xxx(2);
-          }
-        bus1_conv_initiated = issue_convert_on_bus(2);
-        bus_to_address = 0;
-        break;
-#endif
-        }
+      register_testmask = 0x01 << register_to_address;
+
+      // Evaluate side effect: Only read until read is succesful
+      if (register_conv_initiated & register_testmask)
+          read_DS18xxx(register_to_address);
+
+      register_conv_initiated &= ~register_testmask;
+      if (issue_convert_for_device(register_to_address))
+        register_conv_initiated |= register_testmask;
 
       // Reset the conversion timer and set the complete flag so we
       // can wait for conversion time expiry on the next bus - if there is one
       reset_timeout(TEMP_CONV_TIMER);
       conv_complete = FALSE;
+
+      if(++register_to_address == NR_OF_TEMP_SENSORS)
+        register_to_address = 0;
     }
   else
     {
       conv_complete = timeout_occured(TEMP_CONV_TIMER,
-          DS18x20_CONV_TIME / NR_OF_OW_BUSES);
+          (DS18x20_CONV_TIME / NR_OF_TEMP_SENSORS) + 50);
     }
 }
 
@@ -432,20 +438,20 @@ device_specific_init_phase2(void)
 {
   unsigned char i;
 
-  i = NR_OF_TEMP_SENSORS;
-  while (i--)
-    {
-    temperatures[i - 1] = 0;
+  // Set initial resolutions to 12 bit
+  set_temp_resolution_on_bus(0, TEMP_RESOLUTION_12BIT);
 
-    // Set initial resolutions to 12 bit
-    set_temp_resolution(i-1, TEMP_RESOLUTION_12BIT);
-    }
+  for (i=0; i<NR_OF_TEMP_SENSORS; i++)
+    temperatures[i] = 0;
+
+  // Initialize bitfield - all conversions are uninitiated
+  register_conv_initiated = 0;
 
   // We need to start a new conversion so it is complete on init
   conv_complete = TRUE;
 
-  bus0_conv_initiated = FALSE;
-  bus_to_address = 0;
+  // Go for register #0 first
+  register_to_address = 0;
 
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);

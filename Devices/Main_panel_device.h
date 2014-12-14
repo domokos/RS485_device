@@ -24,11 +24,12 @@
 #define HEATER_RELAY_PIN P3_5
 
 // Onewire functions
-bool set_temp_resolution(unsigned char register_id, unsigned char resolution);
+bool set_temp_resolution_on_bus(unsigned char register_id, unsigned char resolution);
 void scale_DS18S20_result(unsigned char register_id);
 void send_onewire_rom_commands(unsigned char register_id);
 void read_DS18xxx(unsigned char register_id);
 bool issue_convert_on_bus(unsigned char register_id);
+bool issue_convert_for_device(unsigned char register_id);
 void operate_onewire_temp_measurement(void);
 
 
