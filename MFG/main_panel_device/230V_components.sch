@@ -577,7 +577,7 @@ device=BS170
 T 6300 75200 5 10 0 0 0 0 1
 footprint=TO92
 T 6300 75500 5 10 1 1 0 0 1
-refdes=Q161
+refdes=Q181
 }
 C 5900 74500 1 0 0 gnd-1.sym
 N 6000 74800 6000 75000 4
@@ -591,7 +591,7 @@ device=SMALLRES
 T 5900 76900 5 10 0 0 90 0 1
 footprint=ACY300
 T 6100 77400 5 10 1 1 180 0 1
-refdes=R161
+refdes=R181
 T 6400 77100 5 10 1 1 90 0 1
 value=1k
 }
@@ -605,7 +605,7 @@ device=TLP3063
 T 6895 77400 5 10 0 0 0 0 1
 footprint=DIL_6_300
 T 7400 77000 5 10 1 1 0 0 1
-refdes=U161
+refdes=U181
 }
 C 9000 78500 1 180 0 io-1.sym
 {
@@ -629,7 +629,7 @@ device=SMALLRES
 T 9000 77000 5 10 0 0 180 0 1
 footprint=ACY300
 T 8500 77600 5 10 1 1 0 0 1
-refdes=R162
+refdes=R182
 T 8800 77500 5 10 1 1 180 0 1
 value=100
 }
@@ -640,7 +640,7 @@ device=TRIAC
 T 9550 76100 5 8 0 1 270 2 1
 footprint=TO220_TRIAC
 T 10300 76000 5 10 1 1 0 6 1
-refdes=D161
+refdes=D181
 }
 N 9200 76100 8000 76100 4
 C 4800 70500 1 0 0 BS170.sym
