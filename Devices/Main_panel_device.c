@@ -32,26 +32,35 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // Hidr Shift temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
 
-      // Single pin outputs
+      // Extender register outputs
 
-      // Radiator pump P1_4
+      // Radiator pump - Extender bit 0 - Q0 - Contact 4
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // Floor pump P1_5
+      // Floor pump - Extender bit 1 - Q1 - Contact 5
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // Hidraulic Shifter pump P1_3
+      // Hidraulic Shifter pump - Extender bit 2 - Q2 - Contact 6
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // HW pump P1_6
+      // HW pump - Extender bit 3 - Q3 - - Contact 7
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // Basement floor valve P1_2
+      // Basement floor valve - Extender bit 4 - Q4 - Contact 9
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // Basement radiator valve P1_1
+      // Basement radiator valve - Extender bit 5 - Q5 - - Contact 8
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // Buffertop valve - Extender bit 6 - Q6 - Contact 3
+         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // Return valve - Extender bit 7 - Q7 - - Contact 2
+         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
 
       // Heater relay P3_5
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
 
       // Furnace temp wiper
+        { REG_TYPE_DATA, REG_RW, 1, DONT_CARE, DONT_CARE },
+
+      // HW temp wiper
         { REG_TYPE_DATA, REG_RW, 1, DONT_CARE, DONT_CARE } };
+
+
 /*
  * Onewire specific declarations and defines
  */
@@ -175,6 +184,7 @@ read_DS18xxx(unsigned char register_id)
     }
 }
 
+#if 0 // We do not use this
 // Return if conversion command is sent succesfully
 // It takes a reference to a specific device but issues convert on the entire bus
 bool
@@ -190,6 +200,7 @@ issue_convert_on_bus(unsigned char register_id)
     }
   return FALSE;
 }
+#endif
 
 // Return if conversion command is sent succesfully
 // It takes a reference to a specific device and issues the convert command specificly for it
@@ -265,14 +276,38 @@ operate_device(void)
   // Messaging variables
   unsigned char response_opcode = RESPONSE_UNDEFINED, p;
 
+  bool got_message;
+
   // The main loop of the device
   while (TRUE)
     {
       // Operate main device functions
       operate_onewire_temp_measurement();
 
+      got_message = get_device_message();
+
+/*
+ *    Watch communication activity on bus and reset the device outputs
+ *    if no communication is seen whithin timeout
+ */
+      if (!got_message)
+        {
+          if (timeout_occured(BUS_COMMUNICATION_WATCHDOG_TIMER, BUS_COMMUNICATION_TIMEOUT_MS))
+          {
+            // Re-initialize the device - shut every output down
+            device_specific_init_phase1();
+            init_device_comm(HOST_ID, COMM_SPEED_9600_H);
+            device_specific_init_phase2();
+
+            // Reset the timer
+            reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+          }
+        } else {
+          reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+        }
+
       // Take care of messaging
-      if (get_device_message() && !process_generic_messages())
+      if (got_message && !process_generic_messages())
         {
           // Set response opcode to undefined to filter response opcode programming issues
           response_opcode = RESPONSE_UNDEFINED;
@@ -286,49 +321,45 @@ operate_device(void)
             // Preset response opcode to success
             response_opcode = COMMAND_SUCCESS;
 
-            switch (p)
-            {
-            case 1: // HW temp sensor
-            case 2: // Basement temp sensor
-            case 3: // Return temp sensor
-            case 4: // Hidr Shift temp sensor
+            if ( p>0 && p<=4 )
+              {
+/*          Address 1:  HW temp sensor
+*           Address 2:  Basement temp sensor
+*           Address 3:  Return temp sensor
+*           Address 4:  Hidr Shift temp sensor
+*/
               response_opcode = COMMAND_FAIL;
-              break;
-            case 5: // Radiator pump P1_4 - contact 1
-              RADIATOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
-              break;
-            case 6: // Floor pump P1_5 - contact 2
-              FLOOR_PUMP_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
-              break;
-            case 7: // Hidraulic Shifter pump P1_3  - contact 3
-              HIDR_SHIFT_PUMP_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
-              break;
-            case 8: // HW pump P1_6 - contact 4
-              HW_PUMP_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
-              break;
-            case 9: // Basement floor valve P1_2  - contact 5
-              BASEMENT_FLOOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
-               break;
-            case 10: // Basement radiator valve P1_1 - contact 6
-              BASEMENT_RADIATOR_VALVE_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
-
-              break;
-            case 11: // Heater relay P3_5 - Heater contact
-              HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1] > 0 ? 1 : 0;
-              break;
+              } else if( p <= 12 ) {
+/*          Address 5:  Radiator pump - Contact 4
+*           Address 6:  Floor pump - Contact 5
+*           Address 7:  Hidraulic Shifter pump - Contact 6
+*           Address 8:  HW pump - Contact 7
+*           Address 9:  Basement floor valve Contact 9
+*           Address 10:  Basement radiator valve - Contact 8
+*           Address 11:  Buffertop valve - Contact 3
+*           Address 12:  Return valve - Contact 2
+*/
+              set_extender_switch_buffer(p-5, message_buffer.content[PARAMETER_START + 1] > 0);
+              write_extender_switches();
+              } else if(p == 13) {
+/*          Address 13: Heater relay P3_5 - Heater contact */
+              HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1] > 0;
+              } else if(p <= 15) {
 /*
-*           Furnace temp wiper - expected data format:
+*           Temp wipers - expected data format:
 *           Byte 1 & 2 - 9 bits of data holdiong the desired wiper setting
-*           Byte 3 - bool flag - is volatile */
-            case 12: // Wiper contact
+*           Byte 3 - bool flag - is volatile
+*           Address 14: HW Wiper
+*           Address 15: Heating Wiper
+*/
               if (!write_wiper(
                   (message_buffer.content[PARAMETER_START+1] << 8) | message_buffer.content[PARAMETER_START+2] ,
-                  message_buffer.content[PARAMETER_START + 3]>0))
+                  message_buffer.content[PARAMETER_START + 3]>0,
+                  p == 14 ? WIPER_HW : WIPER_HEAT))
                 response_opcode = COMMAND_FAIL;
-              break;
-            default: // Any other address fails
+              } else {
+/*          Any other address fails */
               response_opcode = COMMAND_FAIL;
-              break;
             }
 
             message_buffer.index = PARAMETER_START-1;
@@ -342,55 +373,43 @@ operate_device(void)
             // Preset response opcode to success
             response_opcode = COMMAND_SUCCESS;
 
-            switch (p)
-            {
-              case 1: // HW temp sensor
-              case 2: // Basement temp sensor
-              case 3: // Return temp sensor
-              case 4: // Hidr Shift temp sensor
-              message_buffer.content[PARAMETER_START] = temperatures[p - 1]
-                  & 0x00ff;
-              message_buffer.content[PARAMETER_START + 1] = (temperatures[p
-                  - 1] >> 8) & 0x00ff;
+            if ( p>0 && p<=4 )
+              {
+/*          Address 1:  HW temp sensor
+*           Address 2:  Basement temp sensor
+*           Address 3:  Return temp sensor
+*           Address 4:  Hidr Shift temp sensor
+*/
+              message_buffer.content[PARAMETER_START] = temperatures[p - 1] & 0x00ff;
+              message_buffer.content[PARAMETER_START + 1] = (temperatures[p- 1] >> 8) & 0x00ff;
               message_buffer.index = PARAMETER_START + 1;
-              break;
-            case 5: // Radiator pump P1_4 - contact 1
-              message_buffer.content[PARAMETER_START] = RADIATOR_PUMP_PIN;
+              } else if( p <= 12 ) {
+/*          Address 5:  Radiator pump - Contact 4
+*           Address 6:  Floor pump - Contact 5
+*           Address 7:  Hidraulic Shifter pump - Contact 6
+*           Address 8:  HW pump - Contact 7
+*           Address 9:  Basement floor valve Contact 9
+*           Address 10:  Basement radiator valve - Contact 8
+*           Address 11:  Buffertop valve - Contact 3
+*           Address 12:  Return valve - Contact 2
+*/
+              message_buffer.content[PARAMETER_START] = get_extender_switch(p-5);
               message_buffer.index = PARAMETER_START;
-              break;
-            case 6: // Floor pump P1_5 - contact 2
-              message_buffer.content[PARAMETER_START] = FLOOR_PUMP_PIN;
-              message_buffer.index = PARAMETER_START;
-              break;
-            case 7: // Hidraulic Shifter pump P1_3 - contact 3
-              message_buffer.content[PARAMETER_START] = HIDR_SHIFT_PUMP_PIN;
-              message_buffer.index = PARAMETER_START;
-              break;
-            case 8: // HW pump P1_6 - contact 4
-              message_buffer.content[PARAMETER_START] = HW_PUMP_PIN;
-              message_buffer.index = PARAMETER_START;
-              break;
-            case 9: // Basement floor valve P1_2 - contact 5
-              message_buffer.content[PARAMETER_START] = BASEMENT_FLOOR_VALVE_PIN;
-              message_buffer.index = PARAMETER_START;
-              break;
-            case 10: // Basement radiator valve P1_1 - contact 6
-              message_buffer.content[PARAMETER_START] = BASEMENT_RADIATOR_VALVE_PIN;
-              message_buffer.index = PARAMETER_START;
-              break;
-            case 11: // Heater relay P3_5 - Heater contact
+              } else if(p == 13) {
+ /*          Address 13: Heater relay P3_5 - Heater contact */
               message_buffer.content[PARAMETER_START] = HEATER_RELAY_PIN;
               message_buffer.index = PARAMETER_START;
-              break;
+              } else if(p <= 15) {
 /*
-*             Furnace temp wiper - expected data format:
-*             Byte 1 - bool flag - is volatile */
-            case 12: // Wiper contact
-              read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START+1]>0);
+*             Temp wipers - expected data format:
+*             Byte 1 - bool flag - is volatile
+*             Address 14: HW Wiper
+*             Address 15: Heating Wiper
+*/
+              read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START+1]>0, p == 14 ? WIPER_HW : WIPER_HEAT);
               message_buffer.index = PARAMETER_START+1;
-              break;
-            // Any other address fails
-            case 13: // Test address to read rom on onewire bus - a single device should be connected to the bus in this case
+              } else if(p == 16) {
+/* Test address to read rom on onewire bus - a single device should be connected to the bus in this case */
 
               onewire_reset(0x04);
               onewire_write_byte(CMD_READ_ROM, 0x04);
@@ -399,14 +418,12 @@ operate_device(void)
                 message_buffer.content[PARAMETER_START+p] =  onewire_read_byte(0x04);
 
               message_buffer.index = PARAMETER_START+7;
-              break;
-            default:
+              } else {
               response_opcode = COMMAND_FAIL;
-              break;
-            }
+              }
             break;
 
-          // Any other massage code fails
+          // Any other message code fails
           default:
             response_opcode = COMMAND_FAIL;
             break;
@@ -421,16 +438,11 @@ void
 device_specific_init_phase1(void)
 {
   // Turn off all outputs
-  RADIATOR_PUMP_PIN = 0;
-  FLOOR_PUMP_PIN = 0;
-  HIDR_SHIFT_PUMP_PIN = 0;
-  HW_PUMP_PIN = 0;
-  BASEMENT_FLOOR_VALVE_PIN = 0;
-  BASEMENT_RADIATOR_VALVE_PIN = 0;
+  reset_extender_switches();
   HEATER_RELAY_PIN = 0;
 
   // Reset the MCP4161 rheostat
-  rheostat_reset();
+  reset_rheostats();
 }
 
 void

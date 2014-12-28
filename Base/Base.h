@@ -32,13 +32,13 @@ typedef __bit bool;
 
 #ifdef __CDT_PARSER__
   #define TEMP_CONV_TIMER 3
-  #define PWM1_TIMER 4
+  #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
   #define UNSEEN_COMM_TIMER 3
 #elif defined MASTER_DEVICE
   #define UNSEEN_COMM_TIMER 3
 #elif defined SLAVE_DEVICE
   #define TEMP_CONV_TIMER 3
-  #define PWM1_TIMER 4
+  #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
 #else
   #error "Unknown device type for setting timer constants"
 #endif

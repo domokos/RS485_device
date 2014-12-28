@@ -53,6 +53,8 @@ ISR(TIMER0,0)
 // Initiaize the timer
 void init_timer(void)
 {
+  if(timer_initialized) return;
+
   TR0  = 0;
 #ifdef  CRYSTAL_SPEED_LO
   TL0  = 0x50;    // Start from 0xfc50

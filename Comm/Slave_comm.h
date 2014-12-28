@@ -19,6 +19,13 @@
 */
 #define MESSAGE_TIMEOUT_COUNT_LIMIT 500
 
+/*
+ * The amount of time a slave should see a messagfe on the bus
+ * each device is responsible watching this timeout and if it occurs with no communication
+ * it should consider itself as lost bus connectivity and reset itself accordingly
+*/
+#define BUS_COMMUNICATION_TIMEOUT_MS 10000
+
 
 // States of the communication direction pin
 #define DEVICE_LISTENS 0

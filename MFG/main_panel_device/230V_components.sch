@@ -403,7 +403,7 @@ N 5700 88200 4500 88200 4
 C 3900 75600 1 180 0 io-1.sym
 {
 T 3000 75600 5 10 1 1 180 0 1
-net=Buffer_Pump:1
+net=BuffertopValve:1
 T 3700 74900 5 10 0 0 180 0 1
 device=none
 T 3500 75500 5 10 1 1 180 1 1
@@ -414,7 +414,7 @@ C 3800 71100 1 180 0 io-1.sym
 T 3400 71000 5 10 1 1 180 1 1
 value=IO
 T 2900 71100 5 10 1 1 180 0 1
-net=Spare:1
+net=ReturnValve:1
 T 3600 70400 5 10 0 0 180 0 1
 device=none
 }

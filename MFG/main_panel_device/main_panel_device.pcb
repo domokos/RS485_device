@@ -6,7 +6,7 @@ FileVersion[20070407]
 PCB["" 520000 500000]
 
 Grid[2500.0 0 0 1]
-Cursor[520000 160000 0.000000]
+Cursor[520000 37500 0.000000]
 PolyArea[3100.006200]
 Thermal[0.500000]
 DRC[1000 1000 1000 1000 1500 1000]
@@ -2731,7 +2731,7 @@ NetList()
 		Connect("Q121-2")
 		Connect("U6-1")
 	)
-	Net("Buffer_Pump" "(unknown)")
+	Net("BuffertopValve" "(unknown)")
 	(
 		Connect("Q181-2")
 		Connect("U6-6")
@@ -2894,6 +2894,11 @@ NetList()
 		Connect("Q161-2")
 		Connect("U6-5")
 	)
+	Net("ReturnValve" "(unknown)")
+	(
+		Connect("Q171-2")
+		Connect("U6-7")
+	)
 	Net("RXD" "(unknown)")
 	(
 		Connect("U1-1")
@@ -2927,11 +2932,6 @@ NetList()
 	(
 		Connect("U2-17")
 		Connect("U6-11")
-	)
-	Net("Spare" "(unknown)")
-	(
-		Connect("Q171-2")
-		Connect("U6-7")
 	)
 	Net("STCP" "(unknown)")
 	(

@@ -21,20 +21,23 @@
 #define NCS_INACTIVE 1
 #define NCS_ACTIVE 0
 
+#define WIPER_HEAT 0
+#define WIPER_HW 1
+
 /*
  * Public functions
  */
 
 // Reset/initialize the SPI bus
-void rheostat_reset(void);
+void reset_rheostats(void);
 
 // Write 9-bit wiper data into the SPI device
 // return success
-bool write_wiper(unsigned int value, bool is_volatile);
+bool write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector);
 
 // Read and return the value of the wiper memory of
 // the SPI device
-bool read_wiper(unsigned int *value, bool is_volatile);
+bool read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector);
 
 /*
  * Private functions

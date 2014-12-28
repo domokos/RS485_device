@@ -9,17 +9,19 @@
 
 #include "MCP4161.h"
 
-void rheostat_reset(void)
+void reset_rheostats(void)
 {
 // Deselect chip
-  PIN_NCS = NCS_INACTIVE;
+  PIN_NCS_HW = NCS_INACTIVE;
+
+  PIN_NCS_HEAT = NCS_INACTIVE;
 
 // Prepare for SPI Mode 0,0
   PIN_SCK = 0;
 }
 
 bool
-write_wiper(unsigned int value, bool is_volatile)
+write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector)
 {
   unsigned char command_byte, data_byte;
 
@@ -35,7 +37,10 @@ write_wiper(unsigned int value, bool is_volatile)
   data_byte = (unsigned char) (value & 0xff);
 
 // Activate the chip
-  PIN_NCS = NCS_ACTIVE;
+  if (wiper_selector == WIPER_HEAT)
+    PIN_NCS_HEAT = NCS_ACTIVE;
+  else
+    PIN_NCS_HW = NCS_ACTIVE;
 
 // Write the frist six bits to the SPI interface
   write_SPI_bits(command_byte, 6);
@@ -48,7 +53,7 @@ write_wiper(unsigned int value, bool is_volatile)
   set_clock_hi();
   if(PIN_SDI_SDO == 0)
     {
-      rheostat_reset();
+      reset_rheostats();
       return FALSE;
     }
   set_clock_lo();
@@ -59,13 +64,13 @@ write_wiper(unsigned int value, bool is_volatile)
 
 // Write the data_byte
   write_SPI_bits(data_byte, 8);
-  rheostat_reset();
+  reset_rheostats();
 
   return TRUE;
 }
 
 bool
-read_wiper(unsigned int *value, bool is_volatile)
+read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
 {
   unsigned char command_byte, data_byte;
 
@@ -76,7 +81,10 @@ read_wiper(unsigned int *value, bool is_volatile)
       command_byte = 0x2c;
 
 // Activate the chip
-  PIN_NCS = NCS_ACTIVE;
+  if (wiper_selector == WIPER_HEAT)
+    PIN_NCS_HEAT = NCS_ACTIVE;
+  else
+    PIN_NCS_HW = NCS_ACTIVE;
 
 // Write the six command bits to the SPI interface
   write_SPI_bits(command_byte, 6);
@@ -89,7 +97,7 @@ read_wiper(unsigned int *value, bool is_volatile)
   set_clock_hi();
   if(PIN_SDI_SDO == 0)
     {
-      rheostat_reset();
+      reset_rheostats();
       return FALSE;
     }
   set_clock_lo();
@@ -100,7 +108,7 @@ read_wiper(unsigned int *value, bool is_volatile)
 
   // Read the remaining 8 bits
   data_byte = read_SPI_bits(8);
-  rheostat_reset();
+  reset_rheostats();
 
   // Return the command and the data so caller can see the entire communication
   // Caller needs to mask data it needs

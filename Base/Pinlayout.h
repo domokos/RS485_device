@@ -27,7 +27,8 @@
 #define MASTER_COMM_DIRECTION_PIN P1_0
 
 // Define the pins of the SPI interface of the MCP4161
-#define PIN_NCS P1_0
+#define PIN_NCS_HW P1_0
+#define PIN_NCS_HEAT P1_1
 #define PIN_SCK P3_7
 #define PIN_SDI_SDO P3_4
 
@@ -40,10 +41,12 @@
  * For extender swich 74HC595, 8-bit parallell or serial out shift registers are used.
 */
 
+#define NR_OF_SW_EXTENDERS 1
+
 #define DS_PIN P1_2
-#define SHCP_PIN P1_3
-#define NMR_PIN P1_4
-#define STCP_PIN P1_5
-#define NOE_PIN P1_6
+#define NOE_PIN P1_3
+#define STCP_PIN P1_4
+#define SHCP_PIN P1_5
+#define NMR_PIN P1_6
 
 #endif /* PINLAYOUT_H_ */
