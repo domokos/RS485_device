@@ -330,14 +330,15 @@ operate_device(void)
 */
               response_opcode = COMMAND_FAIL;
               } else if( p <= 12 ) {
-/*          Address 5:  Radiator pump - Contact 4
-*           Address 6:  Floor pump - Contact 5
-*           Address 7:  Hidraulic Shifter pump - Contact 6
-*           Address 8:  HW pump - Contact 7
-*           Address 9:  Basement floor valve Contact 9
-*           Address 10:  Basement radiator valve - Contact 8
-*           Address 11:  Buffertop valve - Contact 3
-*           Address 12:  Return valve - Contact 2
+/*
+*           Address 5:  Buffertop valve - Contact 2
+*           Address 6:  Return valve - Contact 3
+*           Address 7:  Radiator pump - Contact 4
+*           Address 8:  Floor pump - Contact 5
+*           Address 9:  Hidraulic Shifter pump - Contact 6
+*           Address 10:  HW pump - Contact 7
+*           Address 11:  Basement radiator valve Contact 8
+*           Address 12:  Basement floor valve - Contact 9
 */
                write_extender(p-5, message_buffer.content[PARAMETER_START + 1] > 0);
               } else if(p == 13) {
@@ -383,16 +384,17 @@ operate_device(void)
               message_buffer.content[PARAMETER_START + 1] = (temperatures[p- 1] >> 8) & 0x00ff;
               message_buffer.index = PARAMETER_START + 1;
               } else if( p <= 12 ) {
-/*          Address 5:  Radiator pump - Contact 4
-*           Address 6:  Floor pump - Contact 5
-*           Address 7:  Hidraulic Shifter pump - Contact 6
-*           Address 8:  HW pump - Contact 7
-*           Address 9:  Basement floor valve Contact 9
-*           Address 10:  Basement radiator valve - Contact 8
-*           Address 11:  Buffertop valve - Contact 3
-*           Address 12:  Return valve - Contact 2
+/*
+*           Address 5:  Buffertop valve - Contact 2
+*           Address 6:  Return valve - Contact 3
+*           Address 7:  Radiator pump - Contact 4
+*           Address 8:  Floor pump - Contact 5
+*           Address 9:  Hidraulic Shifter pump - Contact 6
+*           Address 10:  HW pump - Contact 7
+*           Address 11:  Basement radiator valve Contact 8
+*           Address 12:  Basement floor valve - Contact 9
 */
-              message_buffer.content[PARAMETER_START] = get_extender_value(p-5);
+          message_buffer.content[PARAMETER_START] = get_extender_value(p-5);
               message_buffer.index = PARAMETER_START;
               } else if(p == 13) {
  /*          Address 13: Heater relay P3_5 - Heater contact */
