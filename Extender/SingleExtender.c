@@ -31,7 +31,7 @@ void write_extender(unsigned char reg_nr, bool value)
   unsigned char mask;
 
   // Store the value in the internal buffer
-  mask = 0x01 << reg_nr;
+  mask = 0x80 >> reg_nr;
 
   if (value)
     extender_buffer |= mask;
