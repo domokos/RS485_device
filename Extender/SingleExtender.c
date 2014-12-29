@@ -5,7 +5,7 @@
  *
  */
 
-static unsigned char extender_buffer;
+static unsigned char extender_buffer = 0;
 
 // Reset the extender ouptuts
 void reset_extender(void)
@@ -21,6 +21,8 @@ void reset_extender(void)
 
   NMR_PIN = 1;
   NOE_PIN = 0;
+
+  extender_buffer = 0;
 }
 
 // Set the output to the values passed
