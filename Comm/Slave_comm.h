@@ -24,7 +24,7 @@
  * each device is responsible watching this timeout and if it occurs with no communication
  * it should consider itself as lost bus connectivity and reset itself accordingly
 */
-#define BUS_COMMUNICATION_TIMEOUT_MS 10000
+#define BUS_COMMUNICATION_TIMEOUT_MS 30000
 
 
 // States of the communication direction pin
