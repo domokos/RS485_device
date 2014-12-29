@@ -339,8 +339,7 @@ operate_device(void)
 *           Address 11:  Buffertop valve - Contact 3
 *           Address 12:  Return valve - Contact 2
 */
-              set_extender_switch_buffer(p-5, message_buffer.content[PARAMETER_START + 1] > 0);
-              write_extender_switches();
+               write_extender(p-5, message_buffer.content[PARAMETER_START + 1] > 0);
               } else if(p == 13) {
 /*          Address 13: Heater relay P3_5 - Heater contact */
               HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1] > 0;
@@ -393,7 +392,7 @@ operate_device(void)
 *           Address 11:  Buffertop valve - Contact 3
 *           Address 12:  Return valve - Contact 2
 */
-              message_buffer.content[PARAMETER_START] = get_extender_switch(p-5);
+              message_buffer.content[PARAMETER_START] = get_extender_value(p-5);
               message_buffer.index = PARAMETER_START;
               } else if(p == 13) {
  /*          Address 13: Heater relay P3_5 - Heater contact */
@@ -438,7 +437,7 @@ void
 device_specific_init_phase1(void)
 {
   // Turn off all outputs
-  reset_extender_switches();
+  reset_extender();
   HEATER_RELAY_PIN = 0;
 
   // Reset the MCP4161 rheostat

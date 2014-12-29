@@ -36,13 +36,6 @@
 #define ONEWIRE_IS_ON_P3
 //#define ONEWIRE_IS_ON_P1
 
-/*
- * Extender switch specific pin assignments
- * For extender swich 74HC595, 8-bit parallell or serial out shift registers are used.
-*/
-
-#define NR_OF_SW_EXTENDERS 1
-
 #define DS_PIN P1_2
 #define NOE_PIN P1_3
 #define STCP_PIN P1_4

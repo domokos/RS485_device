@@ -10,7 +10,7 @@
 
 #include "Slave_comm.h"
 #include "MCP4161.h"
-#include "Extender.h"
+#include "SingleExtender.h"
 
 /*
  * Extender PIN mapping of the main panel device
