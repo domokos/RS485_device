@@ -27,7 +27,7 @@ static unsigned char comm_speed;
 static void
 set_master_comm_state(unsigned char direction)
 {
-  MASTER_COMM_DIRECTION_PIN = direction;
+  COMM_DIRECTION_PIN = direction;
 }
 
 // Set master's communication direction when communicating on the bus

@@ -20,11 +20,18 @@
  *  P3_3 on the Main panel device
  */
 
-#define WATCHDOG_PIN P3_3
-
-// Communication direction pins of the microcontroller
-#define SLAVE_COMM_DIRECTION_PIN P1_7
-#define MASTER_COMM_DIRECTION_PIN P1_0
+#ifdef MASTER_CONTROLLER_DEVICE
+  #define WATCHDOG_PIN P3_5
+  #define COMM_DIRECTION_PIN P1_0
+#elif defined MAIN_PANEL_SLAVE_DEVICE
+  #define WATCHDOG_PIN P3_3
+  #define COMM_DIRECTION_PIN P1_7
+#elif defined SIX_OWBUS_SLAVE_DEVICE
+  #define WATCHDOG_PIN P3_5
+  #define COMM_DIRECTION_PIN P1_7
+#else
+  #error "No comm direction pin could be determined"
+#endif
 
 // Define the pins of the SPI interface of the MCP4161
 #define PIN_NCS_HW P1_0
