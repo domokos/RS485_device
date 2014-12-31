@@ -114,7 +114,10 @@ void reset_timeout(unsigned char type)
   // Initialize timer if it is not initialized
   if(!timer_initialized) init_timer();
 
+  ET0 = 0;
   timer_start_times[type] = time_counter;
+  ET0 = 1;
+
 }
 
 // Get the time elapsed since reset

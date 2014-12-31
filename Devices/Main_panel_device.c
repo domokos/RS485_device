@@ -285,7 +285,7 @@ operate_device(void)
       operate_onewire_temp_measurement();
 
       got_message = get_device_message();
-#if 0
+
 /*
  *    Watch communication activity on bus and reset the device outputs
  *    if no communication is seen whithin timeout
@@ -305,7 +305,7 @@ operate_device(void)
         } else {
           reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
         }
-#endif
+
       // Take care of messaging
       if (got_message && !process_generic_messages())
         {
