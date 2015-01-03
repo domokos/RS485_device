@@ -331,11 +331,7 @@ operate_device(void)
               if (onewire_reset(pinmask))
                 {
                   message_buffer.content[PARAMETER_START] = ReadDS2405(register_rom_map[p-1], pinmask);
-
-                  for (p = 1; p < 9; p++)
-                    message_buffer.content[PARAMETER_START+p] =  ow_buf[p-1];
-
-                  message_buffer.index = PARAMETER_START+8;
+                  message_buffer.index = PARAMETER_START;
                 } else {
                   response_opcode = COMMAND_FAIL;
                   message_buffer.index = PARAMETER_START-1;
@@ -398,6 +394,19 @@ device_specific_init(void)
     }
 }
 
+
+void do_tests(void)
+{
+ unsigned char p,pinmask;
+ p = 4;
+ pinmask = register_pinmask_map[p-1];
+ if (onewire_reset(pinmask))
+   {
+     ReadDS2405(register_rom_map[p-1], pinmask);
+   }
+ delay_msec(500);
+}
+
 void
 main(void)
 {
@@ -409,7 +418,7 @@ main(void)
   init_device_comm(HOST_ID, COMM_SPEED_9600_H);
 
   device_specific_init();
-
-  operate_device();
+  do_tests();
+  //operate_device();
 
 }
