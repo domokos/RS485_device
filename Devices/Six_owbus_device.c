@@ -298,11 +298,20 @@ operate_device(void)
                 {
                   // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
                   if((message_buffer.content[PARAMETER_START + 1] > 0) != ReadDS2405(register_rom_map[p-1], pinmask))
-                    send_onewire_rom_commands(p-1);
+                    {
+                      if(onewire_reset(pinmask))
+                        {
+                          send_onewire_rom_commands(p-1);
+                        } else {
+                          response_opcode = COMMAND_FAIL;
+                        }
+                    }
                 } else {
                   response_opcode = COMMAND_FAIL;
                 }
               } else {
+/*            Any other write addresses fail
+ */
                 response_opcode = COMMAND_FAIL;
               }
             message_buffer.index = PARAMETER_START-1;
@@ -337,6 +346,8 @@ operate_device(void)
                   message_buffer.index = PARAMETER_START-1;
                 }
               } else if (p == 6){
+/*           Test address to read a single onewire device's ROM code
+*/
                   pinmask = register_pinmask_map[0];
 
                   onewire_reset(pinmask);
@@ -347,6 +358,8 @@ operate_device(void)
 
                   message_buffer.index = PARAMETER_START+7;
               } else {
+/*            Any other read addresses fail
+*/
                 response_opcode = COMMAND_FAIL;
                 message_buffer.index = PARAMETER_START-1;
               }
@@ -385,27 +398,35 @@ device_specific_init(void)
     {
     pinmask = register_pinmask_map[i];
 
-    if (onewire_reset(pinmask))
+    if (onewire_reset(pinmask) && ReadDS2405(register_rom_map[i], pinmask))
       {
-        // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
-        if(ReadDS2405(register_rom_map[i], pinmask))
-          send_onewire_rom_commands(i);
+      if(onewire_reset(pinmask))
+        send_onewire_rom_commands(i);
       }
     }
 }
 
-
+#if 0
 void do_tests(void)
 {
  unsigned char p,pinmask;
  p = 4;
  pinmask = register_pinmask_map[p-1];
- if (onewire_reset(pinmask))
+
+ while(TRUE)
    {
-     ReadDS2405(register_rom_map[p-1], pinmask);
+   if(onewire_reset(pinmask))
+     send_onewire_rom_commands(p-1);
+
+   if (onewire_reset(pinmask) && ReadDS2405(register_rom_map[p-1], pinmask))
+     P1_6 = 1;
+   else
+     P1_6 = 0;
+
+   delay_msec(500);
    }
- delay_msec(500);
 }
+#endif
 
 void
 main(void)
@@ -418,7 +439,7 @@ main(void)
   init_device_comm(HOST_ID, COMM_SPEED_9600_H);
 
   device_specific_init();
-  do_tests();
-  //operate_device();
+//  do_tests();
+  operate_device();
 
 }

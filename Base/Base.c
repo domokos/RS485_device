@@ -101,7 +101,7 @@ void delay_msec(unsigned int msec)
 
   reset_timeout(DELAY_TIMEOUT);
 
-  while ( !timeout_occured(DELAY_TIMEOUT, ONE_MS_TIMEOUT))
+  while ( !timeout_occured(DELAY_TIMEOUT, msec))
     {
       __asm nop __endasm;
     }             // Wait delaytime
