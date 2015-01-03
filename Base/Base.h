@@ -35,15 +35,19 @@ typedef __bit bool;
   #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
   #define UNSEEN_COMM_TIMER 3
   #define ONEWIRE_READ_DS2405_REQUIRED
+
 #elif defined MASTER_CONTROLLER_DEVICE
   #define UNSEEN_COMM_TIMER 3
+
 #elif defined MAIN_PANEL_SLAVE_DEVICE
   #define TEMP_CONV_TIMER 3
   #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
+
 #elif defined SIX_OWBUS_SLAVE_DEVICE
   #define TEMP_CONV_TIMER 3
   #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
   #define ONEWIRE_READ_DS2405_REQUIRED
+
 #else
   #error "Unknown device type for setting timer constants"
 #endif

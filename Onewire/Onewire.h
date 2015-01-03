@@ -41,10 +41,6 @@
 
 extern unsigned char ow_buf[9];
 
-// Onewire Bus port name
-#define ONEWIRE_BUS_PORT P3
-
-
 /*
  * Public module functions
  */

@@ -237,33 +237,33 @@ operate_device(void)
 
   bool got_message;
 
-  got_message = get_device_message();
-#if 0
-  /*
-  *    Watch communication activity on bus and reset the device outputs
-  *    if no communication is seen whithin timeout
-  */
-  if (!got_message)
-    {
-      if (timeout_occured(BUS_COMMUNICATION_WATCHDOG_TIMER, BUS_COMMUNICATION_TIMEOUT_MS))
-      {
-        // Re-initialize the device - shut every output down
-        device_specific_init();
-        init_device_comm(HOST_ID, COMM_SPEED_9600_H);
-
-        // Reset the timer
-        reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
-      }
-    } else {
-      reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
-    }
-#endif
-
   // The main loop of the device
   while (TRUE)
     {
       // Operate main device functions
       operate_onewire_temp_measurement();
+
+      got_message = get_device_message();
+#if 0
+      /*
+      *    Watch communication activity on bus and reset the device outputs
+      *    if no communication is seen whithin timeout
+      */
+      if (!got_message)
+        {
+          if (timeout_occured(BUS_COMMUNICATION_WATCHDOG_TIMER, BUS_COMMUNICATION_TIMEOUT_MS))
+          {
+            // Re-initialize the device - shut every output down
+            device_specific_init();
+            init_device_comm(HOST_ID, COMM_SPEED_9600_H);
+
+            // Reset the timer
+            reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+          }
+        } else {
+          reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+        }
+#endif
 
       // Take care of messaging
       if (got_message && !process_generic_messages())

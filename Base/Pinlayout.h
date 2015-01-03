@@ -16,19 +16,23 @@
   #define COMM_DIRECTION_PIN P1_7
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
+
 #elif defined MASTER_CONTROLLER_DEVICE
   #define WATCHDOG_PIN P3_5
   #define COMM_DIRECTION_PIN P1_0
+
 #elif defined MAIN_PANEL_SLAVE_DEVICE
   #define WATCHDOG_PIN P3_3
   #define COMM_DIRECTION_PIN P1_7
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P3
+
 #elif defined SIX_OWBUS_SLAVE_DEVICE
   #define WATCHDOG_PIN P3_5
   #define COMM_DIRECTION_PIN P1_7
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
+
 #else
   #error "No comm direction pin could be determined"
 #endif
