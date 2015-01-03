@@ -351,7 +351,8 @@ ReadDS2405(unsigned char register_romcode[], unsigned char pinmask)
 
   unsigned char bit_index, byte_index, bit_pair_read;
 
-  bit_index = byte_index = 0;
+  bit_index = 0;
+  byte_index = 7;
 
   // SearchROM active only command
   onewire_write_byte(CMD_ACTIVE_ONLY_SEARCH, pinmask);
@@ -375,14 +376,14 @@ ReadDS2405(unsigned char register_romcode[], unsigned char pinmask)
 
       if (bit_index == 8) // if the bit index is 8 then go to next ROM byte
       {
-          byte_index++;
+          byte_index--;
           bit_index = 0;
       }
 
     } while (byte_index < 8); //loop until through all ROM bytes 0-7 were matched
 
   // If search was successful then the device is active otherwise inactive
-  return byte_index == 8;
+  return byte_index == 0xff;
 }
 
 #endif /* ONEWIRE_READ_DS2405_REQUIRED */
