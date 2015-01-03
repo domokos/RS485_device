@@ -331,7 +331,11 @@ operate_device(void)
               if (onewire_reset(pinmask))
                 {
                   message_buffer.content[PARAMETER_START] = ReadDS2405(register_rom_map[p-1], pinmask);
-                  message_buffer.index = PARAMETER_START;
+
+                  for (p = 1; p < 9; p++)
+                    message_buffer.content[PARAMETER_START+p] =  ow_buf[p-1];
+
+                  message_buffer.index = PARAMETER_START+8;
                 } else {
                   response_opcode = COMMAND_FAIL;
                   message_buffer.index = PARAMETER_START-1;

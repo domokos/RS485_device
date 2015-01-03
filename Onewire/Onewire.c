@@ -351,11 +351,15 @@ ReadDS2405(unsigned char register_romcode[], unsigned char pinmask)
 
   unsigned char bit_index, byte_index, bit_pair_read;
 
-  bit_index = 0;
+  bit_index = 7;
   byte_index = 7;
 
   // SearchROM active only command
   onewire_write_byte(CMD_ACTIVE_ONLY_SEARCH, pinmask);
+
+  unsigned char i;
+
+  for(i=0;i<8;i++) ow_buf[i]=0;
 
   do
     // for all eight bytes
@@ -367,17 +371,18 @@ ReadDS2405(unsigned char register_romcode[], unsigned char pinmask)
         bit_pair_read |= 1; // and set its complement
 
       if (bit_pair_read == 3) // there are no more matching devices on the 1-Wire
+        ow_buf[byte_index] | = (0x80 >> bit_index)
         break;
 
       // Write the bit of the ROM code
       onewire_write_bit((unsigned int) ((pinmask << 8) | (register_romcode[byte_index] >> bit_index))); // ROM search write
 
-      bit_index++; // increment bit_index
+      bit_index--; // increment bit_index
 
-      if (bit_index == 8) // if the bit index is 8 then go to next ROM byte
+      if (bit_index == 0xff) // if the bit index is 8 then go to next ROM byte
       {
           byte_index--;
-          bit_index = 0;
+          bit_index = 7;
       }
 
     } while (byte_index < 8); //loop until through all ROM bytes 0-7 were matched
