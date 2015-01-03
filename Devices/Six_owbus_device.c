@@ -51,9 +51,9 @@ __code const unsigned char register_rom_map[][8] =
       // Upstairs temp sensor - 286A0B5001000011 - Bus2
         { 0x28, 0x6a, 0x0b, 0x50, 0x01, 0x00, 0x00, 0x11 },
       // Living floor valve - 055E053200000069 - Bus1
-//        { 0x05, 0x5e, 0x05, 0x32, 0x00, 0x00, 0x00, 0x69 },
+        { 0x05, 0x5e, 0x05, 0x32, 0x00, 0x00, 0x00, 0x69 },
 //        Test device: 05 CE E1 31 000000 95
-        { 0x05, 0xce, 0xe1, 0x31, 0x00, 0x00, 0x00, 0x95 },
+//        { 0x05, 0xce, 0xe1, 0x31, 0x00, 0x00, 0x00, 0x95 },
       // Upstairs floor valve - 05200232000000B3 - Bus2
         { 0x05, 0x20, 0x02, 0x32, 0x00, 0x00, 0x00, 0xb3 } };
 
@@ -406,28 +406,6 @@ device_specific_init(void)
     }
 }
 
-#if 0
-void do_tests(void)
-{
- unsigned char p,pinmask;
- p = 4;
- pinmask = register_pinmask_map[p-1];
-
- while(TRUE)
-   {
-   if(onewire_reset(pinmask))
-     send_onewire_rom_commands(p-1);
-
-   if (onewire_reset(pinmask) && ReadDS2405(register_rom_map[p-1], pinmask))
-     P1_6 = 1;
-   else
-     P1_6 = 0;
-
-   delay_msec(500);
-   }
-}
-#endif
-
 void
 main(void)
 {
@@ -439,7 +417,5 @@ main(void)
   init_device_comm(HOST_ID, COMM_SPEED_9600_H);
 
   device_specific_init();
-//  do_tests();
   operate_device();
-
 }
