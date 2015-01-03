@@ -227,6 +227,8 @@ operate_onewire_temp_measurement(void)
 
   if (conv_complete)
     {
+      // Not very nice to use a bitmap but we need to spare bytes for the stack to keep things safe:(
+      // This bitmap is used to keep track of register conversion initiation information
       register_testmask = 0x01 << register_to_address;
 
       // Evaluate side effect: Only read until read is succesful
@@ -238,7 +240,7 @@ operate_onewire_temp_measurement(void)
         register_conv_initiated |= register_testmask;
 
       // Reset the conversion timer and set the complete flag so we
-      // can wait for conversion time expiry on the next bus - if there is one
+      // can wait for conversion time expiry of the next device
       reset_timeout(TEMP_CONV_TIMER);
       conv_complete = FALSE;
 

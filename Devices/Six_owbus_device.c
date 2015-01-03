@@ -14,53 +14,46 @@
 
 __code const unsigned char nr_of_registers = 8;
 
-#define NR_OF_TEMP_SENSORS 6
-#define NR_OF_OW_BUSES 6
+#define NR_OF_TEMP_SENSORS 3
 #define SINGLE_DEVICE_ON_BUS 0
 
 // Describe the registers of this device
 __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
   {
-  // Furnace temp sensor
+      // External temp sensor - Bus3
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // HW temp sensor
+      // Living temp sensor - Bus3
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // Basement temp sensor
+      // Upstairs temp sensor - Bus2
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // Return temp sensor
-        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // Floor water temp sensor
-        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // Spare1 temp sensor
-        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION } // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
+      // Living floor valve - Bus1
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE }, // DS2405
+      // Upstairs floor valve - Bus2
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE } // DS2405
   };
 
 /*
  * Onewire specific declarations and defines
  */
 // Map registers to onewire buses: Register N is on P1_N
-__code const unsigned char register_pinmask_map[6] =
-  { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20 };
+__code const unsigned char register_pinmask_map[5] =
+  { 0x04, 0x04, 0x02, 0x01, 0x02};
 
 // Store 64 bit rom values of registers/devices
-__code const unsigned char register_rom_map[][8] =
+__code const unsigned char register_rom_map[][5] =
   {
-  // First byte is zero, only one device on bus other chars are ignored
-        { SINGLE_DEVICE_ON_BUS, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-      // First byte is zero, only one device on bus other chars are ignored
-        { SINGLE_DEVICE_ON_BUS, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-      // First byte is zero, only one device on bus other chars are ignored
-        { SINGLE_DEVICE_ON_BUS, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-      // First byte is zero, only one device on bus other chars are ignored
-        { SINGLE_DEVICE_ON_BUS, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-      // First byte is zero, only one device on bus other chars are ignored
-        { SINGLE_DEVICE_ON_BUS, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-      // First byte is zero, only one device on bus
-        { SINGLE_DEVICE_ON_BUS, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+      // External temp sensor - 28CBD248010000F3 - Bus3
+        { 0x28, 0xcb, 0xd2, 0x48, 0x01, 0x00, 0x00, 0xf3 },
+      // Living temp sensor - 280AEA48010000E1 - Bus3
+        { 0x28, 0x0a, 0xea, 0x48, 0x01, 0x00, 0x00, 0xe1 },
+      // Upstairs temp sensor - 286A0B5001000011 - Bus2
+        { 0x28, 0x6a, 0x0b, 0x50, 0x01, 0x00, 0x00, 0x11 },
+      // Living floor valve - 055E053200000069 - Bus1
+        { 0x05, 0x5e, 0x05, 0x32, 0x00, 0x00, 0x00, 0x69 },
+      // Upstairs floor valve - 05200232000000B3 - Bus2
+        { 0x05, 0x20, 0x02, 0x32, 0x00, 0x00, 0x00, 0xb3 } };
 
 bool conv_complete;
-bool bus0_conv_initiated, bus1_conv_initiated, bus2_conv_initiated;
-bool bus3_conv_initiated, bus4_conv_initiated, bus5_conv_initiated;
 
 // Buffer to store Temperatures and temp reading timeout
 // temperatures are initialized @ 0C. At each unsuccesful reset or read attempt
@@ -69,7 +62,7 @@ int temperatures[NR_OF_TEMP_SENSORS];
 
 // Sensors are read in a circular manner. One cycle completes in time equal to the conversion
 // time. This variable holds the id of the sensor to be addressed next during the cycle.
-unsigned char bus_to_address;
+unsigned char register_to_address, register_conv_initiated;
 
 /*
  * Functions of the device
@@ -160,6 +153,7 @@ read_DS18xxx(unsigned char register_id)
     }
 }
 
+#if 0 // Not used now
 // Return if conversion command is sent succesfully
 // It takes a reference to a specific device but issues convert on the entire bus
 bool
@@ -175,62 +169,60 @@ issue_convert_on_bus(unsigned char register_id)
     }
   return FALSE;
 }
+#endif
+
+// Return if conversion command is sent succesfully
+// It takes a reference to a specific device and issues the convert command specificly for it
+bool
+issue_convert_for_device(unsigned char register_id)
+{
+  unsigned char pinmask = register_pinmask_map[register_id];
+
+  if (onewire_reset(pinmask))
+    {
+      send_onewire_rom_commands(register_id);
+      onewire_write_byte(CMD_CONVERT_T, pinmask);
+      return TRUE;
+    }
+  return FALSE;
+}
 
 // Keep conversions going on for each sensor on each onewire bus
 void
 operate_onewire_temp_measurement(void)
 {
-  conv_complete |= timeout_occured(TEMP_CONV_TIMER,
-      DS18x20_CONV_TIME / NR_OF_OW_BUSES);
+  {
+    unsigned char register_testmask;
 
-  if (conv_complete)
-    {
-      switch (bus_to_address)
-        {
-      case 0:
-        if (bus0_conv_initiated)
-          read_DS18xxx(0);
-        bus0_conv_initiated = issue_convert_on_bus(0);
-        bus_to_address = 1;
-        break;
-      case 1:
-        if (bus1_conv_initiated)
-          read_DS18xxx(1);
-        bus1_conv_initiated = issue_convert_on_bus(1);
-        bus_to_address = 2;
-        break;
-      case 2:
-        if (bus2_conv_initiated)
-          read_DS18xxx(2);
-        bus2_conv_initiated = issue_convert_on_bus(2);
-        bus_to_address = 3;
-        break;
-      case 3:
-        if (bus3_conv_initiated)
-          read_DS18xxx(3);
-        bus3_conv_initiated = issue_convert_on_bus(3);
-        bus_to_address = 4;
-        break;
-      case 4:
-        if (bus4_conv_initiated)
-          read_DS18xxx(4);
-        bus4_conv_initiated = issue_convert_on_bus(4);
-        bus_to_address = 5;
-        break;
-      case 5:
-        if (bus5_conv_initiated)
-          read_DS18xxx(5);
-        bus5_conv_initiated = issue_convert_on_bus(5);
-        bus_to_address = 0;
-        break;
-        }
+    if (conv_complete)
+      {
+        // Not very nice to use a bitmap but we need to spare bytes for the stack to keep things safe:(
+        // This bitmap is used to keep track of register conversion initiation information
+        register_testmask = 0x01 << register_to_address;
 
-      // Reset the conversion timer and clear the complete flag so we
-      // can wait for conversion time expiry on the next bus
-      reset_timeout(TEMP_CONV_TIMER);
-      conv_complete = FALSE;
-    }
-}
+        // Evaluate side effect: Only read until read is succesful
+        if (register_conv_initiated & register_testmask)
+            read_DS18xxx(register_to_address);
+
+        register_conv_initiated &= ~register_testmask;
+        if (issue_convert_for_device(register_to_address))
+          register_conv_initiated |= register_testmask;
+
+        // Reset the conversion timer and set the complete flag so we
+        // can wait for conversion time expiry of the next device
+        reset_timeout(TEMP_CONV_TIMER);
+        conv_complete = FALSE;
+
+        if(++register_to_address == NR_OF_TEMP_SENSORS)
+          register_to_address = 0;
+      }
+    else
+      {
+        conv_complete = timeout_occured(TEMP_CONV_TIMER,
+            (DS18x20_CONV_TIME / NR_OF_TEMP_SENSORS) + 50);
+      }
+  }
+
 
 void
 operate_device(void)
@@ -270,29 +262,6 @@ operate_device(void)
                 message_buffer.index = PARAMETER_START + 1;
 
                 response_opcode = COMMAND_SUCCESS;
-              }
-            // The next 6 registers return ROM values of sensors attached
-            else if (p < 13)
-              {
-                pinmask = register_pinmask_map[p - 6];
-                onewire_reset(pinmask);
-                onewire_write_byte(CMD_READ_ROM, pinmask);
-
-                p = 0;
-                do
-                  {
-                    message_buffer.content[PARAMETER_START + p] =
-                        onewire_read_byte(pinmask);
-                  }
-                while (++p < 8);
-                message_buffer.index = PARAMETER_START + 7;
-
-                if (message_buffer.content[PARAMETER_START + p]
-                    == calculate_onewire_crc(
-                        message_buffer.content + PARAMETER_START, 8))
-                  response_opcode = COMMAND_SUCCESS;
-                else
-                  response_opcode = COMMAND_FAIL;
               }
             else
               {

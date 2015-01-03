@@ -19,7 +19,7 @@ bool process_generic_messages();
  *  Structure is:
  *  1 byte - register type
  *  1 byte - read/write type
- *  1 byte - data length
+ *  1 byte - length of data returned by the register
  *  1 byte - type specific value1
  *  1 byte - type specific value2
  */
