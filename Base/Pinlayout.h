@@ -29,7 +29,7 @@
   #error "No comm direction pin could be determined"
 #endif
 
-#ifdef __CDT_PARSER__0
+#ifdef __CDT_PARSER__
   // Define the pins of the SPI interface of the MCP4161
   #define PIN_NCS_HW P1_0
   #define PIN_NCS_HEAT P1_1
