@@ -236,7 +236,7 @@ operate_device(void)
   bool got_message;
 
   got_message = get_device_message();
-
+#if 0
   /*
   *    Watch communication activity on bus and reset the device outputs
   *    if no communication is seen whithin timeout
@@ -255,6 +255,7 @@ operate_device(void)
     } else {
       reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
     }
+#endif
 
   // The main loop of the device
   while (TRUE)
@@ -360,7 +361,7 @@ operate_device(void)
 void
 device_specific_init(void)
 {
-  unsigned char i;
+  unsigned char i, pinmask;
 
   i = NR_OF_TEMP_SENSORS;
   while (i--)
@@ -376,6 +377,19 @@ device_specific_init(void)
 
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);
+
+  // Reset outputs
+  for(i=3;i<5;i++)
+    {
+    pinmask = register_pinmask_map[i];
+
+    if (onewire_reset(pinmask))
+      {
+        // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
+        if(ReadDS2405(register_rom_map[i], pinmask))
+          send_onewire_rom_commands(i);
+      }
+    }
 }
 
 void
