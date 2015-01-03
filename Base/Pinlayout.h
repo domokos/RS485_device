@@ -29,7 +29,7 @@
 
 #elif defined SIX_OWBUS_SLAVE_DEVICE
   #define WATCHDOG_PIN P3_5
-  #define COMM_DIRECTION_PIN P1_7
+  #define COMM_DIRECTION_PIN P3_7
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
 
