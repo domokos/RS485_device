@@ -20,6 +20,7 @@
 #define CMD_CONVERT_T           0x44
 #define CMD_READ_SCRATCHPAD     0xBE
 #define CMD_WRITE_SCRATCHPAD    0x4E
+#define CMD_ACTIVE_ONLY_SEARCH  0xEC
 
 
 // The masks used to manipulate temp timeout values
@@ -60,6 +61,12 @@ unsigned char onewire_read_byte(unsigned char pinmask);
 
 // Check the crc of the onewire bus message
 unsigned char calculate_onewire_crc(unsigned char *p, unsigned char num);
+
+#ifdef ONEWIRE_READ_DS2405_REQUIRED
+// Read the value of a DS2405
+bool ReadDS2405(unsigned char register_romcode[], unsigned char pinmask);
+#endif /* ONEWIRE_READ_DS2405_REQUIRED */
+
 
 /*
  * Internal utility functions

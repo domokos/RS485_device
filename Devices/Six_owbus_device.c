@@ -9,6 +9,8 @@
 #include "Onewire.h"
 #include "Generic_device.h"
 
+void device_specific_init();
+
 // The id of this host on the bus
 #define HOST_ID 10
 
@@ -40,7 +42,7 @@ __code const unsigned char register_pinmask_map[5] =
   { 0x04, 0x04, 0x02, 0x01, 0x02};
 
 // Store 64 bit rom values of registers/devices
-__code const unsigned char register_rom_map[][5] =
+__code const unsigned char register_rom_map[][8] =
   {
       // External temp sensor - 28CBD248010000F3 - Bus3
         { 0x28, 0xcb, 0xd2, 0x48, 0x01, 0x00, 0x00, 0xf3 },
@@ -222,7 +224,7 @@ operate_onewire_temp_measurement(void)
             (DS18x20_CONV_TIME / NR_OF_TEMP_SENSORS) + 50);
       }
   }
-
+}
 
 void
 operate_device(void)
@@ -231,6 +233,29 @@ operate_device(void)
   // Create messaging variables
   unsigned char response_opcode = RESPONSE_UNDEFINED, p, pinmask;
 
+  bool got_message;
+
+  got_message = get_device_message();
+
+  /*
+  *    Watch communication activity on bus and reset the device outputs
+  *    if no communication is seen whithin timeout
+  */
+  if (!got_message)
+    {
+      if (timeout_occured(BUS_COMMUNICATION_WATCHDOG_TIMER, BUS_COMMUNICATION_TIMEOUT_MS))
+      {
+        // Re-initialize the device - shut every output down
+        device_specific_init();
+        init_device_comm(HOST_ID, COMM_SPEED_9600_H);
+
+        // Reset the timer
+        reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+      }
+    } else {
+      reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+    }
+
   // The main loop of the device
   while (TRUE)
     {
@@ -238,7 +263,7 @@ operate_device(void)
       operate_onewire_temp_measurement();
 
       // Take care of messaging
-      if (get_device_message() && !process_generic_messages())
+      if (got_message && !process_generic_messages())
         {
           // Set response opcode to undefined to ensure issue identification
           response_opcode = RESPONSE_UNDEFINED;
@@ -246,26 +271,81 @@ operate_device(void)
           switch (message_buffer.content[OPCODE])
             {
           case SET_REGISTER:
-            response_opcode = COMMAND_FAIL;
+            // p holds register to write
+            p = message_buffer.content[PARAMETER_START];
+
+            // Preset response opcode to success
+            response_opcode = COMMAND_SUCCESS;
+
+            if(p>0 && p<3)
+              {
+/*          Address 1:  External temp sensor
+*           Address 2:  Living temp sensor
+*           Address 3:  Upstairs temp sensor
+*/
+                // Read-only temp registers - command fails
+                response_opcode = COMMAND_FAIL;
+              } else if( p<6 ) {
+/*          Address 4:  Living floor valve
+*           Address 5:  Upstairs floor valve
+*/
+              pinmask = register_pinmask_map[p-1];
+
+              if (onewire_reset(pinmask))
+                {
+                  // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
+                  if((message_buffer.content[PARAMETER_START + 1] > 0) != ReadDS2405(register_rom_map[p-1], pinmask))
+                    send_onewire_rom_commands(p-1);
+                } else {
+                  response_opcode = COMMAND_FAIL;
+                }
+              } else {
+                response_opcode = COMMAND_FAIL;
+              }
+            message_buffer.index = PARAMETER_START-1;
             break;
           case READ_REGISTER:
-            // p holds register to read
+            // p holds register to write
             p = message_buffer.content[PARAMETER_START];
-            // Branch based on register number
-            // The first 6 registers read temperatures
-            if (p < 7)
-              {
-                message_buffer.content[PARAMETER_START] = temperatures[p - 1]
-                    & 0x00ff;
-                message_buffer.content[PARAMETER_START + 1] = (temperatures[p
-                    - 1] >> 8) & 0x00ff;
-                message_buffer.index = PARAMETER_START + 1;
 
-                response_opcode = COMMAND_SUCCESS;
-              }
-            else
+            // Preset response opcode to success
+            response_opcode = COMMAND_SUCCESS;
+
+            if(p>0 && p<3)
               {
+/*          Address 1:  External temp sensor
+*           Address 2:  Living temp sensor
+*           Address 3:  Upstairs temp sensor
+*/
+                message_buffer.content[PARAMETER_START] = temperatures[p - 1] & 0x00ff;
+                message_buffer.content[PARAMETER_START + 1] = (temperatures[p- 1] >> 8) & 0x00ff;
+                message_buffer.index = PARAMETER_START + 1;
+              } else if( p<6 ) {
+/*          Address 4:  Living floor valve
+*           Address 5:  Upstairs floor valve
+*/
+              pinmask = register_pinmask_map[p-1];
+              if (onewire_reset(pinmask))
+                {
+                  message_buffer.content[PARAMETER_START] = ReadDS2405(register_rom_map[p-1], pinmask);
+                  message_buffer.index = PARAMETER_START;
+                } else {
+                  response_opcode = COMMAND_FAIL;
+                  message_buffer.index = PARAMETER_START-1;
+                }
+              } else if (p == 6){
+                  pinmask = register_pinmask_map[0];
+
+                  onewire_reset(pinmask);
+                  onewire_write_byte(CMD_READ_ROM, pinmask);
+
+                  for (p = 0; p < 8; p++)
+                    message_buffer.content[PARAMETER_START+p] =  onewire_read_byte(pinmask);
+
+                  message_buffer.index = PARAMETER_START+7;
+              } else {
                 response_opcode = COMMAND_FAIL;
+                message_buffer.index = PARAMETER_START-1;
               }
             break;
           default:
@@ -290,16 +370,9 @@ device_specific_init(void)
   set_temp_resolution(0, TEMP_RESOLUTION_12BIT);
   set_temp_resolution(1, TEMP_RESOLUTION_12BIT);
   set_temp_resolution(2, TEMP_RESOLUTION_12BIT);
-  set_temp_resolution(3, TEMP_RESOLUTION_12BIT);
-  set_temp_resolution(4, TEMP_RESOLUTION_12BIT);
-  set_temp_resolution(5, TEMP_RESOLUTION_12BIT);
 
   // We need to start a new conversion so it is complete on init
   conv_complete = TRUE;
-
-  bus0_conv_initiated = bus1_conv_initiated = bus2_conv_initiated = FALSE;
-  bus3_conv_initiated = bus4_conv_initiated = bus5_conv_initiated = FALSE;
-  bus_to_address = 0;
 
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);

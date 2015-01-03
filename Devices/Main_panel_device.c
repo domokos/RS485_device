@@ -423,12 +423,14 @@ operate_device(void)
               message_buffer.index = PARAMETER_START+7;
               } else {
               response_opcode = COMMAND_FAIL;
+              message_buffer.index = PARAMETER_START-1;
               }
             break;
 
           // Any other message code fails
           default:
             response_opcode = COMMAND_FAIL;
+            message_buffer.index = PARAMETER_START-1;
             break;
             }
           send_response(response_opcode);
