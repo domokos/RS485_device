@@ -389,6 +389,7 @@ device_specific_init(void)
 
   // We need to start a new conversion so it is complete on init
   conv_complete = TRUE;
+  register_to_address = 0;
 
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);
