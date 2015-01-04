@@ -280,7 +280,7 @@ operate_device(void)
             // Preset response opcode to success
             response_opcode = COMMAND_SUCCESS;
 
-            if(p>0 && p<3)
+            if(p>0 && p<=3)
               {
 /*          Address 1:  External temp sensor
 *           Address 2:  Living temp sensor
@@ -288,7 +288,7 @@ operate_device(void)
 */
                 // Read-only temp registers - command fails
                 response_opcode = COMMAND_FAIL;
-              } else if( p<6 ) {
+              } else if( p<=5 ) {
 /*          Address 4:  Living floor valve
 *           Address 5:  Upstairs floor valve
 */
@@ -323,7 +323,7 @@ operate_device(void)
             // Preset response opcode to success
             response_opcode = COMMAND_SUCCESS;
 
-            if(p>0 && p<3)
+            if(p>0 && p<=3)
               {
 /*          Address 1:  External temp sensor
 *           Address 2:  Living temp sensor
@@ -332,7 +332,7 @@ operate_device(void)
                 message_buffer.content[PARAMETER_START] = temperatures[p - 1] & 0x00ff;
                 message_buffer.content[PARAMETER_START + 1] = (temperatures[p- 1] >> 8) & 0x00ff;
                 message_buffer.index = PARAMETER_START + 1;
-              } else if( p<6 ) {
+              } else if( p<=5 ) {
 /*          Address 4:  Living floor valve
 *           Address 5:  Upstairs floor valve
 */
