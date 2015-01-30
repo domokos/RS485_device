@@ -26,6 +26,7 @@
   #define COMM_DIRECTION_PIN P1_7
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P3
+  #define HEATER_RELAY_PIN P3_5 // Heater contact
 
 #elif defined SIX_OWBUS_SLAVE_DEVICE
   #define WATCHDOG_PIN P3_5
@@ -33,8 +34,14 @@
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
 
+#elif defined MIXER_CONTROL_SLAVE_DEVICE
+  #define WATCHDOG_PIN P3_5
+  #define COMM_DIRECTION_PIN P3_7
+  // Define on which port the onewire interface is
+  #define ONEWIRE_IS_ON_P1
+
 #else
-  #error "No comm direction pin could be determined"
+  #error "No basic pinlayout could be determined"
 #endif
 
 #ifdef __CDT_PARSER__

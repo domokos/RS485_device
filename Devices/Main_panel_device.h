@@ -12,8 +12,6 @@
 #include "MCP4161.h"
 #include "SingleExtender.h"
 
-#define HEATER_RELAY_PIN P3_5 // Heater contact
-
 // Onewire functions
 bool set_temp_resolution_on_bus(unsigned char register_id, unsigned char resolution);
 void scale_DS18S20_result(unsigned char register_id);
