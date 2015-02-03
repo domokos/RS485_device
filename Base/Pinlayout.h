@@ -12,10 +12,11 @@
  *  This section defines the pins assignments the microcontroller
  */
 #ifdef __CDT_PARSER__
-  #define WATCHDOG_PIN P3_5
-  #define COMM_DIRECTION_PIN P1_7
+  #define WATCHDOG_PIN
+  #define COMM_DIRECTION_PIN
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
+  #define HEATER_RELAY_PIN // Heater contact
 
 #elif defined MASTER_CONTROLLER_DEVICE
   #define WATCHDOG_PIN P3_5

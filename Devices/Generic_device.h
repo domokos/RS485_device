@@ -31,6 +31,7 @@ extern __code const unsigned char nr_of_registers;
 #define REG_TYPE_SW 1  // Switch register
 #define REG_TYPE_INPUT 2 // Input register
 #define REG_TYPE_DATA 3 // Data register
+
 /*
  * Takes 3 parameters
  * 1st byte: On time in 10th seconds
@@ -40,9 +41,16 @@ extern __code const unsigned char nr_of_registers;
  */
 #define REG_TYPE_PWM2 4  // 2 pin PWM switch control register
 
+/*
+ * This type of register takes a pulse length parameter which
+ * corresponds to the pulse length required in 10th seconds
+ */
+#define REG_TYPE_PULSE 4 // Pulse output register
+
 // Register read-wtite types
 #define REG_RO 0
 #define REG_RW 1
+#define REG_WO 2
 
 /*
  * Register type specific values
