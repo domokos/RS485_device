@@ -31,24 +31,31 @@ typedef __bit bool;
 #define DELAY_TIMEOUT 2
 
 #ifdef __CDT_PARSER__
-  #define TEMP_CONV_TIMER 3
-  #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
-  #define UNSEEN_COMM_TIMER 3
+  #define TEMP_CONV_TIMER
+  #define BUS_COMMUNICATION_WATCHDOG_TIMER
+  #define UNSEEN_COMM_TIMER
   #define ONEWIRE_READ_DS2405_REQUIRED
+  #define PULSING_OUTPUT_TIMER
+  #define NR_OF_TIMERS
 
 #elif defined MASTER_CONTROLLER_DEVICE
+  #define NR_OF_TIMERS 4
   #define UNSEEN_COMM_TIMER 3
 
 #elif defined MAIN_PANEL_SLAVE_DEVICE
+  #define NR_OF_TIMERS 5
   #define TEMP_CONV_TIMER 3
   #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
 
 #elif defined SIX_OWBUS_SLAVE_DEVICE
+  #define NR_OF_TIMERS 4
   #define TEMP_CONV_TIMER 3
   #define ONEWIRE_READ_DS2405_REQUIRED
 
 #elif defined MIXER_CONTROL_SLAVE_DEVICE
+  #define NR_OF_TIMERS 5
   #define TEMP_CONV_TIMER 3
+  #define PULSING_OUTPUT_TIMER 4
 
 #else
   #error "Unknown device for setting timer constants"

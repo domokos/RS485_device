@@ -15,11 +15,10 @@
 /*
  * Define registers of this device
  */
-// This device has 9 registers
-__code const unsigned char nr_of_registers = 9;
+// This device has 10 registers
+__code const unsigned char nr_of_registers = 10;
 
 #define NR_OF_TEMP_SENSORS 5
-#define NR_OF_OW_BUSES 4
 
 // Describe the registers of this device
 __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
@@ -35,13 +34,15 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // Lower buffer sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
 
-      // CW valve output - Contact ?
+      // CW valve output - Contact CW
         { REG_TYPE_PULSE, REG_WO, 2, DONT_CARE, DONT_CARE },
-      // CCW valve output - Contact ?
+      // CCW valve output - Contact CCW
         { REG_TYPE_PULSE, REG_WO, 2, DONT_CARE, DONT_CARE },
-      // Spare switch 1 - Contact ?
+      // Spare switch A - Contact SPA
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // Spare switch 2 - Contact ?
+      // Spare switch B - Contact SPB
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // GPIO switch 2 - Contact 1 on the lowpower part of the pcb
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE } };
 
 
@@ -50,8 +51,8 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
  */
 
 // Map registers to onewire buses all registers are P3_3
-__code const unsigned char register_pinmask_map[4] =
-  {0x01, 0x02, 0x04, 0x08};
+__code const unsigned char register_pinmask_map[5] =
+  {0x01, 0x02, 0x02, 0x04, 0x04};
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
@@ -80,6 +81,11 @@ int temperatures[NR_OF_TEMP_SENSORS];
 // time. This variable holds the id of the sensor to be addressed next during the cycle.
 unsigned char register_to_address;
 
+
+/*
+ * Pulsing output specific variables and defines
+ */
+unsigned char pulsing_duration;
 
 /*
  * Functions of the device
@@ -204,6 +210,47 @@ operate_onewire_temp_measurement(void)
     }
 }
 
+/*
+ * Define the functions of the pulse output
+ */
+
+// Pulse the output for pulse_time* 1/10 second
+
+void operate_pulsing()
+{
+  // Return if pulsing is not active in any direction
+  if (!(CCW_PIN || CW_PIN))
+    return;
+
+  // We know that one of the pulse outputs is active
+  // Deactivate pulsing output if pulsing timeout occured
+  if(timeout_occured(PULSING_OUTPUT_TIMER, pulsing_duration*100))
+    {
+      CCW_PIN = 0;
+      CW_PIN = 0;
+    }
+}
+
+bool start_output_pulse(direction_type direction, unsigned char pulse_time)
+{
+  // Return if pulsing is active in any direction
+  if (CCW_PIN || CW_PIN)
+    return FALSE;
+
+  // Activate the proper output
+  if (direction == DIRECTION_CW)
+    {
+      CW_PIN = 1;
+    } else { // direction == DIRECTION_CCW
+      CCW_PIN = 1;
+    }
+
+  reset_timeout(PULSING_OUTPUT_TIMER);
+  pulsing_duration = pulse_time;
+  return TRUE;
+}
+
+
 void
 operate_device(void)
 {
@@ -216,6 +263,9 @@ operate_device(void)
     {
       // Operate main device functions
       operate_onewire_temp_measurement();
+
+      // Operate pulsing
+      operate_pulsing();
 
       // Take care of messaging
       if (get_device_message() && !process_generic_messages())
@@ -232,45 +282,48 @@ operate_device(void)
             // Preset response opcode to success
             response_opcode = COMMAND_SUCCESS;
 
-            if ( p>0 && p<=4 )
-              {
-/*          Address 1:  HW temp sensor
-*           Address 2:  Basement temp sensor
+            switch (p)
+            {
+/*          Address 1:  Forward temp sensor
+*           Address 2:  Incoming temp sensor
 *           Address 3:  Return temp sensor
-*           Address 4:  Hidr Shift temp sensor
+*           Address 4:  Upper Buffer temp sensor
+*           Address 5:  Lower Buffer temp sensor
 */
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
               response_opcode = COMMAND_FAIL;
-              } else if( p <= 12 ) {
-/*
-*           Address 5:  Buffertop valve - Contact 2
-*           Address 6:  Return valve - Contact 3
-*           Address 7:  Radiator pump - Contact 4
-*           Address 8:  Floor pump - Contact 5
-*           Address 9:  Hidraulic Shifter pump - Contact 6
-*           Address 10:  HW pump - Contact 7
-*           Address 11:  Basement radiator valve Contact 8
-*           Address 12:  Basement floor valve - Contact 9
-*/
-               write_extender(p-5, message_buffer.content[PARAMETER_START + 1] > 0);
-              } else if(p == 13) {
-/*          Address 13: Heater relay P3_5 - Heater contact */
-              HEATER_RELAY_PIN = message_buffer.content[PARAMETER_START + 1] > 0;
-              } else if(p <= 15) {
-/*
-*           Temp wipers - expected data format:
-*           Byte 1 & 2 - 9 bits of data holdiong the desired wiper setting
-*           Byte 3 - bool flag - is volatile
-*           Address 14: HW Wiper
-*           Address 15: Heating Wiper
-*/
-              if (!write_wiper(
-                  (message_buffer.content[PARAMETER_START+1] << 8) | message_buffer.content[PARAMETER_START+2] ,
-                  message_buffer.content[PARAMETER_START + 3]>0,
-                  p == 14 ? WIPER_HW : WIPER_HEAT))
+              break;
+
+             // Address 6:  CW output - Contact CW
+            case 6:
+              if(!start_output_pulse(DIRECTION_CW, message_buffer.content[PARAMETER_START+1]))
                 response_opcode = COMMAND_FAIL;
-              } else {
-/*          Any other address fails */
+              break;
+             // Address 7:  CCW output - Contact CCW
+            case 7:
+              if(!start_output_pulse(DIRECTION_CCW, message_buffer.content[PARAMETER_START+1]))
+                response_opcode = COMMAND_FAIL;
+              break;
+            // Address 8:  SPA switch - Contact SPA
+            case 8:
+              SPAREA_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
+              break;
+            // Address 9:  SPB switch - Contact SPB
+            case 9:
+              SPAREB_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
+              break;
+            // Address 10:  GPIO - Contact 1 on the low power part
+            case 10:
+              GPIO_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
+              break;
+            // Any other address fails
+            default:
               response_opcode = COMMAND_FAIL;
+              break;
             }
 
             message_buffer.index = PARAMETER_START-1;
@@ -284,57 +337,65 @@ operate_device(void)
             // Preset response opcode to success
             response_opcode = COMMAND_SUCCESS;
 
-            if ( p>0 && p<=4 )
-              {
-/*          Address 1:  HW temp sensor
-*           Address 2:  Basement temp sensor
+            switch (p)
+            {
+/*          Address 1:  Forward temp sensor
+*           Address 2:  Incoming temp sensor
 *           Address 3:  Return temp sensor
-*           Address 4:  Hidr Shift temp sensor
+*           Address 4:  Upper Buffer temp sensor
+*           Address 5:  Lower Buffer temp sensor
 */
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
               message_buffer.content[PARAMETER_START] = temperatures[p - 1] & 0x00ff;
               message_buffer.content[PARAMETER_START + 1] = (temperatures[p- 1] >> 8) & 0x00ff;
               message_buffer.index = PARAMETER_START + 1;
-              } else if( p <= 12 ) {
-/*
-*           Address 5:  Buffertop valve - Contact 2
-*           Address 6:  Return valve - Contact 3
-*           Address 7:  Radiator pump - Contact 4
-*           Address 8:  Floor pump - Contact 5
-*           Address 9:  Hidraulic Shifter pump - Contact 6
-*           Address 10:  HW pump - Contact 7
-*           Address 11:  Basement radiator valve Contact 8
-*           Address 12:  Basement floor valve - Contact 9
-*/
-              message_buffer.content[PARAMETER_START] = get_extender_value(p-5);
-              message_buffer.index = PARAMETER_START;
-              } else if(p == 13) {
- /*          Address 13: Heater relay P3_5 - Heater contact */
-              message_buffer.content[PARAMETER_START] = HEATER_RELAY_PIN;
-              message_buffer.index = PARAMETER_START;
-              } else if(p <= 15) {
-/*
-*             Temp wipers - expected data format:
-*             Byte 1 - bool flag - is volatile
-*             Address 14: HW Wiper
-*             Address 15: Heating Wiper
-*/
-              read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START+1]>0, p == 14 ? WIPER_HW : WIPER_HEAT);
-              message_buffer.index = PARAMETER_START+1;
-              } else if(p == 16) {
-/* Test address to read rom on onewire bus - a single device should be connected to the bus in this case */
+              break;
 
-              onewire_reset(0x04);
-              onewire_write_byte(CMD_READ_ROM, 0x04);
+             // Address 6:  CW output - Contact CW
+            case 6:
+              message_buffer.content[PARAMETER_START] = CW_PIN;
+              message_buffer.index = PARAMETER_START;
+              break;
+             // Address 7:  CCW output - Contact CCW
+            case 7:
+              message_buffer.content[PARAMETER_START] = CCW_PIN;
+              message_buffer.index = PARAMETER_START;
+              break;
+            // Address 8:  SPA switch - Contact SPA
+            case 8:
+              message_buffer.content[PARAMETER_START] = SPAREA_PIN;
+              message_buffer.index = PARAMETER_START;
+              break;
+            // Address 9:  SPB switch - Contact SPB
+            case 9:
+              message_buffer.content[PARAMETER_START] = SPAREB_PIN;
+              message_buffer.index = PARAMETER_START;
+              break;
+            // Address 10:  GPIO - Contact 1 on the low power part
+            case 10:
+              message_buffer.content[PARAMETER_START] = GPIO_PIN;
+              message_buffer.index = PARAMETER_START;
+              break;
+            // Any other address fails
+            case 11:
+              /* Test address to read rom on onewire bus - a single device should be connected to the bus in this case */
+              onewire_reset(0x01);
+              onewire_write_byte(CMD_READ_ROM, 0x01);
 
               for (p = 0; p < 8; p++)
-                message_buffer.content[PARAMETER_START+p] =  onewire_read_byte(0x04);
+                message_buffer.content[PARAMETER_START+p] =  onewire_read_byte(0x01);
 
               message_buffer.index = PARAMETER_START+7;
-              } else {
+              break;
+            default:
               response_opcode = COMMAND_FAIL;
               message_buffer.index = PARAMETER_START-1;
-              }
-            break;
+              break;
+            }
 
           // Any other message code fails
           default:
@@ -369,6 +430,9 @@ device_specific_init(void)
 
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);
+
+
+  SPAREA_PIN = SPAREB_PIN = CW_PIN = CCW_PIN = 0;
 }
 
 void

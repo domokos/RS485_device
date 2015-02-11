@@ -10,4 +10,6 @@
 
 #include "Slave_comm.h"
 
+typedef enum {DIRECTION_CW, DIRECTION_CCW} direction_type;
+
 #endif /* MIXER_CONTROLLER_H_ */
