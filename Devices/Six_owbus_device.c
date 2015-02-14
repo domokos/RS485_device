@@ -11,9 +11,6 @@
 
 void device_specific_init();
 
-// The id of this host on the bus
-#define HOST_ID 10
-
 __code const unsigned char nr_of_registers = 8;
 
 #define NR_OF_TEMP_SENSORS 3

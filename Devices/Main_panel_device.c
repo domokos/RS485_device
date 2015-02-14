@@ -8,9 +8,6 @@
 #include "Generic_device.h"
 #include "Main_panel_device.h"
 
-// The id of this host on the bus
-#define HOST_ID 11
-
 /*
  * Define registers of this device
  */

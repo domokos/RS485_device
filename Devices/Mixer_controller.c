@@ -8,10 +8,6 @@
 #include "Generic_device.h"
 #include "Mixer_controller.h"
 
-
-// The id of this host on the bus
-#define HOST_ID 12
-
 /*
  * Define registers of this device
  */

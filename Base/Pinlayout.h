@@ -12,17 +12,26 @@
  *  This section defines the pins assignments the microcontroller
  */
 #ifdef __CDT_PARSER__
+
+  #define MASTER_HOST_ID
+  #define HOST_ID
+
   #define WATCHDOG_PIN
   #define COMM_DIRECTION_PIN
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
-  #define HEATER_RELAY_PIN // Heater contact
 
 #elif defined MASTER_CONTROLLER_DEVICE
+  // Define the ID of this master
+  #define MASTER_HOST_ID 1
+
   #define WATCHDOG_PIN P3_5
   #define COMM_DIRECTION_PIN P1_0
 
 #elif defined MAIN_PANEL_SLAVE_DEVICE
+  // The id of this host on the bus
+  #define HOST_ID 11
+
   #define WATCHDOG_PIN P3_3
   #define COMM_DIRECTION_PIN P1_7
   // Define on which port the onewire interface is
@@ -30,12 +39,18 @@
   #define HEATER_RELAY_PIN P3_5 // Heater contact
 
 #elif defined SIX_OWBUS_SLAVE_DEVICE
+  // The id of this host on the bus
+  #define HOST_ID 10
+
   #define WATCHDOG_PIN P3_5
   #define COMM_DIRECTION_PIN P3_7
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
 
 #elif defined MIXER_CONTROL_SLAVE_DEVICE
+  // The id of this host on the bus
+  #define HOST_ID 12
+
   #define WATCHDOG_PIN P3_3
   #define COMM_DIRECTION_PIN P1_7
   // Define on which port the onewire interface is
@@ -51,6 +66,9 @@
   #define PIN_NCS_HEAT
   #define PIN_SCK
   #define PIN_SDI_SDO
+
+  // Main panel heater pin
+  #define HEATER_RELAY_PIN
 
   // Define the pins of the Extender interface of the MCP4161
   #define DS_PIN
@@ -72,6 +90,9 @@
   #define PIN_NCS_HEAT P1_1
   #define PIN_SCK P3_7
   #define PIN_SDI_SDO P3_4
+
+  // Heater contact
+  #define HEATER_RELAY_PIN P3_5
 
   // Define the pins of the Extender interface of the MCP4161
   #define DS_PIN P1_2

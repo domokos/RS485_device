@@ -7,9 +7,6 @@
 
 #include "Master_controller.h"
 
-#define MASTER_HOST_ID 1
-
-
 void main(void)
 {
   EA = 1;
