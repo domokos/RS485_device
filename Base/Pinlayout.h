@@ -36,8 +36,8 @@
   #define ONEWIRE_IS_ON_P1
 
 #elif defined MIXER_CONTROL_SLAVE_DEVICE
-  #define WATCHDOG_PIN P3_5
-  #define COMM_DIRECTION_PIN P3_7
+  #define WATCHDOG_PIN P3_3
+  #define COMM_DIRECTION_PIN P1_7
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
 
@@ -79,6 +79,10 @@
   #define STCP_PIN P1_4
   #define SHCP_PIN P1_5
   #define NMR_PIN P1_6
+
+#elif defined SIX_OWBUS_SLAVE_DEVICE
+
+
 #elif defined MIXER_CONTROL_SLAVE_DEVICE
 
   // Define pins of the mixer controller
