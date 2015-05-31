@@ -36,6 +36,7 @@ typedef __bit bool;
   #define UNSEEN_COMM_TIMER
   #define ONEWIRE_READ_DS2405_REQUIRED
   #define PULSING_OUTPUT_TIMER
+  #define LEVEL_MEASUREMENT_TIMER
   #define NR_OF_TIMERS
 
 #elif defined MASTER_CONTROLLER_DEVICE
@@ -56,6 +57,10 @@ typedef __bit bool;
   #define NR_OF_TIMERS 5
   #define TEMP_CONV_TIMER 3
   #define PULSING_OUTPUT_TIMER 4
+
+#elif defined LEVEL_MEASUREMENT_DEVICE
+  #define NR_OF_TIMERS 4
+  #define LEVEL_MEASUREMENT_TIMER 3
 
 #else
   #error "Unknown device for setting timer constants"
