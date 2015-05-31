@@ -14,12 +14,12 @@ static volatile unsigned int  event_counter0, event_counter1, event_rate0, event
  * Module private functions
  */
 
-ISR(TIMER0,0)
+ISR(EXT0,0)
   {
   event_counter0++;
   }
 
-ISR(TIMER1,0)
+ISR(EXT1,0)
   {
   event_counter1++;
   }
