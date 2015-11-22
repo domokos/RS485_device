@@ -27,9 +27,9 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // Return floor temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
  */
-      // Upper buffer sensor
+      // Forward sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // Lower buffer sensor
+      // Return sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
       // CW valve output - Contact CW
         { REG_TYPE_PULSE, REG_WO, 2, DONT_CARE, DONT_CARE },
@@ -49,7 +49,7 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
 
 // Map registers to onewire buses on P1
 __code const unsigned char register_pinmask_map[NR_OF_TEMP_SENSORS] =
-  {0x01, 0x02, 0x04};
+  {0x01, 0x02, 0x02};
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
@@ -63,10 +63,10 @@ __code const unsigned char register_rom_map[][8] =
       // Return floor temp sensor
         { 0x28, 0x91, 0x2d, 0x50, 0x01, 0x00, 0x00, 0xff },
 */
-      // Upper buffer sensor
-        { 0x28, 0x5a, 0xe6, 0x48, 0x01, 0x00, 0x00, 0xee },
-      // Lower buffer sensor
-        { 0x28, 0x5a, 0xe6, 0x48, 0x01, 0x00, 0x00, 0xee }};
+      // Forward sensor
+        { 0x28, 0x90, 0x2e, 0x50, 0x01, 0x00, 0x00, 0x86 },
+      // Return sensor
+        { 0x28, 0xd2, 0x04, 0x49, 0x01, 0x00, 0x00, 0x73 }};
 
 bool conv_complete;
 
@@ -301,9 +301,9 @@ operate_device(void)
 
             switch (p)
             {
-/*          Address 1:  Forward temp sensor
-*           Address 2:  Upper Buffer temp sensor
-*           Address 3:  Lower Buffer temp sensor
+/*          Address 1:  Forward mixer temp sensor
+*           Address 2:  Forward temp sensor
+*           Address 3:  Return temp sensor
 */
             case 1:
             case 2:
@@ -352,9 +352,9 @@ operate_device(void)
 
             switch (p)
             {
-/*          Address 1:  Forward temp sensor
-*           Address 2:  Upper Buffer temp sensor
-*           Address 3:  Lower Buffer temp sensor
+/*          Address 1:  Forward mixer temp sensor
+*           Address 2:  Forward temp sensor
+*           Address 3:  Return temp sensor
 */
             case 1:
             case 2:
