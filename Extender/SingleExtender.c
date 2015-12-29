@@ -65,7 +65,7 @@ __bit get_extender_value(unsigned char reg_nr)
 {
   unsigned char mask;
 
-  mask = 0x01 << reg_nr;
+  mask = 0x80 >> reg_nr;
 
   return (extender_buffer & mask) > 0;
 }

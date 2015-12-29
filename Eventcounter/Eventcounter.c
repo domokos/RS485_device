@@ -43,11 +43,21 @@ static void update_event_counts()
  * Module public functions
  */
 
+// Must be called to initialize event counter
 void init_event_counter()
 {
+  // Disable external interrupt
+  EX0 = 0;
+  EX1 = 0;
+
+  // Reset all counters
   event_counter0 = event_counter1 = event_rate0 = event_rate1 = 0;
+
+  // Enable evant sources
   EX0 = 1;
   EX1 = 1;
+
+  // Begin event counting period
   reset_timeout(LEVEL_MEASUREMENT_TIMER);
 }
 
@@ -56,7 +66,7 @@ void init_event_counter()
 void operate_event_rate_measurement()
 {
   // Update rate counters at the end of the if measurement period
-  if(timeout_occured(LEVEL_MEASUREMENT_TIMER,ONE_SEC_TIMEOUT))
+  if(timeout_occured(LEVEL_MEASUREMENT_TIMER, ONE_SEC_TIMEOUT))
     update_event_counts();
 }
 
