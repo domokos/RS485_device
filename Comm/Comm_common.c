@@ -32,7 +32,7 @@ __code const struct comm_speed_struct comm_speeds[] =
       { 0xe8, 0, 150, 700}, //COMM_SPEED_1200_L,SMOD not set in PCON
       { 0xf4, 0, 80, 420}, //COMM_SPEED_2400_L,SMOD not set in PCON
       { 0xfa, 0, 40, 260}, //COMM_SPEED_4800_L,SMOD not set in PCON
-      { 0xfd, 0, 25, 200}, //COMM_SPEED_9600_L,SMOD not set in PCON
+      { 0xfd, 0, 25, 250}, //COMM_SPEED_9600_L,SMOD not set in PCON
       { 0xfe, 0, 20, 180}, //COMM_SPEED_14400_L,SMOD not set in PCON
       { 0x00, 0, 0, 0}, //COMM_SPEED_19200_L,SMOD not set in PCON
       { 0xff, 0, 10, 140}, //COMM_SPEED_28800_L,SMOD not set in PCON
@@ -42,7 +42,7 @@ __code const struct comm_speed_struct comm_speeds[] =
       { 0xd0, 0, 0, 0}, //COMM_SPEED_1200_H,SMOD set in PCON
       { 0xe8, 1, 80, 420}, //COMM_SPEED_2400_H,SMOD set in PCON
       { 0xf4, 1, 40, 260}, //COMM_SPEED_4800_H,SMOD set in PCON
-      { 0xfa, 1, 25, 200}, //COMM_SPEED_9600_H,SMOD set in PCON
+      { 0xfa, 1, 25, 250}, //COMM_SPEED_9600_H,SMOD set in PCON
       { 0xfc, 1, 20, 180}, //COMM_SPEED_14400_H,SMOD set in PCON
       { 0xfd, 1, 18, 172}, //COMM_SPEED_19200_H,SMOD set in PCON
       { 0xfe, 1, 10, 140}, //COMM_SPEED_28800_H,SMOD set in PCON
@@ -57,7 +57,7 @@ __code const struct comm_speed_struct comm_speeds[] =
     { 0xd0, 0, 150, 700 }, //COMM_SPEED_1200_L,SMOD not set in PCON
         { 0xe8, 0, 80, 420 }, //COMM_SPEED_2400_L,SMOD not set in PCON
         { 0xf4, 0, 40, 260 }, //COMM_SPEED_4800_L,SMOD not set in PCON
-        { 0xfa, 0, 25, 200 }, //COMM_SPEED_9600_L,SMOD not set in PCON
+        { 0xfa, 0, 25, 250 }, //COMM_SPEED_9600_L,SMOD not set in PCON
         { 0xfc, 0, 20, 180 }, //COMM_SPEED_14400_L,SMOD not set in PCON
         { 0xfd, 0, 18, 172 }, //COMM_SPEED_19200_L,SMOD not set in PCON
         { 0xfe, 0, 10, 140 }, //COMM_SPEED_28800_L,SMOD not set in PCON
@@ -67,7 +67,7 @@ __code const struct comm_speed_struct comm_speeds[] =
         { 0xa0, 1, 150, 700 }, //COMM_SPEED_1200_H,SMOD set in PCON
         { 0xd0, 1, 80, 420 }, //COMM_SPEED_2400_H,SMOD set in PCON
         { 0xe8, 1, 40, 260 }, //COMM_SPEED_4800_H,SMOD set in PCON
-        { 0xf4, 1, 25, 200 }, //COMM_SPEED_9600_H,SMOD set in PCON
+        { 0xf4, 1, 25, 250 }, //COMM_SPEED_9600_H,SMOD set in PCON
         { 0xf8, 1, 20, 180 }, //COMM_SPEED_14400_H,SMOD set in PCON
         { 0xfa, 1, 18, 172 }, //COMM_SPEED_19200_H,SMOD set in PCON
         { 0xfc, 1, 10, 140 }, //COMM_SPEED_28800_H,SMOD set in PCON

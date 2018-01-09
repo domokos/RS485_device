@@ -103,6 +103,7 @@
 
 #elif defined SIX_OWBUS_SLAVE_DEVICE
 
+#elif defined MASTER_CONTROLLER_DEVICE
 
 #elif defined MIXER_CONTROL_SLAVE_DEVICE
 
@@ -114,7 +115,7 @@
   #define GPIO_PIN P3_7
 
 #else
-  #error "Type specific pinlayout definitions cannot be determined"
+  #error "Device specific pinlayout definitions cannot be determined"
 #endif
 
 #endif /* PINLAYOUT_H_ */

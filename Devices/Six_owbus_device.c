@@ -149,7 +149,7 @@ read_DS18xxx(unsigned char register_id)
         }
       else
         {
-          temperatures[register_id] = ONEWIRE_TEMP_FAIL;
+          temperatures[register_id] = (signed int) ONEWIRE_TEMP_FAIL;
         }
     }
 }
