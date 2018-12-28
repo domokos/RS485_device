@@ -393,11 +393,11 @@ operate_device(void)
 *           Address 11:  Basement radiator valve Contact 8
 *           Address 12:  Basement floor valve - Contact 9
 */
-              message_buffer.content[PARAMETER_START] = get_extender_value(p-5);
+              message_buffer.content[PARAMETER_START] = get_extender_value(p-5) > 0 ? 1 : 0;
               message_buffer.index = PARAMETER_START;
               } else if(p == 13) {
  /*          Address 13: Heater relay P3_5 - Heater contact */
-              message_buffer.content[PARAMETER_START] = HEATER_RELAY_PIN;
+              message_buffer.content[PARAMETER_START] = HEATER_RELAY_PIN > 0  ? 1 : 0;
               message_buffer.index = PARAMETER_START;
               } else if(p <= 15) {
 /*

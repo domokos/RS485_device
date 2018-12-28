@@ -24,7 +24,7 @@
 
 
 // The masks used to manipulate temp timeout values
-#define ONEWIRE_TEMP_FAIL 0xaf0f
+#define ONEWIRE_TEMP_FAIL (int) 0xaf0f
 
 #define TEMP_RESOLUTION_12BIT 0x7F
 
