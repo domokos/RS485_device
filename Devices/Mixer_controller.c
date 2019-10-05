@@ -12,24 +12,20 @@
  * Define registers of this device
  */
 // This device has 10 registers
-__code const unsigned char nr_of_registers = 8;
+__code const unsigned char nr_of_registers = 10;
 
-#define NR_OF_TEMP_SENSORS 3
+#define NR_OF_TEMP_SENSORS 4
 
 // Describe the registers of this device
 __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
   {
-      // Forward floor temp sensor
+      // Mixer output temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-/*
-        // Incoming floor temp sensor
+      // Heating return temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // Return floor temp sensor
+      // Boiler forward temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
- */
-      // Forward sensor
-        { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
-      // Return sensor
+      // Boiler return temp sensor
         { REG_TYPE_TEMP, REG_RW, 2, DONT_SCALE_TEMP, PROG_RESOLUTION }, // DS18B20 - value1: no scaling up needed(0), value2: programmable resolution(1)
       // CW valve output - Contact CW
         { REG_TYPE_PULSE, REG_WO, 2, DONT_CARE, DONT_CARE },
@@ -49,23 +45,19 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
 
 // Map registers to onewire buses on P1
 __code const unsigned char register_pinmask_map[NR_OF_TEMP_SENSORS] =
-  {0x01, 0x02, 0x02};
+  {0x01, 0x01, 0x02, 0x02};
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
   {
   // If the first byte is zero, then there is only one device on bus
-      // Forward floor temp sensor
+      // Mixer output temp sensor
         { 0x10, 0xfe, 0x05, 0x24, 0x01, 0x08, 0x00, 0xeb },
-/*
-        // Incoming floor temp sensor
-        { 0x10, 0x47, 0xbf, 0x24, 0x01, 0x08, 0x00, 0x88 },
-      // Return floor temp sensor
-        { 0x28, 0x91, 0x2d, 0x50, 0x01, 0x00, 0x00, 0xff },
-*/
-      // Forward sensor
+     // Heating return temp sensor
+        { 0x28, 0x5f, 0xfb, 0x4f, 0x01, 0x00, 0x00, 0x13 },
+      // Boiler forward temp sensor
         { 0x28, 0x90, 0x2e, 0x50, 0x01, 0x00, 0x00, 0x86 },
-      // Return sensor
+      // Boiler return temp sensor
         { 0x28, 0xd2, 0x04, 0x49, 0x01, 0x00, 0x00, 0x73 }};
 
 bool conv_complete;
@@ -177,7 +169,7 @@ read_DS18xxx(unsigned char register_id)
 }
 
 // Return if conversion command is sent succesfully
-// It takes a reference to a specific device and issues the convert command specificly for it
+// It takes a reference to a specific device and issues the convert command specifically for it
 bool
 issue_convert_for_device(unsigned char register_id)
 {
@@ -201,7 +193,7 @@ operate_onewire_temp_measurement(void)
 
   if (conv_complete)
     {
-      // Not very nice to use a bitmap but we need to spare bytes for the stack to keep things safe:(
+      // Not very nice to use a bitmap but we need to spare ram for the stack to keep things safe :(
       // This bitmap is used to keep track of register conversion initiation information
       register_testmask = 0x01 << register_to_address;
 
@@ -301,36 +293,38 @@ operate_device(void)
 
             switch (p)
             {
-/*          Address 1:  Forward mixer temp sensor
-*           Address 2:  Forward temp sensor
-*           Address 3:  Return temp sensor
+/*          Address 1:  Mixer output temp sensor
+*           Address 2:  Heating return temp sensor
+*           Address 3:  Boiler forward temp sensor
+*           Address 4:  Boiler return temp sensor
 */
             case 1:
             case 2:
             case 3:
+            case 4:
               response_opcode = COMMAND_FAIL;
               break;
 
-             // Address 4:  CW output - Contact CW
-            case 4:
+             // Address 5:  CW output pulse - Contact CW
+            case 5:
               if(!start_output_pulse(DIRECTION_CW, message_buffer.content[PARAMETER_START+1]))
                 response_opcode = COMMAND_FAIL;
               break;
-             // Address 5:  CCW output - Contact CCW
-            case 5:
+             // Address 6:  CCW output pulse - Contact CCW
+            case 6:
               if(!start_output_pulse(DIRECTION_CCW, message_buffer.content[PARAMETER_START+1]))
                 response_opcode = COMMAND_FAIL;
               break;
-            // Address 6:  SPA switch - Contact SPA
-            case 6:
+            // Address 7:  SPA switch - Contact SPA
+            case 7:
               SPAREA_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
               break;
-            // Address 7:  SPB switch - Contact SPB
-            case 7:
+            // Address 8:  SPB switch - Contact SPB
+            case 8:
               SPAREB_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
               break;
-            // Address 8:  GPIO - Contact 1 on the low power part
-            case 8:
+            // Address 9:  GPIO - Contact 1 on the low power part
+            case 9:
               GPIO_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
               break;
             // Any other address fails
@@ -352,46 +346,47 @@ operate_device(void)
 
             switch (p)
             {
-/*          Address 1:  Forward mixer temp sensor
-*           Address 2:  Forward temp sensor
-*           Address 3:  Return temp sensor
+/*          Address 1:  Mixer output temp sensor
+*           Address 2:  Heating return temp sensor
+*           Address 3:  Boiler forward temp sensor
+*           Address 4:  Boiler return temp sensor
 */
             case 1:
             case 2:
             case 3:
+            case 4:
               message_buffer.content[PARAMETER_START] = temperatures[p - 1] & 0x00ff;
               message_buffer.content[PARAMETER_START + 1] = (temperatures[p- 1] >> 8) & 0x00ff;
               message_buffer.index = PARAMETER_START + 1;
               break;
 
-             // Address 4:  CW output - Contact CW
-            case 4:
+             // Address 5:  CW output is pulse active - Contact CW
+            case 5:
               message_buffer.content[PARAMETER_START] = CW_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-             // Address 5:  CCW output - Contact CCW
-            case 5:
+             // Address 6:  CCW output is pulse active - Contact CCW
+            case 6:
               message_buffer.content[PARAMETER_START] = CCW_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Address 6:  SPA switch - Contact SPA
-            case 6:
+            // Address 7:  SPA switch - Contact SPA
+            case 7:
               message_buffer.content[PARAMETER_START] = SPAREA_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Address 7:  SPB switch - Contact SPB
-            case 7:
+            // Address 8:  SPB switch - Contact SPB
+            case 8:
               message_buffer.content[PARAMETER_START] = SPAREB_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Address 8:  GPIO - Contact 1 on the low power part
-            case 8:
+            // Address 9:  GPIO - Contact 1 on the low power part
+            case 9:
               message_buffer.content[PARAMETER_START] = GPIO_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Any other address fails
-            case 9:
-              /* Test address to read rom on onewire bus - a single device should be connected to the bus in this case */
+            // Test address to read rom on onewire bus - a single device should be connected to the bus in this case
+            case 10:
               onewire_reset(0x01);
               onewire_write_byte(CMD_READ_ROM, 0x01);
 
@@ -400,6 +395,7 @@ operate_device(void)
 
               message_buffer.index = PARAMETER_START+7;
               break;
+            // Any other address fails
             default:
               response_opcode = COMMAND_FAIL;
               message_buffer.index = PARAMETER_START-1;
