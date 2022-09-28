@@ -1,0 +1,27 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP MCP4162-103
+D Single Digital Potentiometer, SPI interface, 256 taps, 10 kohm
+K R POT
+F http://ww1.microchip.com/downloads/en/DeviceDoc/11195c.pdf
+$ENDCMP
+#
+$CMP MCP4162-104
+D Single Digital Potentiometer, SPI interface, 256 taps, 100 kohm
+K R POT
+F http://ww1.microchip.com/downloads/en/DeviceDoc/11195c.pdf
+$ENDCMP
+#
+$CMP MCP4162-503
+D Single Digital Potentiometer, SPI interface, 256 taps, 50 kohm
+K R POT
+F http://ww1.microchip.com/downloads/en/DeviceDoc/11195c.pdf
+$ENDCMP
+#
+$CMP SN65176BP
+D RS485 Differential Bus Transceiver
+K RS485
+F https://www.ti.com/lit/ds/symlink/sn65176b.pdf
+$ENDCMP
+#
+#End Doc Library

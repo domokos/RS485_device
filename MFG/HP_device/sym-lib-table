@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name RS485Device)(type Legacy)(uri /home/doma/git/RS485_device/MFG/KicadLibs/RS485Device.lib)(options "")(descr ""))
+)

@@ -8,6 +8,8 @@
 *.backup
 *.bak*
 *.net
+*.bck
+*-bak
 /Master_controller_test
 /Generic_device_test
 /Generic_Device_Test
