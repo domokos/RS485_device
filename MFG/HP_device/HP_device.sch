@@ -835,9 +835,9 @@ Wire Wire Line
 	8150 6150 8250 6150
 Text Label 8250 6150 2    50   ~ 0
 LT
-Text GLabel 6150 3950 2    50   Input ~ 0
+Text GLabel 6250 3950 2    50   Input ~ 0
 RXD
-Text GLabel 6150 4050 2    50   Input ~ 0
+Text GLabel 6250 4050 2    50   Input ~ 0
 TXD
 Wire Wire Line
 	7550 1350 7550 1400
@@ -882,25 +882,7 @@ Wire Wire Line
 Wire Wire Line
 	4850 3050 4850 3000
 Wire Wire Line
-	4850 2800 4850 2750
-Wire Wire Line
-	4850 2750 5500 2750
-Wire Wire Line
 	4800 2700 4800 2750
-Wire Wire Line
-	4800 2750 4850 2750
-Connection ~ 4850 2750
-$Comp
-L Device:R_Small R8
-U 1 1 63927284
-P 4850 2900
-F 0 "R8" H 4950 2950 50  0000 L CNN
-F 1 "4.7k" H 4900 2850 50  0000 L CNN
-F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" H 4850 2900 50  0001 C CNN
-F 3 "~" H 4850 2900 50  0001 C CNN
-	1    4850 2900
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	8150 1400 8150 1450
 Wire Wire Line
@@ -912,10 +894,6 @@ Wire Wire Line
 Connection ~ 8000 2700
 Text Label 8550 4300 2    50   ~ 0
 C_DSET
-Wire Wire Line
-	6100 3950 6150 3950
-Wire Wire Line
-	6100 4050 6150 4050
 Wire Wire Line
 	6300 3450 6100 3450
 Wire Wire Line
@@ -1187,8 +1165,6 @@ Entry Wire Line
 	6350 4450 6450 4550
 Entry Wire Line
 	6350 4550 6450 4650
-Wire Wire Line
-	6150 4150 6100 4150
 $Comp
 L Connector:Screw_Terminal_01x02 J13
 U 1 1 638934B6
@@ -1490,7 +1466,7 @@ Wire Notes Line
 	11100 3000 10300 3000
 Wire Notes Line
 	10300 3000 10300 500 
-Text GLabel 6150 4150 2    50   Input ~ 0
+Text GLabel 6250 4150 2    50   Input ~ 0
 DRIVE
 Text GLabel 3300 2300 2    50   Input ~ 0
 RXD
@@ -1818,10 +1794,10 @@ Wire Notes Line
 Wire Notes Line
 	600  4500 1800 4500
 $Comp
-L Device:R_Small R9
+L Device:R_Small R8
 U 1 1 63544C21
 P 1700 2500
-F 0 "R9" H 1800 2550 50  0000 L CNN
+F 0 "R8" H 1800 2550 50  0000 L CNN
 F 1 "150" H 1750 2450 50  0000 L CNN
 F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" H 1700 2500 50  0001 C CNN
 F 3 "~" H 1700 2500 50  0001 C CNN
@@ -1838,6 +1814,14 @@ Wire Wire Line
 Connection ~ 1700 2700
 Wire Wire Line
 	1700 2700 1400 2700
+Wire Wire Line
+	4800 2750 5500 2750
+Wire Wire Line
+	6100 4150 6250 4150
+Wire Wire Line
+	6100 3950 6250 3950
+Wire Wire Line
+	6100 4050 6250 4050
 Wire Bus Line
 	6450 3250 6450 3500
 Wire Bus Line
