@@ -36,7 +36,11 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // Spare switch B - Contact SPB
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
       // GPIO switch 2 - Contact 1 on the lowpower part of the pcb
-        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE } };
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
+      // Temporary onewire relay for HP's DHW switch
+	{ REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE }, // DS2405
+      // Temporary onewire relay for HP's On/Off switch
+	{ REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE } }; // DS2405
 
 
 /*
@@ -44,8 +48,8 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
  */
 
 // Map registers to onewire buses on P1
-__code const unsigned char register_pinmask_map[NR_OF_TEMP_SENSORS] =
-  {0x01, 0x01, 0x02, 0x02};
+__code const unsigned char register_pinmask_map[] =
+  {0x01, 0x01, 0x02, 0x02, 0x04, 0x04};
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
@@ -58,7 +62,12 @@ __code const unsigned char register_rom_map[][8] =
       // Boiler forward temp sensor
         { 0x28, 0x90, 0x2e, 0x50, 0x01, 0x00, 0x00, 0x86 },
       // Boiler return temp sensor
-        { 0x28, 0xd2, 0x04, 0x49, 0x01, 0x00, 0x00, 0x73 }};
+        { 0x28, 0xd2, 0x04, 0x49, 0x01, 0x00, 0x00, 0x73 },
+      // Temporary HP DHW Switch
+        { 0x05, 0x13, 0xfa, 0x31, 0x00, 0x00, 0x00, 0x17 },
+      // Temporary HP ON/OFF Switch
+        { 0x05, 0xc4, 0xf7, 0x31, 0x00, 0x00, 0x00, 0xba }
+  };
 
 bool conv_complete;
 
@@ -319,15 +328,36 @@ operate_device(void)
             case 7:
               SPAREA_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
               break;
-            // Address 8:  SPB switch - Contact SPB
+            // Address 8:  USEBUFFER_PIN switch - Contact SPB
             case 8:
-              SPAREB_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
+              USEBUFFER_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
               break;
             // Address 9:  GPIO - Contact 1 on the low power part
             case 9:
               GPIO_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
               break;
-            // Any other address fails
+            case 10:
+            case 11:
+/*          Address 10:  Temporary HP Unit's DHW switch
+*           Address 11:  Temporary HP Unit's ON/Off switch
+*/
+	      if (onewire_reset(0x04))
+		{
+		  // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
+		  if((message_buffer.content[PARAMETER_START + 1] > 0) != ReadDS2405(register_rom_map[p-6], 0x04))
+		    {
+		      if(onewire_reset(0x04))
+			{
+			  send_onewire_rom_commands(p-6);
+			} else {
+			  response_opcode = COMMAND_FAIL;
+			}
+		    }
+		} else {
+		  response_opcode = COMMAND_FAIL;
+		}
+              break;
+              // Any other address fails
             default:
               response_opcode = COMMAND_FAIL;
               break;
@@ -375,9 +405,9 @@ operate_device(void)
               message_buffer.content[PARAMETER_START] = SPAREA_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Address 8:  SPB switch - Contact SPB
+            // Address 8:  USEBUFFER switch - Contact SPB
             case 8:
-              message_buffer.content[PARAMETER_START] = SPAREB_PIN;
+              message_buffer.content[PARAMETER_START] = USEBUFFER_PIN;
               message_buffer.index = PARAMETER_START;
               break;
             // Address 9:  GPIO - Contact 1 on the low power part
@@ -387,6 +417,20 @@ operate_device(void)
               break;
             // Test address to read rom on onewire bus - a single device should be connected to the bus in this case
             case 10:
+            case 11:
+/*          Address 10:  Temporary HP Unit's DHW switch
+*           Address 11:  Temporary HP Unit's ON/Off switch
+*/
+              if (onewire_reset(0x04))
+                {
+                  message_buffer.content[PARAMETER_START] = ReadDS2405(register_rom_map[p-6], 0x04);
+                  message_buffer.index = PARAMETER_START;
+                } else {
+                  response_opcode = COMMAND_FAIL;
+                  message_buffer.index = PARAMETER_START-1;
+                }
+              break;
+            case 12:
               onewire_reset(0x01);
               onewire_write_byte(CMD_READ_ROM, 0x01);
 
@@ -436,8 +480,21 @@ device_specific_init(void)
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);
 
+  // Reset outputs - Setup spare B output to use Buffer
+  USEBUFFER_PIN=1;
 
-  SPAREA_PIN = SPAREB_PIN = CW_PIN = CCW_PIN = 0;
+  // Reset outputs
+  SPAREA_PIN = CW_PIN = CCW_PIN = 0;
+
+  // Reset Temporary HP outputs
+  for(i=4;i<6;i++)
+    {
+    if (onewire_reset(0x04) && ReadDS2405(register_rom_map[i], 0x04))
+      {
+      if(onewire_reset(0x04))
+        send_onewire_rom_commands(i);
+      }
+    }
 }
 
 void

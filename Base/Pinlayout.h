@@ -81,7 +81,7 @@
   #define CCW_PIN
   #define CW_PIN
   #define SPAREA_PIN
-  #define SPAREB_PIN
+  #define USEBUFFER_PIN
   #define GPIO_PIN
 
 #elif defined MAIN_PANEL_SLAVE_DEVICE
@@ -111,7 +111,7 @@
   #define CCW_PIN P1_5
   #define CW_PIN P1_6
   #define SPAREA_PIN P1_3
-  #define SPAREB_PIN P1_4
+  #define USEBUFFER_PIN P1_4
   #define GPIO_PIN P3_7
 
 #else

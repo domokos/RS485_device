@@ -57,6 +57,7 @@ typedef __bit bool;
   #define NR_OF_TIMERS 5
   #define TEMP_CONV_TIMER 3
   #define PULSING_OUTPUT_TIMER 4
+  #define ONEWIRE_READ_DS2405_REQUIRED
 
 #elif defined LEVEL_MEASUREMENT_DEVICE
   #define NR_OF_TIMERS 4
