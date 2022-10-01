@@ -1,0 +1,11 @@
+{
+    "projectManager.git.baseFolders": [
+        "/home/doma/git"
+    ],
+    "files.associations": {
+        "base.h": "c",
+        "slave_comm.h": "c",
+        "generic_device.h": "c",
+        "main_panel_device.h": "c"
+    }
+}

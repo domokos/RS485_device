@@ -445,6 +445,18 @@ device_specific_init_phase1(void)
 
   // Reset the MCP4161 rheostat
   reset_rheostats();
+
+  // Enable the resistor network globally and
+  // enable the 2 used terminals
+  set_tcon(0x0e, WIPER_HEAT);
+  set_tcon(0x0e, WIPER_HW);
+
+  // Set safe values for wipers
+  write_wiper(0xff,TRUE,WIPER_HW);
+  write_wiper(0xff,FALSE,WIPER_HW);
+
+  write_wiper(0x00,TRUE,WIPER_HEAT);
+  write_wiper(0x00,FALSE,WIPER_HEAT);
 }
 
 void
@@ -474,7 +486,6 @@ device_specific_init_phase2(void)
 void
 main(void)
 {
-
   device_specific_init_phase1();
 
 // Enable interrupts and initialize timer
