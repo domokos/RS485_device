@@ -37,7 +37,7 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
       // GPIO switch 2 - Contact 1 on the lowpower part of the pcb
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // Temporary onewire relay for HP's DHW switch
+      // Temporary onewire relay for HP's DHW temperature switch
 	{ REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE }, // DS2405
       // Temporary onewire relay for HP's On/Off switch
 	{ REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE } }; // DS2405
@@ -489,7 +489,8 @@ device_specific_init(void)
   // Reset Temporary HP outputs
   for(i=4;i<6;i++)
     {
-    if (onewire_reset(0x04) && ReadDS2405(register_rom_map[i], 0x04))
+    if (onewire_reset(0x04) &&
+	(ReadDS2405(register_rom_map[i], 0x04) != (i==4)) )
       {
       if(onewire_reset(0x04))
         send_onewire_rom_commands(i);
