@@ -38,6 +38,7 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
       // GPIO switch 2 - Contact 1 on the lowpower part of the pcb
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
       // Temporary onewire relay for HP's DHW temperature switch
+      // This one is set with inverted logic
 	{ REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE }, // DS2405
       // Temporary onewire relay for HP's On/Off switch
 	{ REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE } }; // DS2405
@@ -275,6 +276,7 @@ operate_device(void)
 
   // Messaging variables
   unsigned char response_opcode = RESPONSE_UNDEFINED, p;
+  bool invert_logic, is_val, tobe_val, flip;
 
   // The main loop of the device
   while (TRUE)
@@ -341,10 +343,23 @@ operate_device(void)
 /*          Address 10:  Temporary HP Unit's DHW switch
 *           Address 11:  Temporary HP Unit's ON/Off switch
 */
-	      if (onewire_reset(0x04))
+              if (onewire_reset(0x04))
 		{
-		  // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
-		  if((message_buffer.content[PARAMETER_START + 1] > 0) != ReadDS2405(register_rom_map[p-6], 0x04))
+        	  is_val = ReadDS2405(register_rom_map[p-6], 0x04);
+                  invert_logic = p == 10;
+                  tobe_val = message_buffer.content[PARAMETER_START + 1] > 0;
+                  // A - invert_logic
+                  // B - is_val
+                  // C - tobe_val
+                  // flip = A'B'C + A'BC' + AB'C' + ABC
+                  flip =
+                      (!invert_logic && !is_val && !tobe_val) ||
+                      (!invert_logic && is_val && !tobe_val) ||
+                      (invert_logic && !is_val && !tobe_val) ||
+                      (invert_logic && is_val && tobe_val);
+
+                  // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
+		  if(flip)
 		    {
 		      if(onewire_reset(0x04))
 			{
