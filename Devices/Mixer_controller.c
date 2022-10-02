@@ -433,12 +433,13 @@ operate_device(void)
             // Test address to read rom on onewire bus - a single device should be connected to the bus in this case
             case 10:
             case 11:
-/*          Address 10:  Temporary HP Unit's DHW switch
+/*          Address 10:  Temporary HP Unit's DHW switch - This should be returned inverted
 *           Address 11:  Temporary HP Unit's ON/Off switch
 */
+            invert_logic = p == 10;
               if (onewire_reset(0x04))
                 {
-                  message_buffer.content[PARAMETER_START] = ReadDS2405(register_rom_map[p-6], 0x04);
+                  message_buffer.content[PARAMETER_START] = ReadDS2405(register_rom_map[p-6], 0x04) != invert_logic;
                   message_buffer.index = PARAMETER_START;
                 } else {
                   response_opcode = COMMAND_FAIL;
