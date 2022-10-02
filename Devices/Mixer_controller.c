@@ -353,7 +353,7 @@ operate_device(void)
                   // C - tobe_val
                   // flip = A'B'C + A'BC' + AB'C' + ABC
                   flip =
-                      (!invert_logic && !is_val && !tobe_val) ||
+                      (!invert_logic && !is_val && tobe_val) ||
                       (!invert_logic && is_val && !tobe_val) ||
                       (invert_logic && !is_val && !tobe_val) ||
                       (invert_logic && is_val && tobe_val);
