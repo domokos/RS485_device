@@ -345,18 +345,14 @@ operate_device(void)
 */
               if (onewire_reset(0x04))
 		{
-        	  is_val = ReadDS2405(register_rom_map[p-6], 0x04);
                   invert_logic = p == 10;
+        	  is_val = ReadDS2405(register_rom_map[p-6], 0x04);
                   tobe_val = message_buffer.content[PARAMETER_START + 1] > 0;
-                  // A - invert_logic
-                  // B - is_val
-                  // C - tobe_val
-                  // flip = A'B'C + A'BC' + AB'C' + ABC
-                  flip =
-                      (!invert_logic && !is_val && tobe_val) ||
-                      (!invert_logic && is_val && !tobe_val) ||
-                      (invert_logic && !is_val && !tobe_val) ||
-                      (invert_logic && is_val && tobe_val);
+
+                  if (invert_logic)
+                      flip = (is_val == tobe_val);
+                  else
+		      flip = (is_val != tobe_val);
 
                   // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
 		  if(flip)
