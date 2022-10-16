@@ -73,7 +73,7 @@ __code const unsigned char register_rom_map[][8] =
         { 0x10, 0xc7, 0xa2, 0x23, 0x01, 0x08, 0x00, 0x74 },
       // The Basement sensor
         { 0x10, 0x47, 0xbf, 0x24, 0x01, 0x08, 0x00, 0x88 },
-      // The return water temp sensor
+      // The Output sensor
         { 0x28, 0x91, 0x2d, 0x50, 0x01, 0x00, 0x00, 0xff },
       // The Hidr Shift water temp sensor
         { 0x28, 0x5a, 0xe6, 0x48, 0x01, 0x00, 0x00, 0xee }};
@@ -324,7 +324,7 @@ operate_device(void)
               {
 /*          Address 1:  HW temp sensor
 *           Address 2:  Basement temp sensor
-*           Address 3:  Return temp sensor
+*           Address 3:  Output sensor
 *           Address 4:  Hidr Shift temp sensor
 */
               response_opcode = COMMAND_FAIL;
@@ -376,7 +376,7 @@ operate_device(void)
               {
 /*          Address 1:  HW temp sensor
 *           Address 2:  Basement temp sensor
-*           Address 3:  Return temp sensor
+*           Address 3:  Output sensor
 *           Address 4:  Hidr Shift temp sensor
 */
               message_buffer.content[PARAMETER_START] = temperatures[p - 1] & 0x00ff;
