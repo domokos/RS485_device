@@ -1,3 +1,4 @@
 (sym_lib_table
   (lib (name "RS485Device")(type "KiCad")(uri "/home/doma/git/RS485_device/MFG/KicadLibs/RS485Device.kicad_sym")(options "")(descr ""))
+  (lib (name "HP_device-rescue")(type "Legacy")(uri "${KIPRJMOD}/HP_device-rescue.lib")(options "")(descr ""))
 )
