@@ -9,7 +9,7 @@
 #define PINLAYOUT_H_
 
 /*
- *  This section defines the pins assignments the microcontroller
+ *  This section defines the pins assignments of the microcontroller
  */
 #ifdef __CDT_PARSER__
 
@@ -56,6 +56,17 @@
   // Define on which port the onewire interface is
   #define ONEWIRE_IS_ON_P1
 
+#elif defined HP_SLAVE_DEVICE
+  // The id of this host on the bus
+  #define HOST_ID 13
+
+  #define COMM_DIRECTION_PIN P3_2
+  #define EHS_PIN P3_7
+  #define MODE_PIN P3_5
+  #define BACKUP_PIN P3_4
+  #define ALARM_PIN P3_3
+
+
 #else
   #error "Basic pinlayout definitions could be determined"
 #endif
@@ -84,6 +95,15 @@
   #define USEBUFFER_PIN
   #define GPIO_PIN
 
+  // Define pins of the HP device
+  #define EHS_PIN
+  #define MODE_PIN
+  #define BACKUP_PIN
+  #define ALARM_PIN
+  #define PIN_SERDATA
+  #define PIN_SDO
+  #define PIN_NCS_CSEL
+
 #elif defined MAIN_PANEL_SLAVE_DEVICE
   // Define the pins of the SPI interface of the MCP4161
   #define PIN_NCS_HW P1_0
@@ -94,12 +114,27 @@
   // Heater contact
   #define HEATER_RELAY_PIN P3_5
 
-  // Define the pins of the Extender interface of the MCP4161
+  // Define the pins of the Extender interface
   #define DS_PIN P1_2
   #define NOE_PIN P1_3
   #define STCP_PIN P1_4
   #define SHCP_PIN P1_5
   #define NMR_PIN P1_6
+
+#elif defined HP_SLAVE_DEVICE
+
+  #define PIN_SERDATA P1_3
+
+  // Define the pins of the SPI interface of the MCP416x
+  #define PIN_NCS_CSEL P1_0
+  #define PIN_SCK P1_1
+  #define PIN_SDO P1_2
+
+  // Define the pins of the Extender interface
+  #define NOE_PIN P1_4
+  #define STCP_PIN P1_5
+  #define SHCP_PIN P1_6
+  #define NMR_PIN P1_7
 
 #elif defined SIX_OWBUS_SLAVE_DEVICE
 

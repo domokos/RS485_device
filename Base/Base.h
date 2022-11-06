@@ -37,6 +37,8 @@ typedef __bit bool;
   #define ONEWIRE_READ_DS2405_REQUIRED
   #define PULSING_OUTPUT_TIMER
   #define LEVEL_MEASUREMENT_TIMER
+  #define INPUT_SENSING_TIMER
+  #define EXTENDER_WATCHDOG_TIMER
   #define NR_OF_TIMERS
 
 #elif defined MASTER_CONTROLLER_DEVICE
@@ -47,6 +49,11 @@ typedef __bit bool;
   #define NR_OF_TIMERS 5
   #define TEMP_CONV_TIMER 3
   #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
+
+#elif defined HP_SLAVE_DEVICE
+  #define NR_OF_TIMERS 5
+  #define INPUT_SENSING_TIMER 3
+  #define EXTENDER_WATCHDOG_TIMER 4
 
 #elif defined SIX_OWBUS_SLAVE_DEVICE
   #define NR_OF_TIMERS 4

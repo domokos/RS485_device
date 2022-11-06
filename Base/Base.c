@@ -24,9 +24,10 @@ ISR(TIMER0,0)
   // Increase timer
   time_counter++;
 
+#ifndef HP_SLAVE_DEVICE
   // Keep watchdog happy
   WATCHDOG_PIN = !WATCHDOG_PIN;
-
+#endif
   // Restart the timer
   TR0  = 0;
 

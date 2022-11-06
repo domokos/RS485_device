@@ -52,10 +52,10 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
 
       // Furnace temp wiper
-        { REG_TYPE_DATA, REG_RW, 1, DONT_CARE, DONT_CARE },
+        { REG_TYPE_DATA, REG_RW, 2, DONT_CARE, DONT_CARE },
 
       // HW temp wiper
-        { REG_TYPE_DATA, REG_RW, 1, DONT_CARE, DONT_CARE } };
+        { REG_TYPE_DATA, REG_RW, 2, DONT_CARE, DONT_CARE } };
 
 
 /*
@@ -406,8 +406,15 @@ operate_device(void)
 *             Address 14: HW Wiper
 *             Address 15: Heating Wiper
 */
-              read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START), message_buffer.content[PARAMETER_START+1]>0, p == 14 ? WIPER_HW : WIPER_HEAT);
-              message_buffer.index = PARAMETER_START+1;
+              if (read_wiper((unsigned int*)(message_buffer.content+PARAMETER_START),
+			     message_buffer.content[PARAMETER_START+1]>0,
+			     p == 14 ? WIPER_HW : WIPER_HEAT))
+        	{
+        	  message_buffer.index = PARAMETER_START+1;
+        	} else {
+                  response_opcode = COMMAND_FAIL;
+                  message_buffer.index = PARAMETER_START-1;
+        	}
               } else if(p == 16) {
 /* Test address to read rom on onewire bus - a single device should be connected to the bus in this case */
 

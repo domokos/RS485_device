@@ -2,7 +2,7 @@
 
 /*
  * EXTENDER Switches specific function section
- *
+ *  Updated on: Nov 22, 2022 - Add HP controller
  */
 
 static unsigned char extender_buffer = 0;
@@ -11,7 +11,15 @@ static unsigned char extender_buffer = 0;
 void reset_extender(void)
 {
   NOE_PIN = 1;
+
+#ifdef MAIN_PANEL_SLAVE_DEVICE
   DS_PIN = 0;
+#elif defined HP_SLAVE_DEVICE
+  PIN_SERDATA =0;
+#else
+  #error "Device specific pinlayout definitions cannot be determined"
+#endif
+
   SHCP_PIN = 0;
   NMR_PIN = 0;
 
@@ -47,7 +55,18 @@ void write_extender(unsigned char reg_nr, bool value)
   mask = 0x80;
   while (mask)
     {
+#ifdef MAIN_PANEL_SLAVE_DEVICE
       DS_PIN = (extender_buffer & mask) > 0;
+#elif defined HP_SLAVE_DEVICE
+      PIN_SERDATA = (extender_buffer & mask) > 0;
+      __asm
+	nop
+	nop
+      __endasm;
+#else
+  #error "Device specific pinlayout definitions cannot be determined"
+#endif
+
       SHCP_PIN = 1;
       SHCP_PIN = 0;
 

@@ -12,7 +12,7 @@
 
 
 /*
- * For extender swich a 74HC595, 8-bit parallell or serial out shift register is used.
+ * A 74HC595, 8-bit parallell or serial out shift register is used az an extender switch .
  */
 
 void reset_extender(void);

@@ -9,8 +9,8 @@
 #define FURNACE_TEMP_DEVICE_H
 
 #include "Slave_comm.h"
-#include "MCP4161.h"
 #include "SingleExtender.h"
+#include "../MCP416X/MCP4161.h"
 
 // Onewire functions
 bool set_temp_resolution_on_bus(unsigned char register_id, unsigned char resolution);

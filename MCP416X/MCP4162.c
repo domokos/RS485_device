@@ -2,51 +2,63 @@
  * MCP4161.c
  *
  *  Created on: Nov 19, 2014
+ *  Updated on: Nov 22, 2022 - Add HP controller
  *      Author: dmolnar
  *
  *  This module handles read/write of the wiper memory of the MCP4161-502E/P
  */
 
-#include "MCP4161.h"
+#include "../MCP416X/MCP4162.h"
 
 void reset_rheostats(void)
 {
-// Deselect chip
-  PIN_NCS_HW = NCS_INACTIVE;
-
-  PIN_NCS_HEAT = NCS_INACTIVE;
-
 // Prepare for SPI Mode 0,0
   PIN_SCK = 0;
+  PIN_SDO = 1;
 }
-
-bool write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector)
-{
-  unsigned char command_byte, data_byte;
-  // Set command and addres part of the command byte
-    if(is_volatile)
-        command_byte = 0x00;
-      else
-        command_byte = 0x20;
-
-  // Set the upper part of data to the
-  // lowest two bits of the command byte
-    command_byte |= (unsigned char) (value >> 8);
-    data_byte = (unsigned char) (value & 0xff);
-
-    return write16bit(command_byte, data_byte, wiper_selector);
-}
-
 
 bool
-set_tcon(unsigned char data_byte, __bit wiper_selector)
+write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector)
 {
-  unsigned char command_byte;
-  command_byte = 0x40;
+  unsigned char command_byte, data_byte;
 
-  return write16bit(command_byte, data_byte, wiper_selector);
+// Set command and addres part of the command byte
+  if(is_volatile)
+      command_byte = 0x00;
+    else
+      command_byte = 0x20;
+
+// Set the upper part of data to the
+// lowest two bits of the command byte
+  command_byte |= (unsigned char) (value >> 8);
+  data_byte = (unsigned char) (value & 0xff);
+
+// Select the appropriate chip
+  PIN_NCS_CSEL = wiper_selector;
+
+// Write the frist six bits to the SPI interface
+  write_SPI_bits(command_byte, 6);
+
+//  Read CMDERR condition and reset the bus/return failure if error is detected
+  set_clock_lo();
+  set_clock_hi();
+  if(PIN_SDO == 0)
+    {
+      reset_rheostats();
+      return FALSE;
+    }
+  set_clock_lo();
+
+// Write the last bit of the command byte
+  PIN_SERDATA = command_byte & 0x01;
+  set_clock_hi();
+
+// Write the data_byte
+  write_SPI_bits(data_byte, 8);
+  reset_rheostats();
+
+  return TRUE;
 }
-
 
 bool
 read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
@@ -59,22 +71,16 @@ read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
     else
       command_byte = 0x2c;
 
-// Activate the chip
-  if (wiper_selector == WIPER_HEAT)
-    PIN_NCS_HEAT = NCS_ACTIVE;
-  else
-    PIN_NCS_HW = NCS_ACTIVE;
+// Select the appropriate chip
+  PIN_NCS_CSEL = wiper_selector;
 
 // Write the six command bits to the SPI interface
   write_SPI_bits(command_byte, 6);
 
 //  Read CMDERR condition and reset the bus/return failure if error is detected
-//  Set pin to HI to read SDI/SDO line
   set_clock_lo();
-  PIN_SDI_SDO = 1;
-
   set_clock_hi();
-  if(PIN_SDI_SDO == 0)
+  if(PIN_SDO == 0)
     {
       reset_rheostats();
       return FALSE;
@@ -82,7 +88,7 @@ read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
   set_clock_lo();
   set_clock_hi();
   // Read bit 8
-  if (PIN_SDI_SDO)
+  if (PIN_SDO)
     command_byte |= 0x01;
 
   // Read the remaining 8 bits
@@ -98,42 +104,6 @@ read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
 /*
  * Private functions of the module
  */
-
-static bool
-write16bit(unsigned char command_byte, unsigned char data_byte, __bit wiper_selector)
-{
-// Activate the chip
-  if (wiper_selector == WIPER_HEAT)
-    PIN_NCS_HEAT = NCS_ACTIVE;
-  else
-    PIN_NCS_HW = NCS_ACTIVE;
-
-// Write the frist six bits to the SPI interface
-  write_SPI_bits(command_byte, 6);
-
-//  Read CMDERR condition and reset the bus/return failure if error is detected
-//  Set pin to HI to read SDI/SDO line
-  set_clock_lo();
-  PIN_SDI_SDO = 1;
-
-  set_clock_hi();
-  if(PIN_SDI_SDO == 0)
-    {
-      reset_rheostats();
-      return FALSE;
-    }
-  set_clock_lo();
-
-// Write the last bit of the command byte
-  PIN_SDI_SDO = command_byte & 0x01;
-  set_clock_hi();
-
-// Write the data_byte
-  write_SPI_bits(data_byte, 8);
-  reset_rheostats();
-
-  return TRUE;
-}
 
 static void
 set_clock_hi(void)
@@ -160,7 +130,7 @@ write_SPI_bits(unsigned char data, unsigned char bit_count)
   for(i=0;i<bit_count;i++)
     {
       set_clock_lo();
-      PIN_SDI_SDO = (data & mask) > 0;
+      PIN_SERDATA = (data & mask) > 0;
       set_clock_hi();
       mask = mask >> 1;
     }
@@ -171,15 +141,12 @@ read_SPI_bits(unsigned char bit_count)
 {
   unsigned char i, mask, retval;
 
-  // Set the data pin high to read the value set by the external chip
-  PIN_SDI_SDO = 1;
-
   retval = 0;
   mask = 0x80;
   for(i=0;i<bit_count;i++)
     {
       set_clock_lo();
-      if (PIN_SDI_SDO) retval |= mask;
+      if (PIN_SDO) retval |= mask;
       set_clock_hi();
       mask = mask >> 1;
     }
