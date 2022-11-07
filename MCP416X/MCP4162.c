@@ -8,7 +8,7 @@
  *  This module handles read/write of the wiper memory of the MCP4161-502E/P
  */
 
-#include "../MCP416X/MCP4162.h"
+#include "MCP4162.h"
 
 void reset_rheostats(void)
 {
@@ -33,31 +33,16 @@ write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector)
   command_byte |= (unsigned char) (value >> 8);
   data_byte = (unsigned char) (value & 0xff);
 
-// Select the appropriate chip
-  PIN_NCS_CSEL = wiper_selector;
+  return write16bit(command_byte, data_byte, wiper_selector);
+}
 
-// Write the frist six bits to the SPI interface
-  write_SPI_bits(command_byte, 6);
+bool
+set_tcon(unsigned char data_byte, __bit wiper_selector)
+{
+  unsigned char command_byte;
+  command_byte = 0x40;
 
-//  Read CMDERR condition and reset the bus/return failure if error is detected
-  set_clock_lo();
-  set_clock_hi();
-  if(PIN_SDO == 0)
-    {
-      reset_rheostats();
-      return FALSE;
-    }
-  set_clock_lo();
-
-// Write the last bit of the command byte
-  PIN_SERDATA = command_byte & 0x01;
-  set_clock_hi();
-
-// Write the data_byte
-  write_SPI_bits(data_byte, 8);
-  reset_rheostats();
-
-  return TRUE;
+  return write16bit(command_byte, data_byte, wiper_selector);
 }
 
 bool
@@ -104,6 +89,36 @@ read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
 /*
  * Private functions of the module
  */
+
+static bool
+write16bit(unsigned char command_byte, unsigned char data_byte, __bit wiper_selector)
+{
+// Select the appropriate chip
+  PIN_NCS_CSEL = wiper_selector;
+
+// Write the frist six bits to the SPI interface
+  write_SPI_bits(command_byte, 6);
+
+//  Read CMDERR condition and reset the bus/return failure if error is detected
+  set_clock_lo();
+  set_clock_hi();
+  if(PIN_SDO == 0)
+    {
+      reset_rheostats();
+      return FALSE;
+    }
+  set_clock_lo();
+
+// Write the last bit of the command byte
+  PIN_SERDATA = command_byte & 0x01;
+  set_clock_hi();
+
+// Write the data_byte
+  write_SPI_bits(data_byte, 8);
+  reset_rheostats();
+
+  return TRUE;
+}
 
 static void
 set_clock_hi(void)

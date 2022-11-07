@@ -35,6 +35,9 @@ void reset_rheostats(void);
 // return success
 bool write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector);
 
+// Set the TCON register
+bool set_tcon(unsigned char value, __bit wiper_selector);
+
 // Read and return the value of the wiper memory of
 // the SPI device
 bool read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector);
@@ -42,6 +45,10 @@ bool read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector);
 /*
  * Private functions
  */
+
+// Write 16 bits to the wiper
+static bool
+write16bit(unsigned char command_byte, unsigned char data_byte, __bit wiper_selector);
 
 // helper to set clock line with wait times
 static void

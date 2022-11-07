@@ -2,18 +2,16 @@
  * MCP4161.c
  *
  *  Created on: Nov 19, 2014
- *  Updated on: Nov 22, 2022 - Add HP controller
  *      Author: dmolnar
  *
  *  This module handles read/write of the wiper memory of the MCP4161-502E/P
  */
 
-#include "../MCP416X/MCP4161.h"
+#include "MCP4161.h"
 
 void reset_rheostats(void)
 {
-
-// Deselect chips
+// Deselect chip
   PIN_NCS_HW = NCS_INACTIVE;
 
   PIN_NCS_HEAT = NCS_INACTIVE;
@@ -22,53 +20,30 @@ void reset_rheostats(void)
   PIN_SCK = 0;
 }
 
-bool
-write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector)
+bool write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector)
 {
   unsigned char command_byte, data_byte;
+  // Set command and addres part of the command byte
+    if(is_volatile)
+        command_byte = 0x00;
+      else
+        command_byte = 0x20;
 
-// Set command and addres part of the command byte
-  if(is_volatile)
-      command_byte = 0x00;
-    else
-      command_byte = 0x20;
+  // Set the upper part of data to the
+  // lowest two bits of the command byte
+    command_byte |= (unsigned char) (value >> 8);
+    data_byte = (unsigned char) (value & 0xff);
 
-// Set the upper part of data to the
-// lowest two bits of the command byte
-  command_byte |= (unsigned char) (value >> 8);
-  data_byte = (unsigned char) (value & 0xff);
+    return write16bit(command_byte, data_byte, wiper_selector);
+}
 
-// Activate the appropriate chip
-  if (wiper_selector == WIPER_HEAT)
-    PIN_NCS_HEAT = NCS_ACTIVE;
-  else
-    PIN_NCS_HW = NCS_ACTIVE;
+bool
+set_tcon(unsigned char data_byte, __bit wiper_selector)
+{
+  unsigned char command_byte;
+  command_byte = 0x40;
 
-// Write the frist six bits to the SPI interface
-  write_SPI_bits(command_byte, 6);
-
-//  Read CMDERR condition and reset the bus/return failure if error is detected
-//  Set pin to HI to read SDI/SDO line
-  set_clock_lo();
-  PIN_SDI_SDO = 1;
-
-  set_clock_hi();
-  if(PIN_SDI_SDO == 0)
-    {
-      reset_rheostats();
-      return FALSE;
-    }
-  set_clock_lo();
-
-// Write the last bit of the command byte
-  PIN_SDI_SDO = command_byte & 0x01;
-  set_clock_hi();
-
-// Write the data_byte
-  write_SPI_bits(data_byte, 8);
-  reset_rheostats();
-
-  return TRUE;
+  return write16bit(command_byte, data_byte, wiper_selector);
 }
 
 bool
@@ -82,7 +57,7 @@ read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
     else
       command_byte = 0x2c;
 
-// Activate the appropriate chip
+// Activate the chip
   if (wiper_selector == WIPER_HEAT)
     PIN_NCS_HEAT = NCS_ACTIVE;
   else
@@ -121,6 +96,42 @@ read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
 /*
  * Private functions of the module
  */
+
+static bool
+write16bit(unsigned char command_byte, unsigned char data_byte, __bit wiper_selector)
+{
+// Activate the chip
+  if (wiper_selector == WIPER_HEAT)
+    PIN_NCS_HEAT = NCS_ACTIVE;
+  else
+    PIN_NCS_HW = NCS_ACTIVE;
+
+// Write the frist six bits to the SPI interface
+  write_SPI_bits(command_byte, 6);
+
+//  Read CMDERR condition and reset the bus/return failure if error is detected
+//  Set pin to HI to read SDI/SDO line
+  set_clock_lo();
+  PIN_SDI_SDO = 1;
+
+  set_clock_hi();
+  if(PIN_SDI_SDO == 0)
+    {
+      reset_rheostats();
+      return FALSE;
+    }
+  set_clock_lo();
+
+// Write the last bit of the command byte
+  PIN_SDI_SDO = command_byte & 0x01;
+  set_clock_hi();
+
+// Write the data_byte
+  write_SPI_bits(data_byte, 8);
+  reset_rheostats();
+
+  return TRUE;
+}
 
 static void
 set_clock_hi(void)
