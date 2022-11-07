@@ -454,7 +454,7 @@ device_specific_init_phase1(void)
   reset_rheostats();
 
   // Enable the resistor network globally and
-  // enable the 2 used terminals
+  // enable the 2 used terminals of the 3 on the MCP4161 chip
   set_tcon(0x0e, WIPER_HEAT);
   set_tcon(0x0e, WIPER_HW);
 

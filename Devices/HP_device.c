@@ -91,6 +91,20 @@ device_specific_init_phase1(void)
 
   // Reset the MCP4161 rheostat
   reset_rheostats();
+
+  // Enable the resistor network globally and
+  // enable the terminals on the MCP4162 chip
+  set_tcon(0x0b, WIPER_HEAT);
+  set_tcon(0x0b, WIPER_HW);
+
+  // Set safe values for wipers
+  // HW 50k wiper target is max temp - 2k - value 2
+  write_wiper(0x02,TRUE,WIPER_HW);
+  write_wiper(0x02,FALSE,WIPER_HW);
+
+  // HEAT 100k wiper target 20 C 16k  - value 40
+  write_wiper(0x28,TRUE,WIPER_HEAT);
+  write_wiper(0x28,FALSE,WIPER_HEAT);
 }
 
 /* Device specific initailization */
