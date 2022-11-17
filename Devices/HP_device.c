@@ -115,6 +115,9 @@ device_specific_init_phase2(void)
   reset_timeout(INPUT_SENSING_TIMER);
   // Reset watchdog timer
   reset_timeout(EXTENDER_WATCHDOG_TIMER);
+  // Reset BUs communication timer
+  reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+
   write_extender(WD_EXTENDER_REGISTER, !get_extender_value(WD_EXTENDER_REGISTER));
 }
 
@@ -134,17 +137,37 @@ handle_watchdog(void)
 static void
 operate_device(void)
 {
+  // Messaging variables
+  unsigned char response_opcode = RESPONSE_UNDEFINED, p;
+  bool got_message;
+
   while (TRUE)
     {
       handle_watchdog();
-
       update_input_sensing_windows();
+      got_message = get_device_message();
+/*
+ *    Watch communication activity on bus and reset the device outputs
+ *    if no communication is seen whithin timeout
+ */
+      if (!got_message)
+	{
+	  if (timeout_occured(BUS_COMMUNICATION_WATCHDOG_TIMER, BUS_COMMUNICATION_TIMEOUT_MS))
+	  {
+	    // Re-initialize the device - shut every output down
+	    device_specific_init_phase1();
+	    init_device_comm(HOST_ID, COMM_SPEED_9600_H);
+	    device_specific_init_phase2();
 
-      // Messaging variables
-      unsigned char response_opcode = RESPONSE_UNDEFINED, p;
+	    // Reset the timer
+	    reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+	  }
+	} else {
+	  reset_timeout(BUS_COMMUNICATION_WATCHDOG_TIMER);
+	}
 
       // Take care of messaging
-      if (get_device_message() && !process_generic_messages())
+      if (got_message && !process_generic_messages())
 	{
 	  // Set response opcode to undefined to filter response opcode programming issues
 	  response_opcode = RESPONSE_UNDEFINED;
@@ -180,7 +203,7 @@ operate_device(void)
 		 if (!write_wiper(
 		     (message_buffer.content[PARAMETER_START+1] << 8) | message_buffer.content[PARAMETER_START+2] ,
 		     message_buffer.content[PARAMETER_START + 3]>0,
-		     p == 8 ? WIPER_HP_HW : WIPER_HP_HEAT))
+		     p == 7 ? WIPER_HP_HW : WIPER_HP_HEAT))
 		   response_opcode = COMMAND_FAIL;
 
 	     } else {

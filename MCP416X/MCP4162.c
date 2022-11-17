@@ -15,6 +15,9 @@ void reset_rheostats(void)
 // Prepare for SPI Mode 0,0
   PIN_SCK = 0;
   PIN_SDO = 1;
+
+// Cycle the CS pin
+  PIN_NCS_CSEL = !PIN_NCS_CSEL;
 }
 
 bool
@@ -102,6 +105,9 @@ write16bit(unsigned char command_byte, unsigned char data_byte, __bit wiper_sele
 //  Read CMDERR condition and reset the bus/return failure if error is detected
   set_clock_lo();
   set_clock_hi();
+  __asm
+    nop
+  __endasm;
   if(PIN_SDO == 0)
     {
       reset_rheostats();

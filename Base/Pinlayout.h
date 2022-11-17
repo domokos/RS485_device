@@ -91,7 +91,7 @@
   // Define pins of the mixer controller
   #define CCW_PIN
   #define CW_PIN
-  #define SPAREA_PIN
+  #define HW_HP_ONLY_PIN
   #define USEBUFFER_PIN
   #define GPIO_PIN
 
@@ -145,7 +145,7 @@
   // Define pins of the mixer controller
   #define CCW_PIN P1_5
   #define CW_PIN P1_6
-  #define SPAREA_PIN P1_3
+  #define HW_HP_ONLY_PIN P1_3
   #define USEBUFFER_PIN P1_4
   #define GPIO_PIN P3_7
 

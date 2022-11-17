@@ -31,26 +31,23 @@ __code const unsigned char register_identification[][REG_IDENTIFICATION_LEN] =
         { REG_TYPE_PULSE, REG_WO, 2, DONT_CARE, DONT_CARE },
       // CCW valve output - Contact CCW
         { REG_TYPE_PULSE, REG_WO, 2, DONT_CARE, DONT_CARE },
-      // Spare switch A - Contact SPA
+      // HP Only 3-way valve - Contact SPA
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // Spare switch B - Contact SPB
+      // Use Buffer tandem 3-way valves around buffer - Contact SPB
         { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
       // GPIO switch 2 - Contact 1 on the lowpower part of the pcb
-        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE },
-      // Temporary onewire relay for HP's DHW temperature switch
-      // This one is set with inverted logic
-	{ REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE }, // DS2405
-      // Temporary onewire relay for HP's On/Off switch
-	{ REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE } }; // DS2405
-
+        { REG_TYPE_SW, REG_RW, 1, DONT_CARE, DONT_CARE }};
 
 /*
  * Onewire specific declarations and defines
  */
 
 // Map registers to onewire buses on P1
+// Third onewire bus physically available on mask position 0x04
+// not currently in use by any register - used to identify rom addresses of single devices
+// by reading address 10
 __code const unsigned char register_pinmask_map[] =
-  {0x01, 0x01, 0x02, 0x02, 0x04, 0x04};
+  {0x01, 0x01, 0x02, 0x02};
 
 // Store 64 bit rom values of registers/devices
 __code const unsigned char register_rom_map[][8] =
@@ -63,11 +60,7 @@ __code const unsigned char register_rom_map[][8] =
       // Boiler forward temp sensor
         { 0x28, 0x90, 0x2e, 0x50, 0x01, 0x00, 0x00, 0x86 },
       // Boiler return temp sensor
-        { 0x28, 0xd2, 0x04, 0x49, 0x01, 0x00, 0x00, 0x73 },
-      // Temporary HP DHW Switch
-        { 0x05, 0x13, 0xfa, 0x31, 0x00, 0x00, 0x00, 0x17 },
-      // Temporary HP ON/OFF Switch
-        { 0x05, 0xc4, 0xf7, 0x31, 0x00, 0x00, 0x00, 0xba }
+        { 0x28, 0xd2, 0x04, 0x49, 0x01, 0x00, 0x00, 0x73 }
   };
 
 bool conv_complete;
@@ -276,7 +269,6 @@ operate_device(void)
 
   // Messaging variables
   unsigned char response_opcode = RESPONSE_UNDEFINED, p;
-  bool invert_logic, is_val, tobe_val, flip;
 
   // The main loop of the device
   while (TRUE)
@@ -328,7 +320,7 @@ operate_device(void)
               break;
             // Address 7:  SPA switch - Contact SPA
             case 7:
-              SPAREA_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
+              HW_HP_ONLY_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
               break;
             // Address 8:  USEBUFFER_PIN switch - Contact SPB
             case 8:
@@ -337,36 +329,6 @@ operate_device(void)
             // Address 9:  GPIO - Contact 1 on the low power part
             case 9:
               GPIO_PIN = (message_buffer.content[PARAMETER_START+1] > 0);
-              break;
-            case 10:
-            case 11:
-/*          Address 10:  Temporary HP Unit's DHW switch
-*           Address 11:  Temporary HP Unit's ON/Off switch
-*/
-              if (onewire_reset(0x04))
-		{
-                  invert_logic = p == 10;
-        	  is_val = ReadDS2405(register_rom_map[p-6], 0x04);
-                  tobe_val = message_buffer.content[PARAMETER_START + 1] > 0;
-
-                  if (invert_logic)
-                      flip = (is_val == tobe_val);
-                  else
-		      flip = (is_val != tobe_val);
-
-                  // If the value read and the value got on the bus do not equal then toggle the value of the DS2405 switch
-		  if(flip)
-		    {
-		      if(onewire_reset(0x04))
-			{
-			  send_onewire_rom_commands(p-6);
-			} else {
-			  response_opcode = COMMAND_FAIL;
-			}
-		    }
-		} else {
-		  response_opcode = COMMAND_FAIL;
-		}
               break;
               // Any other address fails
             default:
@@ -413,7 +375,7 @@ operate_device(void)
               break;
             // Address 7:  SPA switch - Contact SPA
             case 7:
-              message_buffer.content[PARAMETER_START] = SPAREA_PIN;
+              message_buffer.content[PARAMETER_START] = HW_HP_ONLY_PIN;
               message_buffer.index = PARAMETER_START;
               break;
             // Address 8:  USEBUFFER switch - Contact SPB
@@ -426,28 +388,14 @@ operate_device(void)
               message_buffer.content[PARAMETER_START] = GPIO_PIN;
               message_buffer.index = PARAMETER_START;
               break;
-            // Test address to read rom on onewire bus - a single device should be connected to the bus in this case
+            // Test address to read rom on onewire bus #3 - rightmost contact
+            // a single device should be connected to the bus in this case
             case 10:
-            case 11:
-/*          Address 10:  Temporary HP Unit's DHW switch - This should be returned inverted
-*           Address 11:  Temporary HP Unit's ON/Off switch
-*/
-            invert_logic = p == 10;
-              if (onewire_reset(0x04))
-                {
-                  message_buffer.content[PARAMETER_START] = ReadDS2405(register_rom_map[p-6], 0x04) != invert_logic;
-                  message_buffer.index = PARAMETER_START;
-                } else {
-                  response_opcode = COMMAND_FAIL;
-                  message_buffer.index = PARAMETER_START-1;
-                }
-              break;
-            case 12:
-              onewire_reset(0x01);
-              onewire_write_byte(CMD_READ_ROM, 0x01);
+              onewire_reset(0x04);
+              onewire_write_byte(CMD_READ_ROM, 0x04);
 
               for (p = 0; p < 8; p++)
-                message_buffer.content[PARAMETER_START+p] =  onewire_read_byte(0x01);
+                message_buffer.content[PARAMETER_START+p] =  onewire_read_byte(0x04);
 
               message_buffer.index = PARAMETER_START+7;
               break;
@@ -492,11 +440,14 @@ device_specific_init(void)
   // Reset conversion timers and distribute conversion across the 3 sensors
   reset_timeout(TEMP_CONV_TIMER);
 
-  // Reset outputs - Setup spare B output to use Buffer
-  USEBUFFER_PIN=1;
+  // Reset outputs - Setup spare B output to bypass Buffer
+  USEBUFFER_PIN=0;
+
+  // Set HP ONLY HW production
+  HW_HP_ONLY_PIN = 0;
 
   // Reset outputs
-  SPAREA_PIN = CW_PIN = CCW_PIN = 0;
+  CW_PIN = CCW_PIN = 0;
 
   // Reset Temporary HP outputs
   for(i=4;i<6;i++)

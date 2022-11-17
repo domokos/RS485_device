@@ -51,9 +51,10 @@ typedef __bit bool;
   #define BUS_COMMUNICATION_WATCHDOG_TIMER 4
 
 #elif defined HP_SLAVE_DEVICE
-  #define NR_OF_TIMERS 5
+  #define NR_OF_TIMERS 6
   #define INPUT_SENSING_TIMER 3
   #define EXTENDER_WATCHDOG_TIMER 4
+  #define BUS_COMMUNICATION_WATCHDOG_TIMER 5
 
 #elif defined SIX_OWBUS_SLAVE_DEVICE
   #define NR_OF_TIMERS 4
