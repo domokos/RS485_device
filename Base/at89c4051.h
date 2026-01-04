@@ -66,7 +66,7 @@ ISR(UTX1, 0)
 }
 \endcode
  */
-#define ISR(source, bank) void ISR_##source() __interrupt(source##_VECTOR) __using(bank)
+#define ISR(source, bank) void ISR_##source(void) __interrupt(source##_VECTOR) __using(bank)
 
 #elif defined(__CDT_PARSER__)
 

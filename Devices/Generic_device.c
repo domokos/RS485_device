@@ -7,7 +7,7 @@
 
 #include "Generic_device.h"
 
-bool process_generic_messages()
+bool process_generic_messages(void)
 {
   unsigned char response_opcode=RESPONSE_UNDEFINED, p, i;
   bool message_handled = TRUE;

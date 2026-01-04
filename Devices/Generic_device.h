@@ -11,7 +11,7 @@
 #include "Slave_comm.h"
 
 // Returns true if message is processed and false otherwise
-bool process_generic_messages();
+bool process_generic_messages(void);
 
 #define REG_IDENTIFICATION_LEN 5
 /*
