@@ -5,6 +5,7 @@
  *      Author: dmolnar
  *
  *      This module handles read/write of the wiper memory of the MCP4162
+ *      Rheostat
  */
 
 #ifndef MCP4162_H_

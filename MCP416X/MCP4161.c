@@ -9,7 +9,7 @@
 
 #include "MCP4161.h"
 
-void reset_rheostats(void)
+void reset_potentiometer(void)
 {
 // Deselect chip
   PIN_NCS_HW = NCS_INACTIVE;
@@ -75,7 +75,7 @@ read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
   set_clock_hi();
   if(PIN_SDI_SDO == 0)
     {
-      reset_rheostats();
+      reset_potentiometer();
       return FALSE;
     }
   set_clock_lo();
@@ -86,7 +86,7 @@ read_wiper(unsigned int *value, bool is_volatile, __bit wiper_selector)
 
   // Read the remaining 8 bits
   data_byte = read_SPI_bits(8);
-  reset_rheostats();
+  reset_potentiometer();
 
   // Return the command and the data so caller can see the entire communication
   // Caller needs to mask data it needs
@@ -118,7 +118,7 @@ write16bit(unsigned char command_byte, unsigned char data_byte, __bit wiper_sele
   set_clock_hi();
   if(PIN_SDI_SDO == 0)
     {
-      reset_rheostats();
+      reset_potentiometer();
       return FALSE;
     }
   set_clock_lo();
@@ -129,7 +129,7 @@ write16bit(unsigned char command_byte, unsigned char data_byte, __bit wiper_sele
 
 // Write the data_byte
   write_SPI_bits(data_byte, 8);
-  reset_rheostats();
+  reset_potentiometer();
 
   return TRUE;
 }

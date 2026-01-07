@@ -5,6 +5,7 @@
  *      Author: dmolnar
  *
  *      This module handles read/write of the wiper memory of the MCP4161-502E/P
+ *      Potentionmeter
  */
 
 #ifndef MCP4161_H_
@@ -29,7 +30,7 @@
  */
 
 // Reset/initialize the SPI bus
-void reset_rheostats(void);
+void reset_potentiometer(void);
 
 // Write 9-bit wiper data into the SPI device
 // return success

@@ -450,8 +450,8 @@ device_specific_init_phase1(void)
   reset_extender();
   HEATER_RELAY_PIN = 0;
 
-  // Reset the MCP4161 rheostat
-  reset_rheostats();
+  // Reset the MCP4161 potentiometer
+  reset_potentiometer();
 
   // Enable the resistor network globally and
   // enable the 2 used terminals of the 3 on the MCP4161 chip
