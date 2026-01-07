@@ -1,11 +1,11 @@
 /*
- * MCP4161.c
+ * MCP4162.c
  *
  *  Created on: Nov 19, 2014
  *  Updated on: Nov 22, 2022 - Add HP controller
  *      Author: dmolnar
  *
- *  This module handles read/write of the wiper memory of the MCP4161-502E/P
+ *  This module handles read/write of the wiper memory of the MCP4162-502E/P
  */
 
 #include "MCP4162.h"
@@ -39,6 +39,7 @@ write_wiper(unsigned int value, bool is_volatile, __bit wiper_selector)
   return write16bit(command_byte, data_byte, wiper_selector);
 }
 
+// Cannot be moved to common part as this calls a different static function
 bool
 set_tcon(unsigned char data_byte, __bit wiper_selector)
 {
@@ -127,22 +128,6 @@ write16bit(unsigned char command_byte, unsigned char data_byte, __bit wiper_sele
 }
 
 static void
-set_clock_hi(void)
-{
-  sck_delay();
-  PIN_SCK = 1;
-  sck_delay();
-}
-
-static void
-set_clock_lo(void)
-{
-  sck_delay();
-  PIN_SCK = 0;
-  sck_delay();
-}
-
-static void
 write_SPI_bits(unsigned char data, unsigned char bit_count)
 {
   unsigned char i, mask;
@@ -174,39 +159,4 @@ read_SPI_bits(unsigned char bit_count)
   return retval;
 }
 
-/*
- *  Wait for about 2.5 us - used for SPI clock timing
- *  we are targetting a 100 kHz clock frequency. With 4 calls to
- *  sck_delay per period we get a minimum of 2.5*4=10us period, which is a 100 kHz frequency.
- *  As per the datasheet the MCP4161 allows a maximum clock frequency of 250 kHz
- *  when reading non-volatile memory w/o external pullup.
- *  So setting 100 kHz should be safe for everything
- */
-#ifdef  CRYSTAL_SPEED_LO
-
-static void sck_delay(void)
-{
-        __asm
-        mov     r2, #1
-spi_clock_delay_loop:
-        nop
-        nop
-        djnz    r2, spi_clock_delay_loop
-        __endasm;
-}
-
-#elif defined CRYSTAL_SPEED_HI
-
-static void sck_delay(void)
-{
-        __asm
-        mov     r2, #1
-spi_clock_delay_loop:
-        djnz    r2, spi_clock_delay_loop
-        __endasm;
-}
-
-#else
-#error "No or incorrect crystal speed defined."
-#endif
 
