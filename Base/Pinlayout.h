@@ -66,6 +66,15 @@
   #define BACKUP_PIN P3_4
   #define ALARM_PIN P3_3
 
+#elif defined FANCOIL_SLAVE_DEVICE
+
+  // The id of this host on the bus
+  #define HOST_ID 14
+
+  #define WATCHDOG_PIN P3_7
+  #define COMM_DIRECTION_PIN P3_2
+  // Define on which port the onewire interface is
+  #define ONEWIRE_IS_ON_P1
 
 #else
   #error "Basic pinlayout definitions could be determined"
@@ -104,6 +113,9 @@
   #define PIN_SDO
   #define PIN_NCS_CSEL
 
+  // Define pinns of the fancoil device
+  #define PIN_FC_ACTIVE
+
 #elif defined MAIN_PANEL_SLAVE_DEVICE
   // Define the pins of the SPI interface of the MCP4161
   #define PIN_NCS_HW P1_0
@@ -125,7 +137,7 @@
 
   #define PIN_SERDATA P1_3
 
-  // Define the pins of the SPI interface of the MCP416x
+  // Define the pins of the SPI interface of the MCP4162
   #define PIN_NCS_CSEL P1_0
   #define PIN_SCK P1_1
   #define PIN_SDO P1_2
@@ -148,6 +160,17 @@
   #define HW_HP_ONLY_PIN P1_3
   #define USEBUFFER_PIN P1_4
   #define GPIO_PIN P3_7
+
+#elif defined FANCOIL_SLAVE_DEVICE
+
+  // Define the pins of the SPI interface of the MCP4161
+  // In this case there is only one potentionmeter wiper in use so we define both chip selector pins to be the
+  // same.
+  #define PIN_NCS_HW P1_2
+  #define PIN_NCS_HEAT P1_2
+  #define PIN_SCK P1_3
+  #define PIN_SDI_SDO P1_4
+  #define PIN_FC_ACTIVE P1_5
 
 #else
   #error "Device specific pinlayout definitions cannot be determined"

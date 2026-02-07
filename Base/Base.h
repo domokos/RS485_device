@@ -67,9 +67,8 @@ typedef __bit bool;
   #define PULSING_OUTPUT_TIMER 4
   #define ONEWIRE_READ_DS2405_REQUIRED
 
-#elif defined LEVEL_MEASUREMENT_DEVICE
-  #define NR_OF_TIMERS 4
-  #define LEVEL_MEASUREMENT_TIMER 3
+#elif defined FANCOIL_SLAVE_DEVICE
+  #define NR_OF_TIMERS 3
 
 #else
   #error "Unknown device for setting timer constants"
